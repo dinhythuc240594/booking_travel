@@ -50,33 +50,3 @@ def validate_phone(site, phone: str) -> tuple:
         return False, msg
     
     return True, ""
-
-def _news_to_dict(news):
-    """Convert News object to dictionary"""
-    return {
-        'id': news.id,
-        'title': news.title,
-        'slug': news.slug,
-        'summary': news.summary,
-        'thumbnail': news.thumbnail,
-        'category': {
-            'id': news.category.id,
-            'name': news.category.name,
-            'slug': news.category.slug
-        },
-        'view_count': news.view_count,
-        'is_featured': news.is_featured,
-        'is_hot': news.is_hot,
-        'published_at': news.published_at.isoformat() if news.published_at else None,
-        'created_at': news.created_at.isoformat()
-    }
-
-def _category_to_dict(category) -> dict:
-    """Convert Category object to dictionary"""
-    return {
-        'id': category.id,
-        'name': category.name,
-        'slug': category.slug,
-        'icon': category.icon,
-        'parent_id': category.parent_id
-    }

@@ -1,0 +1,128 @@
+{% extends '/client/en/base.html' %}
+{% block title %}Register - VnNews International{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_client.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_register.css') }}">
+{% endblock %}
+{% block content %}
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-7">
+    <div class="register-container">
+        <div class="register-header">
+            <h1><i class="fas fa-user-plus"></i> VnNews</h1>
+            <p>Register new account</p>
+        </div>
+        
+        <div class="register-body">
+            <h2 class="register-title">Register</h2>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <form method="POST" action="{{ url_for('client.register') }}" id="registerForm" novalidate>
+                <input type="hidden" name="site" value="en">
+                <div class="form-group">
+                    <label class="form-label">Username <span class="required">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-user"></i>
+                        </span>
+                        <input type="text" class="form-control" name="username" id="username" placeholder="Enter username" required>
+                    </div>
+                    <div class="invalid-feedback" id="username-error"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Full name</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-id-card"></i>
+                        </span>
+                        <input type="text" class="form-control" name="full_name" id="full_name" placeholder="Enter full name">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Email address <span class="required">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-envelope"></i>
+                        </span>
+                        <input type="email" class="form-control" name="email" id="email" placeholder="Enter email address" required>
+                    </div>
+                    <div class="invalid-feedback" id="email-error"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Phone number <span class="required">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-phone"></i>
+                        </span>
+                        <input type="tel" class="form-control" name="phone" id="phone" placeholder="Enter phone number (e.g: 0912345678)" required>
+                    </div>
+                    <div class="invalid-feedback" id="phone-error"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Password <span class="required">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Nhập mật khẩu (tối thiểu 6 ký tự)" required>
+                        <span class="input-group-text password-toggle" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </span>
+                    </div>
+                    <div class="password-strength">
+                        <div class="strength-bar">
+                            <div class="strength-fill" id="strengthFill"></div>
+                        </div>
+                        <small id="strengthText" class="text-muted"></small>
+                    </div>
+                    <div class="invalid-feedback" id="password-error"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Confirm password <span class="required">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-lock"></i>
+                        </span>
+                        <input type="password" class="form-control" name="confirm_password" id="confirm_password" placeholder="Nhập lại mật khẩu" required>
+                        <span class="input-group-text password-toggle" id="toggleConfirmPassword">
+                            <i class="fas fa-eye"></i>
+                        </span>
+                    </div>
+                    <div class="invalid-feedback" id="confirm-password-error"></div>
+                </div>
+                
+                <button type="submit" class="btn btn-register" id="submitBtn">
+                    <i class="fas fa-user-plus me-2"></i> Register
+                </button>
+            </form>
+            
+            <div class="login-link">
+                <p>Already have an account? <a href="{{ url_for('client.en_user_login') }}">Login now</a></p>
+            </div>
+        </div>
+    </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}
+

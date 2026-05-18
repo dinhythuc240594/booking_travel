@@ -1,0 +1,172 @@
+{% extends 'client/en/base.html' %}
+{% block title %}VnNews International - The Latest News{% endblock %}
+{% block head %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_client.css') }}">
+{% endblock %}
+{% block content %}
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="row">
+                <!-- Left Content -->
+                <div class="col-lg-9">
+                    <!-- Featured News -->
+                    <section class="featured-news mb-4">
+                        {% if featured_news %}
+                        <div class="row">
+                            {% if featured_news|length > 0 %}
+                            <div class="col-md-8">
+                                {% set main_featured = featured_news[0] %}
+                                <article class="news-card featured-card">
+                                    <div class="news-image">
+                                        <img src="{{ main_featured.thumbnail|default_image }}" alt="{{ main_featured.title }}">
+                                        <span class="badge-category">{{ main_featured.category.name }}</span>
+                                    </div>
+                                    <div class="news-content">
+                                        <h2 class="news-title">
+                                            <a href="{{ url_for('client.en_news_detail', news_slug=main_featured.slug) }}">{{ main_featured.title }}</a>
+                                        </h2>
+                                        <p class="news-description">
+                                            {{ main_featured.summary or main_featured.content|get_description }}
+                                        </p>
+                                        <div class="news-meta">
+                                            <span><i class="far fa-clock"></i> {{ (main_featured.published_at or main_featured.created_at)|timeago }}</span>
+                                            <span><i class="far fa-eye"></i> {{ main_featured.view_count|format_view }}</span>
+                                        </div>
+                                    </div>
+                                </article>
+                            </div>
+                            {% endif %}
+                            {% if featured_news|length > 1 %}
+                            <div class="col-md-4">
+                                <div class="sub-featured">
+                                    {% for news in featured_news[1:3] %}
+                                    <article class="news-card small-card">
+                                        <div class="news-image">
+                                            <img src="{{ news.thumbnail|default_image }}" alt="{{ news.title }}">
+                                            <span class="badge-category">{{ news.category.name }}</span>
+                                        </div>
+                                        <h3 class="news-title">
+                                            <a href="{{ url_for('client.en_news_detail', news_slug=news.slug) }}">{{ news.title }}</a>
+                                        </h3>
+                                        <div class="news-meta">
+                                            <span><i class="far fa-clock"></i> {{ (news.published_at or news.created_at)|timeago }}</span>
+                                        </div>
+                                    </article>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% else %}
+                        <div class="row">
+                            <div class="col-12">
+                                <p class="text-center text-muted">No featured news</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </section>
+
+                    <!-- Latest News -->
+                    <section class="latest-news">
+                        <h2 class="section-title">
+                            <span>Latest</span>
+                        </h2>
+                        
+                        <div class="news-list">
+                            {% if latest_news %}
+                                {% for news in latest_news %}
+                                <article class="news-card horizontal-card">
+                                    <div class="row g-0">
+                                        <div class="col-md-4">
+                                            <div class="news-image">
+                                                <img src="{{ news.thumbnail|default_image }}" alt="{{ news.title }}">
+                                                <span class="badge-category">{{ news.category.name }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-8">
+                                            <div class="news-content">
+                                                <h3 class="news-title">
+                                                    <a href="{{ url_for('client.en_news_detail', news_slug=news.slug) }}">{{ news.title }}</a>
+                                                </h3>
+                                                <p class="news-description">
+                                                    {{ news.summary or news.content|get_description }}
+                                                </p>
+                                                <div class="news-meta">
+                                                    <span><i class="far fa-clock"></i> {{ (news.published_at or news.created_at)|timeago }}</span>
+                                                    <span><i class="far fa-eye"></i> {{ news.view_count|format_view }}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </article>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-center text-muted">No latest news</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button class="btn-load-more-en">
+                                <i class="fas fa-sync-alt"></i> View more
+                            </button>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Right Sidebar -->
+                <div class="col-lg-3">
+                    <!-- Most Read -->
+                    <aside class="sidebar-widget">
+                        <h3 class="widget-title">
+                            <i class="fas fa-fire"></i> View more
+                        </h3>
+                        <div class="most-read-list">
+                            {% if hot_news %}
+                                {% for news in hot_news %}
+                                <article class="most-read-item">
+                                    <span class="rank">{{ loop.index }}</span>
+                                    <div class="content">
+                                        <h4><a href="{{ url_for('client.en_news_detail', news_slug=news.slug) }}">{{ news.title }}</a></h4>
+                                        <span class="meta"><i class="far fa-eye"></i> {{ news.view_count|format_view }}</span>
+                                    </div>
+                                </article>
+                                {% endfor %}
+                            {% else %}
+                                <p class="text-muted text-center">No hot news</p>
+                            {% endif %}
+                        </div>
+                    </aside>
+
+                    <!-- Video -->
+                    <!-- <aside class="sidebar-widget">
+                        <h3 class="widget-title">
+                            <i class="fas fa-video"></i> Video
+                        </h3>
+                        <div class="video-widget">
+                            <div class="video-thumbnail">
+                                <img src="https://images.unsplash.com/photo-1492619375914-88005aa9e8fb?w=400" alt="Video">
+                                <div class="play-icon">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                            </div>
+                            <h4 class="video-title">Cảnh đẹp Việt Nam từ trên cao</h4>
+                        </div>
+                    </aside> -->
+
+                    <!-- Weather -->
+                    <aside class="sidebar-widget weather-widget">
+                        <h3 class="widget-title">
+                            <i class="fas fa-cloud-sun"></i> Weather
+                        </h3>
+                        <div class="weather-content" id="weatherWidget">
+                            <div class="weather-loading">
+                                <i class="fas fa-spinner fa-spin"></i> Loading...
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+            </div>
+        </div>
+    </main>
+{% endblock %}

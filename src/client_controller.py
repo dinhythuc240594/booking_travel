@@ -1,31 +1,83 @@
 
 from flask import Blueprint, render_template, request, jsonify, abort, redirect, url_for, flash, session, current_app
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from sqlalchemy import or_
-from typing import Optional
-from functools import wraps
 import pytz
-import os
 from datetime import datetime, timedelta
-from werkzeug.utils import secure_filename
-import database as db
-import model
 
+from database import (
+    get_session,
+    TourStatus,
+    UserRole,
+    ViewedTours,
+    SavedTours, PasswordResetToken,
+)
+
+from models import (
+    ToursModel,
+    UserModel,
+)
 
 class Controller():
 
-    """Quản lý các route của client"""
+    """Mangaer controller - manage related user, tours, ..."""
     
     def __init__(self):
-        """Khởi tạo controller"""
-        self.db_session = db.get_session()
-        self.news_model = model.NewsModel(self.db_session)
-        self.category_model = model.CategoryModel(self.db_session)
-        self.user_model = model.UserModel(self.db_session)
+        """initialize controller"""
+        self.db_session = get_session()
+        self.tours_model = ToursModel(self.db_session)
+        self.user_model = UserModel(self.db_session)
+
+    def list_tours(self, limit=None, offset=None):
+        """
+        List latest tours
+        Route: GET /
+        """
+        db_session = self.db_session
+        try:
+            tours_model = self.tours_model(db_session)
+            latest_tours = tours_model.get_published(limit=limit, offset=offset)
+
+            return latest_tours
+        finally:
+            db_session.close()
+
+    def handle_login(self, site):
+
+        username = request.form.get('username')
+        password = request.form.get('password')
+
+        if self.user_model.is_locked_user(username):
+            if site == 'en':
+                flash('Account has been locked. Please contact administrator', 'error')
+                return redirect(url_for('client.en_user_login'))
+            else:
+                flash('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên', 'error')
+                return redirect(url_for('client.user_login'))
         
-        self.int_news_model = model.InternationalNewsModel(self.db_session)
-        self.int_category_model = model.InternationalCategoryModel(self.db_session)
+        user = self.user_model.authenticate(username, password)
+        
+        if user and user.is_active and user.role == UserRole.USER:
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session['full_name'] = user.full_name or user.username
+            session['role'] = user.role.value
+            
+            
+            if site == 'en':
+                flash('Login successful', 'success')
+                return redirect(url_for('client.en_index'))
+            else:
+                flash('Đăng nhập thành công', 'success')
+                return redirect(url_for('client.index'))
+        else:
+            if site == 'en':
+                print('Username or password is incorrect')
+                flash('Username or password is incorrect', 'error')
+                return redirect(url_for('client.en_user_login'))
+            else:
+                print('Tên đăng nhập hoặc mật khẩu không đúng')
+                flash('Tên đăng nhập hoặc mật khẩu không đúng', 'error')
+                return redirect(url_for('client.user_login'))
+
 
     def checkLogin(self):
         """
@@ -53,8 +105,7 @@ class Controller():
             session['username'] = user.username
             session['full_name'] = user.full_name or user.username
             session['role'] = user.role.value
-            
-            # Nếu chọn "Ghi nhớ đăng nhập", set session permanent
+
             if remember:
                 session.permanent = True
             else:
@@ -63,14 +114,12 @@ class Controller():
             flash('Đăng nhập thành công', 'success')
             return redirect(url_for('client.index'))
         else:
-            print('Tên đăng nhập hoặc mật khẩu không đúng')
             flash('Tên đăng nhập hoặc mật khẩu không đúng', 'error')
             return redirect(url_for('client.user_login'))
 
-
     def register(self):
         """
-        Trang đăng ký cho user
+        Page register user
         Route: POST /register
         """
 
@@ -136,7 +185,7 @@ class Controller():
 
     def forgot_password(self):
         """
-        Trang quên mật khẩu - Yêu cầu reset
+        Page forgot password - Request reset
         Route: POST /forgot-password
         """
         email = request.form.get('email', '').strip().lower()
@@ -184,61 +233,101 @@ class Controller():
             flash(success_msg, 'success')
             return redirect(url_for('client.user_login', site=site))
 
-    def init_menu_item(self):
-        
-        count = self.db_session.query(db.Category).count()
-        if count > 0:
-            return {
-                'success': False,
-                'error': 'Đã có categories trong database'
-            }
-        
-        created_items = {}
-        parent_categories = [c for c in db.DEFAULT_CATEGORIES if c['parent_id'] is None]
-        parent_categories.sort(key=lambda x: x['order_display'])
+    def tours_detail(self, tours_slug: str):
+        """
+        Page tour detail
+        Route: GET /tours/<tours_slug>
+        """
+        db_session = db.get_session()
+        try:
 
-        for cat_data in parent_categories:
-            category = db.Category(
-                name=cat_data['name'],
-                slug=cat_data['slug'],
-                icon=cat_data['icon'],
-                order_display=cat_data['order_display'],
-                parent_id=None,
-                visible=True
-            )
-            self.db_session.add(category)
-            self.db_session.flush()  # Để lấy ID
-            created_items[cat_data['slug']] = category.id
+            print(f"Slug received: {tours_slug}")
+            
+            tours_model = self.tours_model(db_session)
+            
+            tours = tours_model.get_by_slug(tours_slug)
+            print(f"Tours found: {tours}")
+            
+            if not tours:
+                print(f"Tours not found for slug: {tours_slug}")
+                abort(404)
+            
+            print(f"Tours status: {tours.status}")
+            if tours.status != TourStatus.PUBLISHED:
+                print(f"Tours not published, status: {tours.status}")
+                abort(404)
 
-        child_categories = [c for c in db.DEFAULT_CATEGORIES if c['parent_id'] is not None]
-        child_categories.sort(key=lambda x: (x['parent_id'], x['order_display']))
+            is_saved = False
+            user_id = None
+            if 'user_id' in session:
+                user_id = session['user_id']
 
-        for cat_data in child_categories:
-            parent_slug = None
-            for parent_cat in db.DEFAULT_CATEGORIES:
-                if parent_cat.get('id') == cat_data['parent_id']:
-                    parent_slug = parent_cat['slug']
-                    break
+                existing_viewed = db_session.query(ViewedTours).filter(
+                    ViewedTours.user_id == user_id,
+                    ViewedTours.tour_id == tours.id,
+                    ViewedTours.site == 'vn'
+                ).first()
+                
+                if not existing_viewed:
+                    viewed_tours = ViewedTours(
+                        user_id=user_id,
+                        tour_id=tours.id,
+                        site='vn'
+                    )
+                    db_session.add(viewed_tours)
+                    db_session.commit()
+                else:
 
-            if parent_slug and parent_slug in created_items:
-                parent_id = created_items[parent_slug]
-                parent_id = created_items[parent_slug]
-                category = db.Category(
-                    name=cat_data['name'],
-                    slug=cat_data['slug'],
-                    icon=cat_data['icon'],
-                    order_display=cat_data['order_display'],
-                    parent_id=parent_id,
-                    visible=True
-                )
-                self.db_session.add(category)
-                self.db_session.flush()
-                created_items[cat_data['slug']] = category.id
+                    existing_viewed.viewed_at = datetime.utcnow()
+                    db_session.commit()
 
-        self.db_session.commit()
+                saved_tours = db_session.query(SavedTours).filter(
+                    SavedTours.user_id == user_id,
+                    SavedTours.tour_id == tours.id,
+                    SavedTours.site == 'vn'
+                ).first()
+                is_saved = saved_tours is not None
 
-        return {
-            'success': True,
-            'message': f'Đã khởi tạo {len(db.DEFAULT_CATEGORIES)} categories mặc định',
-            'count': len(db.DEFAULT_CATEGORIES)
-        }
+            time_format = '%d-%m-%Y %H:%M'
+            time_zone = 'Asia/Ho_Chi_Minh'
+            
+            format_time = lambda x: x.astimezone(pytz.timezone(time_zone)).strftime(time_format)
+
+            return render_template('client/vn/tours_detail.html',
+                                 tours=tours,
+                                 is_saved=is_saved,
+                                 user_id=user_id,
+                                 format_time=format_time)
+        except Exception as e:
+            db_session.rollback()
+            
+            import traceback
+            print(f"Error in tours_detail: {str(e)}")
+            traceback.print_exc()
+            
+            abort(404)
+        finally:
+            db_session.close()
+    
+    def search_tours(self, keyword, page):
+        """
+        Search tours by keyword
+        Route: GET /search?q=<keyword>
+        """
+        db_session = db.get_session()
+        try:
+
+            tours_model = self.tours_model(db_session)
+
+            if not keyword:
+                return []
+            
+            per_page = 25
+            offset = (page - 1) * per_page
+            
+            tours_list = tours_model.search(keyword, limit=per_page + offset)
+            tours_list = tours_list[offset:offset + per_page]
+            
+            return tours_list
+        finally:
+            db_session.close()

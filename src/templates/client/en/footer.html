@@ -1,0 +1,52 @@
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <h4>About VnNews</h4>
+                <ul class="footer-links">
+                    <li><a href="{{ url_for('client.en_introducing') }}">Introduction</a></li>
+                    <li><a href="{{ url_for('client.en_contact') }}">Contact</a></li>
+                    <!-- <li><a href="#">Advertising</a></li>
+                    <li><a href="#">Recruitment</a></li> -->
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h4>Support</h4>
+                <ul class="footer-links">
+                    <li><a href="{{ url_for('client.en_guide') }}">Guide</a></li>
+                    <li><a href="{{ url_for('client.en_term_of_service') }}">Terms of Service</a></li>
+                    <li><a href="{{ url_for('client.en_security') }}">Privacy Policy</a></li>
+                    <!-- <li><a href="#">RSS</a></li> -->
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h4>Categories</h4>
+                <ul class="footer-links">
+                    {% for category in categories %}
+                    {% if category.parent_id is none%}
+                        {% if category.visible %}
+                            <li><a href="{{ url_for('client.en_category', category_slug=category.slug) }}">{{ category.name }}</a></li>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h4>Follow</h4>
+                <!-- <div class="social-footer">
+                    <a href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                </div> -->
+                <div class="newsletter" style="width: 350px;">
+                    <input type="email" id="newsletter-email-en" placeholder="Your email" class="form-control" style="width: 250px;">
+                    <button class="btn-subscribe" id="newsletter-subscribe-btn-en">Subscribe</button>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 VnNews. All rights reserved.</p>
+        </div>
+    </div>
+</footer>

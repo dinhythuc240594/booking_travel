@@ -1,0 +1,43 @@
+<footer class="footer">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <h4>Về VnBookingTravel</h4>
+                <ul class="footer-links">
+                    <li><a href="{{ url_for('client.introducing') }}">Giới thiệu</a></li>
+                    <li><a href="{{ url_for('client.contact') }}">Liên hệ</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h4>Hỗ trợ</h4>
+                <ul class="footer-links">
+                    <li><a href="{{ url_for('client.guide') }}">Hướng dẫn</a></li>
+                    <li><a href="{{ url_for('client.term_of_service') }}">Điều khoản</a></li>
+                    <li><a href="{{ url_for('client.security') }}">Chính sách bảo mật</a></li>
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h4>Chuyên mục</h4>
+                <ul class="footer-links">
+                    {% for category in categories %}
+                        {% if category.parent_id is none%}
+                            {% if category.visible %}
+                                <li><a href="{{ url_for('client.category', category_slug=category.slug) }}">{{ category.name }}</a></li>
+                            {% endif %}
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="col-md-3">
+                <h4>Theo dõi</h4>
+                <div class="newsletter" style="width: 350px;">
+                    <input type="email" id="newsletter-email-vn" placeholder="Email của bạn" class="form-control" style="width: 250px;">
+                    <button class="btn-subscribe" id="newsletter-subscribe-btn-vn">Đăng ký</button>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 VnBookingTravel. Tất cả các quyền được bảo lưu.</p>
+        </div>
+    </div>
+</footer>
