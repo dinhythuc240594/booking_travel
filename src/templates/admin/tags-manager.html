@@ -1,0 +1,70 @@
+        <!-- Tags Manager Section -->
+        <div class="content-section" id="tags-manager">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0"><i class="fas fa-hashtag me-1"></i> Quản lý Hashtag</h5>
+                        <small class="text-muted">Tạo, chỉnh sửa và xóa các hashtag dùng cho bài viết.</small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="tagSearchInput" placeholder="Tìm hashtag...">
+                        </div>
+                        <span class="badge bg-secondary" id="tagsTotalBadge">0 hashtag</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6 class="mb-3"><i class="fas fa-plus-circle me-1"></i> Thêm / Sửa hashtag</h6>
+                            <form id="tagForm">
+                                <input type="hidden" id="tagId">
+                                <div class="mb-3">
+                                    <label class="form-label">Tên hashtag <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" id="tagName" placeholder="Ví dụ: công_nghệ, kinh_tế...">
+                                    <small class="text-muted">Không cần nhập dấu #, hệ thống sẽ tự chuẩn hóa định dạng.</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Slug</label>
+                                    <input type="text" class="form-control" id="tagSlug" placeholder="Tự sinh từ tên nếu để trống">
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="tagResetBtn">
+                                        <i class="fas fa-undo me-1"></i> Làm mới
+                                    </button>
+                                    <button type="submit" class="btn btn-primary btn-sm" id="tagSaveBtn">
+                                        <i class="fas fa-save me-1"></i> Lưu hashtag
+                                    </button>
+                                </div>
+                                <div class="mt-3 small text-muted">
+                                    Gợi ý: Sử dụng định dạng <code>#ten_tag</code> trong editor. Các hashtag ở đây sẽ được gợi ý tự động.
+                                </div>
+                            </form>
+                        </div>
+                        <div class="col-md-8">
+                            <h6 class="mb-3"><i class="fas fa-list-ul me-1"></i> Danh sách hashtag</h6>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 10%;">#</th>
+                                            <th style="width: 35%;">Tên hashtag</th>
+                                            <th style="width: 35%;">Slug</th>
+                                            <th style="width: 20%;">Hành động</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tagsTableBody">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted">
+                                                Đang tải dữ liệu hashtag...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>

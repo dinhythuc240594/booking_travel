@@ -1,0 +1,43 @@
+<div class="content-section" id="my-articles">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5><i class="fas fa-file-alt"></i> Bài viết của tôi</h5>
+            <div>
+                <select class="form-select form-select-sm d-inline-block" style="width: 150px;" id="filterStatus">
+                    <option value="all">Tất cả</option>
+                    <option value="draft">Bản nháp</option>
+                    <option value="pending">Chờ duyệt</option>
+                    <option value="published">Đã xuất bản</option>
+                    <option value="hidden">Đã ẩn</option>
+                </select>
+                <input type="text" class="form-control form-control-sm d-inline-block" style="width: 200px;" id="searchMyArticles" placeholder="Tìm kiếm...">
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <!-- <th width="5%">#</th> -->
+                            <th width="35%">Tiêu đề</th>
+                            <th width="12%">Danh mục</th>
+                            <th width="10%">Trạng thái</th>
+                            <!-- <th width="10%">Hiển thị</th> -->
+                            <th width="13%">Ngày tạo</th>
+                            <th width="15%">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="myArticlesTable">
+                        <!-- Data will be loaded by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <div class="text-muted small" id="myArticlesInfo"></div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="myArticlesPagination"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>

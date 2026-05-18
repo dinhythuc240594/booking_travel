@@ -1,0 +1,28 @@
+# news_universe
+
+``Run file setup.bat``
+Run file check configuration for web demo
+
+``Check config .env``
+``1. if it not exists, to edit``
+# Configuration file for app
+
+# using: python -c "import secrets; print(secrets.token_hex(32))" to create secret key safety
+SECRET_KEY=dev-secret-key-change-in-production
+
+# Database Configuration
+# Format: mysql+pymysql://username:password@host:port/database
+DATABASE_URL=mysql+pymysql://username:password@host:port/database
+TRACK_MODIFICATIONS=False
+
+# Email Configuration (SMTP)
+MAIL_SERVER=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USE_TLS=True
+MAIL_USE_SSL=False
+MAIL_USERNAME=your-email@gmail.com
+MAIL_PASSWORD=your-app-password
+MAIL_DEFAULT_SENDER=your-email@gmail.com
+MAIL_SUBJECT_PREFIX=[News Universe]
+``2. Run again file setup.bat``
+Run file check configuration for web demo

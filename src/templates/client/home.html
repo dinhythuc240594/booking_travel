@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traveloka Clone - Đặt phòng, Vé máy bay</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <h2 style="color: var(--primary-blue); font-weight: 800; cursor: pointer;"><i class="fa-solid fa-dove"></i> MyTravel</h2>
+            </div>
+            <nav class="nav-links">
+                <a href="#"><i class="fa-solid fa-percent"></i> Khuyến mãi</a>
+                <a href="#">Hỗ trợ</a>
+                <a href="#">Hợp tác với chúng tôi</a>
+                <a href="#">Đã lưu</a>
+                <a href="#">Đặt chỗ của tôi</a>
+            </nav>
+            <div class="auth-buttons">
+                <button class="btn btn-outline">Đăng nhập</button>
+                <button class="btn btn-primary">Đăng ký</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero & Search Section -->
+    <section class="hero">
+        <div class="hero-content text-center text-white">
+            <h1>Từ Đông Nam Á đến Thế giới, trong tầm tay bạn</h1>
+            <p>Khám phá khách sạn, vé máy bay và trải nghiệm tuyệt vời</p>
+        </div>
+    </section>
+
+    <!-- Search Box (Nổi lên trên Hero) -->
+    <div class="container search-wrapper">
+        <div class="search-box">
+            <div class="search-tabs">
+                <button class="tab active"><i class="fa-solid fa-bed"></i> Khách sạn</button>
+                <button class="tab"><i class="fa-solid fa-plane"></i> Vé máy bay</button>
+                <button class="tab"><i class="fa-solid fa-ticket"></i> Hoạt động</button>
+                <button class="tab"><i class="fa-solid fa-car"></i> Thuê xe</button>
+            </div>
+            
+            <div class="search-form">
+                <div class="input-group">
+                    <label>Thành phố, địa điểm hoặc tên khách sạn</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <input type="text" placeholder="Thành phố, địa điểm...">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Nhận phòng - Trả phòng</label>
+                    <div class="input-with-icon">
+                        <i class="fa-regular fa-calendar"></i>
+                        <input type="text" placeholder="20 Thg 10 - 22 Thg 10">
+                    </div>
+                </div>
+                <div class="input-group">
+                    <label>Khách và Phòng</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-user"></i>
+                        <input type="text" value="1 Người lớn, 0 Trẻ em, 1 Phòng" readonly>
+                    </div>
+                </div>
+                <button class="btn-search"><i class="fa-solid fa-magnifying-glass"></i> Tìm khách sạn</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Promotions Section -->
+    <section class="section container">
+        <h2 class="section-title">Chương trình Khuyến mãi</h2>
+        <div class="promo-grid">
+            <div class="promo-card" style="background-image: url('https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=500&q=80');">
+                <div class="promo-content">
+                    <h3>Giảm tới 50% Vé máy bay</h3>
+                    <p>Bay nội địa vi vu, không lo về giá</p>
+                </div>
+            </div>
+            <div class="promo-card" style="background-image: url('https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=500&q=80');">
+                <div class="promo-content">
+                    <h3>Deal Khách sạn Phú Quốc</h3>
+                    <p>Nghỉ dưỡng sang trọng 5 sao</p>
+                </div>
+            </div>
+            <div class="promo-card" style="background-image: url('https://images.unsplash.com/photo-1528127269322-539801943592?w=500&q=80');">
+                <div class="promo-content">
+                    <h3>Khám phá Thái Lan</h3>
+                    <p>Combo Vé + Khách sạn siêu rẻ</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Popular Destinations Section -->
+    <section class="section bg-light">
+        <div class="container">
+            <h2 class="section-title">Điểm đến thịnh hành</h2>
+            <div class="destinations-grid">
+                <div class="dest-card">
+                    <img src="https://images.unsplash.com/photo-1557406902-690240d42127?w=500&q=80" alt="Đà Lạt">
+                    <div class="dest-info">
+                        <h4>Đà Lạt</h4>
+                        <p>1,245 chỗ ở</p>
+                    </div>
+                </div>
+                <div class="dest-card">
+                    <img src="https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=500&q=80" alt="Đà Nẵng">
+                    <div class="dest-info">
+                        <h4>Đà Nẵng</h4>
+                        <p>850 chỗ ở</p>
+                    </div>
+                </div>
+                <div class="dest-card">
+                    <img src="https://images.unsplash.com/photo-1550653303-a15234208a07?w=500&q=80" alt="Hội An">
+                    <div class="dest-info">
+                        <h4>Hội An</h4>
+                        <p>420 chỗ ở</p>
+                    </div>
+                </div>
+                <div class="dest-card">
+                    <img src="https://images.unsplash.com/photo-1601584852021-cd3dc2d93eab?w=500&q=80" alt="Sapa">
+                    <div class="dest-info">
+                        <h4>Sapa</h4>
+                        <p>320 chỗ ở</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-grid">
+            <div class="footer-col">
+                <h3>Về MyTravel</h3>
+                <ul>
+                    <li><a href="#">Cách đặt chỗ</a></li>
+                    <li><a href="#">Liên hệ chúng tôi</a></li>
+                    <li><a href="#">Trợ giúp</a></li>
+                    <li><a href="#">Tuyển dụng</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Sản phẩm</h3>
+                <ul>
+                    <li><a href="#">Khách sạn</a></li>
+                    <li><a href="#">Vé máy bay</a></li>
+                    <li><a href="#">Vé xe khách</a></li>
+                    <li><a href="#">Xperience</a></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h3>Tải ứng dụng</h3>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" alt="Google Play" style="width: 150px; margin-bottom: 10px; cursor:pointer;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" alt="App Store" style="width: 150px; cursor:pointer;">
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2024 MyTravel. Demo Project for Booking System.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

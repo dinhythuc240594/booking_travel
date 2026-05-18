@@ -1,0 +1,35 @@
+<div class="content-section" id="drafts">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5><i class="fas fa-save"></i> Bản nháp</h5>
+            <input type="text" class="form-control form-control-sm d-inline-block" style="width: 220px;" id="searchDrafts" placeholder="Tìm kiếm bản nháp...">
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <!-- <th width="5%">#</th> -->
+                            <th width="40%">Tiêu đề</th>
+                            <th width="15%">Danh mục</th>
+                            <th width="15%">Ngày tạo</th>
+                            <!-- <th width="10%">Hiển thị</th> -->
+                            <th width="25%">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="draftsTable">
+                        <!-- Data will be loaded by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <div class="text-muted small" id="draftsInfo"></div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="draftsPagination"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+

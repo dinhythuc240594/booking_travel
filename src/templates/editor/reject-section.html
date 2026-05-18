@@ -1,0 +1,67 @@
+<div class="content-section" id="rejected">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5><i class="fas fa-times-circle"></i> Bài viết bị từ chối</h5>
+            <input type="text" class="form-control form-control-sm d-inline-block" style="width: 220px;" id="searchRejected" placeholder="Tìm kiếm bài bị từ chối...">
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <!-- <th width="5%">#</th> -->
+                            <th width="40%">Tiêu đề</th>
+                            <th width="15%">Danh mục</th>
+                            <th width="15%">Trạng thái</th>
+                            <th width="15%">Ngày xuất bản</th>
+                            <th width="25%">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rejectedTable">
+                        <!-- Data will be loaded by JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mt-2">
+                <div class="text-muted small" id="rejectedInfo"></div>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0" id="rejectedPagination"></ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal hiển thị lý do từ chối -->
+<div class="modal fade" id="rejectionReasonModal" tabindex="-1" aria-labelledby="rejectionReasonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="rejectionReasonModalLabel">
+                    <i class="fas fa-times-circle me-2"></i>Lý do từ chối
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label"><strong>Tiêu đề bài viết:</strong></label>
+                    <p id="rejectionArticleTitle" class="text-primary"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label"><strong>Người từ chối:</strong></label>
+                    <p id="rejectionRejectedBy"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label"><strong>Thời gian từ chối:</strong></label>
+                    <p id="rejectionRejectedAt"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label"><strong>Lý do từ chối:</strong></label>
+                    <div class="alert alert-danger" id="rejectionReasonText" style="white-space: pre-wrap;"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>

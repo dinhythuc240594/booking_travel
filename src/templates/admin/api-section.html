@@ -1,0 +1,82 @@
+<!-- API News Section -->
+<div class="content-section" id="api-news">
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="fas fa-cloud"></i> Lấy bài từ API News</h5>
+        </div>
+        <div class="card-body">
+            <!-- Thông báo về API Token -->
+            <div class="alert alert-info mb-4">
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Lưu ý:</strong> API Token được lấy từ phần <strong>Cài đặt</strong>. 
+                Vui lòng đảm bảo đã cài đặt API Token trước khi sử dụng chức năng này.
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-3" id="apiModeTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="category-tab" data-bs-toggle="tab" data-bs-target="#category-panel" 
+                            type="button" role="tab" aria-controls="category-panel" aria-selected="true">
+                        <i class="fas fa-list"></i> Theo Khu vực & Danh mục
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="urls-tab" data-bs-toggle="tab" data-bs-target="#urls-panel" 
+                            type="button" role="tab" aria-controls="urls-panel" aria-selected="false">
+                        <i class="fas fa-link"></i> Theo Danh sách URL
+                    </button>
+                </li>
+            </ul>
+
+            <!-- Tab Content -->
+            <div class="tab-content" id="apiModeTabContent">
+                <!-- Category Mode Panel -->
+                <div class="tab-pane fade show active" id="category-panel" role="tabpanel" aria-labelledby="category-tab">
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Khu vực *</label>
+                            <select class="form-select" id="apiRegion">
+                                <option value="domestic">Trong nước</option>
+                                <option value="international">Quốc tế</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Danh mục</label>
+                            <select class="form-select" id="apiCategorySelect">
+                                <option value="">Chọn danh mục...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Số lượng tối đa</label>
+                            <input type="number" class="form-control" id="apiLimit" value="5" min="1" max="20">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- URLs Mode Panel -->
+                <div class="tab-pane fade" id="urls-panel" role="tabpanel" aria-labelledby="urls-tab">
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label class="form-label">Article URLs *</label>
+                            <textarea class="form-control" id="apiUrls" rows="8" placeholder="Nhập các URL bài viết, mỗi URL một dòng&#10;Ví dụ:&#10;https://vnexpress.net/article1.html&#10;https://vnexpress.net/article2.html&#10;https://thanhnien.vn/article3.html"></textarea>
+                            <small class="text-muted">Mỗi URL một dòng. API sẽ trích xuất nội dung từ các URL này.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Nút Fetch -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <button type="button" class="btn btn-primary w-100" id="fetchApiBtn">
+                        <i class="fas fa-download"></i> Tải bài từ API
+                    </button>
+                </div>
+            </div>
+
+            <div id="apiArticlesList" class="mt-4">
+                <p class="text-muted text-center">Chọn danh mục hoặc nhập URLs rồi nhấn "Tải bài từ API" để xem danh sách bài viết</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,145 @@
+<div class="content-section" id="settings">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cog me-2"></i>Cài đặt hệ thống
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- API Settings -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-key me-2"></i>Cài đặt API News
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-key me-2"></i>API Token
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" class="form-control" id="apiToken" placeholder="Nhập API token để truy cập News API">
+                                    <small class="text-muted">Token để truy cập API tin tức bên ngoài (ví dụ: Bearer token)</small>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-link me-2"></i>API Base URL
+                                    </label>
+                                    <input type="text" class="form-control" id="apiBaseUrl" placeholder="https://news-api.techreview.pro">
+                                    <small class="text-muted">URL cơ sở của News API</small>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Lưu ý:</strong> API Token là bắt buộc để có thể lấy tin tức từ API bên ngoài. 
+                                    Vui lòng đảm bảo token hợp lệ và có quyền truy cập.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SMTP Settings -->
+                        <div class="card mb-4">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-envelope me-2"></i>Cài đặt SMTP (Email)
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-server me-2"></i>SMTP Server
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="text" class="form-control" id="smtpServer" placeholder="smtp.gmail.com">
+                                        <small class="text-muted">Địa chỉ SMTP server (ví dụ: smtp.gmail.com, smtp-mail.outlook.com)</small>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-network-wired me-2"></i>SMTP Port
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="number" class="form-control" id="smtpPort" placeholder="587">
+                                        <small class="text-muted">Port SMTP (thường là 587 cho TLS hoặc 465 cho SSL)</small>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-user me-2"></i>SMTP Username (Email)
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <input type="email" class="form-control" id="smtpUsername" placeholder="your-email@gmail.com">
+                                        <small class="text-muted">Email đăng nhập SMTP</small>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-lock me-2"></i>SMTP Password
+                                            <span class="text-danger">*</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="password" class="form-control" id="smtpPassword" placeholder="App Password">
+                                            <button class="btn btn-outline-secondary" type="button" id="toggleSmtpPassword">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">Với Gmail, sử dụng App Password thay vì mật khẩu thường</small>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-envelope me-2"></i>From Email
+                                        </label>
+                                        <input type="email" class="form-control" id="smtpFromEmail" placeholder="sender@example.com">
+                                        <small class="text-muted">Email người gửi (mặc định sẽ dùng SMTP Username nếu để trống)</small>
+                                        <div class="invalid-feedback"></div>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">
+                                            <i class="fas fa-shield-alt me-2"></i>Use TLS
+                                        </label>
+                                        <select class="form-select" id="smtpUseTls">
+                                            <option value="true">Có (TLS - Port 587)</option>
+                                            <option value="false">Không (SSL - Port 465)</option>
+                                        </select>
+                                        <small class="text-muted">Chọn TLS cho port 587, SSL cho port 465</small>
+                                    </div>
+                                </div>
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Lưu ý:</strong> 
+                                    <ul class="mb-0 mt-2">
+                                        <li>Với Gmail: Bật 2-Step Verification và tạo App Password tại <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
+                                        <li>Với Outlook/Hotmail: Sử dụng mật khẩu tài khoản Microsoft</li>
+                                        <li>Đảm bảo SMTP Server và Port đúng với nhà cung cấp email của bạn</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between align-items-center">
+                            <button type="button" class="btn btn-secondary" id="testSmtpBtn">
+                                <i class="fas fa-paper-plane me-2"></i>Test Email
+                            </button>
+                            <button type="button" class="btn btn-primary" id="saveSettingsBtn">
+                                <i class="fas fa-save me-2"></i>Lưu cài đặt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

@@ -1,0 +1,81 @@
+        <!-- Create Article Section -->
+        <div class="content-section" id="create">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-plus-circle"></i> Tạo bài viết mới</h5>
+                </div>
+                <div class="card-body">
+                    <form id="articleForm">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label class="form-label">Tiêu đề bài viết *</label>
+                                    <input type="text" class="form-control" id="articleTitle" placeholder="Nhập tiêu đề..." required>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Nội dung *</label>
+                                    <textarea id="articleContent" class="form-control"></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Danh mục *</label>
+                                    <select class="form-select" id="articleCategory" required>
+                                        <option value="">Chọn danh mục</option>
+                                        {% for category in categories %}
+                                            <option value="{{ category.id }}">{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Ảnh đại diện</label>
+                                    <input type="file" class="form-control" id="articleImage" accept="image/*">
+                                    <input type="hidden" id="articleImageUrl">
+                                    <div id="imagePreview" class="mt-2"></div>
+                                    <small class="text-muted">Ảnh sẽ được upload tự động khi chọn file</small>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label">Mô tả ngắn</label>
+                                    <textarea class="form-control" id="articleDescription" rows="3" placeholder="Mô tả ngắn gọn về bài viết..."></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="articleIsHot">
+                                        <label class="form-check-label" for="articleIsHot">
+                                            <i class="fas fa-fire text-danger"></i> Tin nóng
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="articleIsFeatured">
+                                        <label class="form-check-label" for="articleIsFeatured">
+                                            <i class="fas fa-star text-warning"></i> Tin nổi bật
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <!-- <div class="mb-3" style="position: relative;">
+                                    <label class="form-label">Tags</label>
+                                    <input type="text" class="form-control" id="articleTags" placeholder="Gõ # để gợi ý tag, ví dụ: #công_nghệ #AI #iPhone">
+                                    <small class="text-muted">Nhập tags theo định dạng hashtag: #tên_tag</small>
+                                    <div id="tagSuggestions" class="tag-suggestions" style="display: none;"></div>
+                                </div> -->
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="button" class="btn btn-secondary" id="saveDraftBtn">
+                                        <i class="fas fa-save"></i> Lưu nháp
+                                    </button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i> Gửi duyệt
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>

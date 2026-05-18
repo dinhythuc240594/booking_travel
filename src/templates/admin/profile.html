@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style_profile.css') }}">
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+{% if user.role|string() == 'admin' %}
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+{% else %}
+<script src="{{ url_for('static', filename='js/editor.js') }}"></script>
+{% endif %}
+
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-10 col-lg-9">
+                <div class="profile-container">
+                    <!-- Profile Header with Avatar -->
+                    <div class="profile-header">
+                        <div class="avatar-container">
+                            <img src="{% if user.avatar %}/{{ user.avatar }}{% else %}https://ui-avatars.com/api/?name={{ (user.full_name or user.username)|urlencode }}&size=150&background=007bff&color=fff{% endif %}" 
+                                 alt="Avatar" 
+                                 class="avatar-preview" 
+                                 id="avatarPreview"
+                                 onclick="document.getElementById('avatarInput').click()">
+                            <div class="avatar-upload-btn" onclick="document.getElementById('avatarInput').click()">
+                                <i class="fas fa-camera"></i>
+                            </div>
+                            <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display: none;" onchange="previewAvatar(this)">
+                        </div>
+                        <h2>{{ user.full_name or user.username }}</h2>
+                        <p class="text-muted">{{ user.email }}</p>
+                    </div>
+
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Sidebar Tabs Layout -->
+                    <div class="profile-layout">
+                        <!-- Sidebar -->
+                        <div class="sidebar-tabs">
+                            <ul class="nav flex-column" id="profileTabs" role="tablist">
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link active" id="info-tab" data-bs-toggle="tab" data-bs-target="#info" type="button" role="tab">
+                                        <i class="fas fa-user me-2"></i>Thông tin cá nhân
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit" type="button" role="tab">
+                                        <i class="fas fa-edit me-2"></i>Chỉnh sửa thông tin
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="password-tab" data-bs-toggle="tab" data-bs-target="#password" type="button" role="tab">
+                                        <i class="fas fa-lock me-2"></i>Đổi mật khẩu
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved" type="button" role="tab">
+                                        <i class="fas fa-bookmark me-2"></i>Tin đã lưu
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="viewed-tab" data-bs-toggle="tab" data-bs-target="#viewed" type="button" role="tab">
+                                        <i class="fas fa-eye me-2"></i>Tin đã xem
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab">
+                                        <i class="fas fa-comments me-2"></i>Ý kiến của bạn ({{ total_comments }})
+                                    </button>
+                                </li>
+                                <li class="nav-item" role="presentation">
+                                    <button class="nav-link" id="newsletter-tab" data-bs-toggle="tab" data-bs-target="#newsletter" type="button" role="tab">
+                                        <i class="fas fa-envelope me-2"></i>Newsletter
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <!-- Tab Content -->
+                        <div class="tab-content-wrapper">
+                            <div class="tab-content" id="profileTabContent">
+                        <!-- Tab 1: Thông tin cá nhân -->
+                        <div class="tab-pane fade show active" id="info" role="tabpanel">
+                            <div class="profile-info">
+                                <div class="info-item">
+                                    <label class="info-label"><i class="fas fa-user me-2"></i>Tên đăng nhập:</label>
+                                    <div class="info-value">{{ user.username }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label"><i class="fas fa-id-card me-2"></i>Họ và tên:</label>
+                                    <div class="info-value">{{ user.full_name or 'Chưa cập nhật' }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label"><i class="fas fa-envelope me-2"></i>Email:</label>
+                                    <div class="info-value">{{ user.email }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label"><i class="fas fa-phone me-2"></i>Số điện thoại:</label>
+                                    <div class="info-value">{{ user.phone or 'Chưa cập nhật' }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label"><i class="fas fa-calendar me-2"></i>Ngày đăng ký:</label>
+                                    <div class="info-value">{{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}</div>
+                                </div>
+                                <div class="info-item">
+                                    <label class="info-label"><i class="fas fa-check-circle me-2"></i>Trạng thái:</label>
+                                    <div class="info-value">
+                                        {% if user.is_active %}
+                                            <span class="badge bg-success">Đang hoạt động</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Đã khóa</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Chỉnh sửa thông tin -->
+                        <div class="tab-pane fade" id="edit" role="tabpanel">
+                            <div class="form-section">
+                                <form method="POST" action="{{ url_for('client.update_profile') }}" enctype="multipart/form-data">
+                                    <input type="hidden" name="action" value="update_info">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Họ và tên</label>
+                                        <input type="text" class="form-control" name="full_name" value="{{ user.full_name or '' }}" placeholder="Nhập họ và tên">
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Email</label>
+                                        <input type="email" class="form-control" name="email" value="{{ user.email }}" required>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Số điện thoại</label>
+                                        <input type="tel" class="form-control" name="phone" value="{{ user.phone or '' }}" placeholder="Nhập số điện thoại">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Cập nhật thông tin
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Đổi mật khẩu -->
+                        <div class="tab-pane fade" id="password" role="tabpanel">
+                            <div class="form-section">
+                                <form method="POST" action="{{ url_for('client.update_profile') }}" id="changePasswordForm">
+                                    <input type="hidden" name="action" value="change_password">
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Mật khẩu hiện tại</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-lock"></i>
+                                            </span>
+                                            <input type="password" class="form-control" name="current_password" id="current_password" required>
+                                            <span class="input-group-text password-toggle" id="toggleCurrentPassword">
+                                                <i class="fas fa-eye"></i>
+                                            </span>
+                                        </div>
+                                        <div class="invalid-feedback" id="current-password-error"></div>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Mật khẩu mới</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-lock"></i>
+                                            </span>
+                                            <input type="password" class="form-control" name="new_password" id="new_password" required minlength="6">
+                                            <span class="input-group-text password-toggle" id="toggleNewPassword">
+                                                <i class="fas fa-eye"></i>
+                                            </span>
+                                        </div>
+                                        <div class="password-strength">
+                                            <div class="strength-bar">
+                                                <div class="strength-fill" id="strengthFill"></div>
+                                            </div>
+                                            <small id="strengthText" class="text-muted"></small>
+                                        </div>
+                                        <div class="invalid-feedback" id="new-password-error"></div>
+                                    </div>
+                                    <div class="form-group mb-3">
+                                        <label class="form-label">Xác nhận mật khẩu mới</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">
+                                                <i class="fas fa-lock"></i>
+                                            </span>
+                                            <input type="password" class="form-control" name="confirm_password" id="confirm_new_password" required minlength="6">
+                                            <span class="input-group-text password-toggle" id="toggleConfirmNewPassword">
+                                                <i class="fas fa-eye"></i>
+                                            </span>
+                                        </div>
+                                        <div class="invalid-feedback" id="confirm-password-error"></div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-key me-2"></i>Đổi mật khẩu
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Tab 4: Tin đã lưu -->
+                        <div class="tab-pane fade" id="saved" role="tabpanel">
+                            {% if saved_news %}
+                                <div class="news-list">
+                                    {% for saved in saved_news %}
+                                    {% set news_item = saved.news_international if saved.news_international else saved.news %}
+                                    {% if news_item %}
+                                    <div class="news-list-item">
+                                        <img src="{{ news_item.thumbnail or 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800' }}" alt="{{ news_item.title }}">
+                                        <div class="news-list-item-content">
+                                            <h5><a href="{{ url_for('client.en_news_detail', news_slug=news_item.slug) if saved.news_international else url_for('client.news_detail', news_slug=news_item.slug) }}">{{ news_item.title }}</a></h5>
+                                            <div class="news-meta">
+                                                <span><i class="far fa-clock"></i> {{ saved.created_at.strftime('%d/%m/%Y') if saved.created_at else '' }}</span>
+                                                <span class="ms-3"><i class="far fa-eye"></i> {{ news_item.view_count or 0 }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-bookmark"></i>
+                                    <p>Bạn chưa lưu tin tức nào</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tab 5: Tin đã xem -->
+                        <div class="tab-pane fade" id="viewed" role="tabpanel">
+                            {% if viewed_news %}
+                                <div class="news-list">
+                                    {% for viewed in viewed_news %}
+                                    {% set news_item = viewed.news_international if viewed.news_international else viewed.news %}
+                                    {% if news_item %}
+                                    <div class="news-list-item">
+                                        <img src="{{ news_item.thumbnail or 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800' }}" alt="{{ news_item.title }}">
+                                        <div class="news-list-item-content">
+                                            <h5><a href="{{ url_for('client.en_news_detail', news_slug=news_item.slug) if viewed.news_international else url_for('client.news_detail', news_slug=news_item.slug) }}">{{ news_item.title }}</a></h5>
+                                            <div class="news-meta">
+                                                <span><i class="far fa-clock"></i> Đã xem: {{ viewed.viewed_at.strftime('%d/%m/%Y %H:%M') if viewed.viewed_at else '' }}</span>
+                                                <span class="ms-3"><i class="far fa-eye"></i> {{ news_item.view_count or 0 }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-eye"></i>
+                                    <p>Bạn chưa xem tin tức nào</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tab 6: Ý kiến của bạn -->
+                        <div class="tab-pane fade" id="comments" role="tabpanel">
+                            {% if comments %}
+                                <div class="news-list">
+                                    {% for comment in comments %}
+                                    {% set news_item = comment.news_international if comment.news_international else comment.news %}
+                                    {% set news_id = comment.news_international_id if comment.news_international_id else comment.news_id %}
+                                    {% if news_item %}
+                                    <div class="news-list-item">
+                                        <div class="news-list-item-content">
+                                            <h5><a href="{{ url_for('client.en_news_detail', news_slug=news_item.slug) if comment.news_international else url_for('client.news_detail', news_slug=news_item.slug) }}">{{ news_item.title }}</a></h5>
+                                            <p class="mt-2 mb-2">{{ comment.content }}</p>
+                                            <div class="news-meta">
+                                                <span><i class="far fa-clock"></i> {{ comment.created_at.strftime('%d/%m/%Y %H:%M') if comment.created_at else '' }}</span>
+                                                <span class="ms-3"><i class="fas fa-comments"></i> {{ comment_counts.get(news_id, 0) }} bình luận</span>
+                                                {% if not comment.is_active %}
+                                                    <span class="badge bg-warning ms-2">Đang chờ duyệt</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="empty-state">
+                                    <i class="fas fa-comments"></i>
+                                    <p>Bạn chưa có bình luận nào</p>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Tab 7: Newsletter -->
+                        <div class="tab-pane fade" id="newsletter" role="tabpanel">
+                            <div class="newsletter-management">
+                                <h4 class="mb-4"><i class="fas fa-envelope me-2"></i>Quản lý Newsletter</h4>
+                                
+                                {% if newsletter_subscription %}
+                                    {% if newsletter_subscription.is_active %}
+                                        <div class="alert alert-success">
+                                            <i class="fas fa-check-circle me-2"></i>
+                                            <strong>Bạn đang đăng ký nhận bản tin</strong>
+                                            <p class="mb-0 mt-2">
+                                                Email: <strong>{{ newsletter_subscription.email }}</strong><br>
+                                                Đăng ký ngày: {{ newsletter_subscription.subscribed_at.strftime('%d/%m/%Y %H:%M') if newsletter_subscription.subscribed_at else 'N/A' }}
+                                            </p>
+                                        </div>
+                                        <div class="newsletter-actions mt-4">
+                                            <button type="button" class="btn btn-danger" id="unsubscribeBtnVn">
+                                                <i class="fas fa-times-circle me-2"></i>Hủy đăng ký nhận bản tin
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <div class="alert alert-warning">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            <strong>Bạn đã hủy đăng ký nhận bản tin</strong>
+                                            <p class="mb-0 mt-2">
+                                                Email: <strong>{{ newsletter_subscription.email }}</strong><br>
+                                                Hủy đăng ký ngày: {{ newsletter_subscription.unsubscribed_at.strftime('%d/%m/%Y %H:%M') if newsletter_subscription.unsubscribed_at else 'N/A' }}
+                                            </p>
+                                        </div>
+                                        <div class="newsletter-actions mt-4">
+                                            <p class="text-muted">Bạn có thể đăng ký lại bằng cách nhập email vào form đăng ký ở footer.</p>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Bạn chưa đăng ký nhận bản tin</strong>
+                                        <p class="mb-0 mt-2">Đăng ký ngay để nhận những tin tức và cập nhật mới nhất từ chúng tôi.</p>
+                                    </div>
+                                    <div class="newsletter-actions mt-4">
+                                        <p class="text-muted">Vui lòng sử dụng form đăng ký ở footer để đăng ký nhận bản tin.</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="profile-actions mt-4 text-center">
+                        {% if user.role|string() == 'admin' %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Quay lại trang Quản trị viên
+                        </a>
+                        {% else %}
+                        <a href="{{ url_for('admin.editor_dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Quay lại trang Biên tập viên
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function previewAvatar(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('avatarPreview').src = e.target.result;
+                    // Auto submit avatar
+                    const form = new FormData();
+                    form.append('avatar', input.files[0]);
+                    form.append('action', 'update_avatar');
+                    
+                    fetch('{{ url_for("client.update_profile") }}', {
+                        method: 'POST',
+                        body: form
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            location.reload();
+                        } else {
+                            alert(data.message || 'Có lỗi xảy ra khi cập nhật avatar');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Có lỗi xảy ra khi cập nhật avatar');
+                    });
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Password toggle functions
+        function setupPasswordToggle(toggleId, inputId) {
+            const toggle = document.getElementById(toggleId);
+            if (toggle) {
+                toggle.addEventListener('click', function() {
+                    const passwordInput = document.getElementById(inputId);
+                    const icon = this.querySelector('i');
+                    
+                    if (passwordInput.type === 'password') {
+                        passwordInput.type = 'text';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    } else {
+                        passwordInput.type = 'password';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    }
+                });
+            }
+        }
+
+        // Setup password toggles
+        setupPasswordToggle('toggleCurrentPassword', 'current_password');
+        setupPasswordToggle('toggleNewPassword', 'new_password');
+        setupPasswordToggle('toggleConfirmNewPassword', 'confirm_new_password');
+
+        // Check password strength (same as register)
+        function checkPasswordStrength(password) {
+            if (!password) return { strength: 'none', text: '', width: '0%', class: '' };
+            
+            let strength = 0;
+            if (password.length >= 6) strength++;
+            if (password.length >= 8) strength++;
+            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
+            if (/\d/.test(password)) strength++;
+            if (/[^a-zA-Z\d]/.test(password)) strength++;
+            
+            if (strength <= 2) {
+                return { strength: 'weak', text: 'Mật khẩu yếu', width: '33%', class: 'strength-weak' };
+            } else if (strength <= 3) {
+                return { strength: 'medium', text: 'Mật khẩu trung bình', width: '66%', class: 'strength-medium' };
+            } else {
+                return { strength: 'strong', text: 'Mật khẩu mạnh', width: '100%', class: 'strength-strong' };
+            }
+        }
+
+        // Update password strength indicator
+        const newPasswordInput = document.getElementById('new_password');
+        if (newPasswordInput) {
+            newPasswordInput.addEventListener('input', function() {
+                const password = this.value;
+                const strength = checkPasswordStrength(password);
+                const fill = document.getElementById('strengthFill');
+                const text = document.getElementById('strengthText');
+                
+                if (password) {
+                    fill.style.width = strength.width;
+                    fill.className = 'strength-fill ' + strength.class;
+                    text.textContent = strength.text;
+                } else {
+                    fill.style.width = '0%';
+                    fill.className = 'strength-fill';
+                    text.textContent = '';
+                }
+            });
+        }
+
+        // Validate password form
+        const changePasswordForm = document.getElementById('changePasswordForm');
+        if (changePasswordForm) {
+            changePasswordForm.addEventListener('submit', function(e) {
+                const currentPassword = document.getElementById('current_password').value;
+                const newPassword = document.getElementById('new_password').value;
+                const confirmPassword = document.getElementById('confirm_new_password').value;
+                
+                let isValid = true;
+
+                // Validate current password
+                if (!currentPassword) {
+                    document.getElementById('current_password').classList.add('is-invalid');
+                    document.getElementById('current-password-error').textContent = 'Vui lòng nhập mật khẩu hiện tại';
+                    isValid = false;
+                } else {
+                    document.getElementById('current_password').classList.remove('is-invalid');
+                    document.getElementById('current-password-error').textContent = '';
+                }
+
+                // Validate new password
+                if (!newPassword) {
+                    document.getElementById('new_password').classList.add('is-invalid');
+                    document.getElementById('new-password-error').textContent = 'Vui lòng nhập mật khẩu mới';
+                    isValid = false;
+                } else if (newPassword.length < 6) {
+                    document.getElementById('new_password').classList.add('is-invalid');
+                    document.getElementById('new-password-error').textContent = 'Mật khẩu phải có ít nhất 6 ký tự';
+                    isValid = false;
+                } else {
+                    document.getElementById('new_password').classList.remove('is-invalid');
+                    document.getElementById('new-password-error').textContent = '';
+                }
+
+                // Validate confirm password
+                if (!confirmPassword) {
+                    document.getElementById('confirm_new_password').classList.add('is-invalid');
+                    document.getElementById('confirm-password-error').textContent = 'Vui lòng xác nhận mật khẩu mới';
+                    isValid = false;
+                } else if (newPassword !== confirmPassword) {
+                    document.getElementById('confirm_new_password').classList.add('is-invalid');
+                    document.getElementById('confirm-password-error').textContent = 'Mật khẩu xác nhận không khớp';
+                    isValid = false;
+                } else {
+                    document.getElementById('confirm_new_password').classList.remove('is-invalid');
+                    document.getElementById('confirm-password-error').textContent = '';
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    // Scroll to first error
+                    const firstError = this.querySelector('.is-invalid');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        firstError.focus();
+                    }
+                }
+            });
+        }
+        
+        // Newsletter unsubscribe from profile
+        const unsubscribeBtnVn = document.getElementById('unsubscribeBtnVn');
+        if (unsubscribeBtnVn) {
+            unsubscribeBtnVn.addEventListener('click', function() {
+                if (!confirm('Bạn có chắc chắn muốn hủy đăng ký nhận bản tin?')) {
+                    return;
+                }
+                
+                const btn = this;
+                const originalText = btn.innerHTML;
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
+                
+                fetch('{{ url_for("client.newsletter_unsubscribe_from_profile") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert(data.message);
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Có lỗi xảy ra');
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Có lỗi xảy ra khi hủy đăng ký');
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                });
+            });
+        }
+    </script>
+</body>
+</html>

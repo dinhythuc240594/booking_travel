@@ -1,0 +1,319 @@
+/* --- Biến màu sắc & Reset --- */
+:root {
+    --primary-blue: #0194f3;
+    --hover-blue: #007ce8;
+    --orange: #ff5e1f;
+    --hover-orange: #e54d10;
+    --text-dark: #1c2930;
+    --text-gray: #687176;
+    --bg-main: #f7f9fa;
+    --white: #ffffff;
+    --border-color: #e1e2e3;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-dark);
+    line-height: 1.5;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.text-center { text-align: center; }
+.text-white { color: var(--white); }
+.bg-light { background-color: var(--white); padding: 40px 0;}
+.section { padding: 60px 0; }
+.section-title { font-size: 24px; font-weight: 700; margin-bottom: 24px; color: var(--text-dark); }
+
+/* --- Buttons --- */
+.btn {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: 0.2s;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--primary-blue);
+    color: var(--primary-blue);
+}
+
+.btn-outline:hover { background: #e6f4ff; }
+
+.btn-primary {
+    background: var(--primary-blue);
+    color: var(--white);
+}
+
+.btn-primary:hover { background: var(--hover-blue); }
+
+/* --- Navbar --- */
+.navbar {
+    background-color: var(--white);
+    padding: 15px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-links {
+    display: flex;
+    gap: 24px;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: var(--text-dark);
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.nav-links a:hover { color: var(--primary-blue); }
+
+/* --- Hero Section --- */
+.hero {
+    background-image: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=1600&q=80');
+    background-size: cover;
+    background-position: center;
+    height: 380px;
+    display: flex;
+    flex-direction: column;
+    padding-top: 60px;
+}
+
+.hero h1 { font-size: 36px; margin-bottom: 10px; font-weight: 700; }
+.hero p { font-size: 18px; font-weight: 400; }
+
+/* --- Search Box Nổi --- */
+.search-wrapper {
+    margin-top: -120px; /* Đẩy form nổi lên trên hero */
+    position: relative;
+    z-index: 10;
+}
+
+.search-box {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+.search-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color);
+    background-color: #fcfcfc;
+    border-radius: 12px 12px 0 0;
+}
+
+.tab {
+    padding: 16px 24px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-gray);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 3px solid transparent;
+}
+
+.tab.active {
+    color: var(--primary-blue);
+    border-bottom: 3px solid var(--primary-blue);
+    background: var(--white);
+}
+
+.search-form {
+    padding: 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-end;
+}
+
+.input-group { flex: 1; }
+
+.input-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-dark);
+    margin-bottom: 8px;
+}
+
+.input-with-icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.input-with-icon i {
+    position: absolute;
+    left: 12px;
+    color: var(--text-gray);
+}
+
+.input-with-icon input {
+    width: 100%;
+    padding: 12px 12px 12px 36px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 14px;
+    outline: none;
+    transition: 0.2s;
+}
+
+.input-with-icon input:focus { border-color: var(--primary-blue); }
+
+.btn-search {
+    background-color: var(--orange);
+    color: var(--white);
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s;
+}
+
+.btn-search:hover { background-color: var(--hover-orange); }
+
+/* --- Promotions --- */
+.promo-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.promo-card {
+    height: 200px;
+    border-radius: 12px;
+    background-size: cover;
+    background-position: center;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.promo-content {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    padding: 20px;
+    background: linear-gradient(transparent, rgba(0,0,0,0.8));
+    color: var(--white);
+}
+
+.promo-content h3 { font-size: 18px; margin-bottom: 4px; }
+.promo-content p { font-size: 13px; color: #ddd; }
+
+/* --- Popular Destinations --- */
+.destinations-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.dest-card {
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    background: var(--white);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.dest-card:hover { transform: translateY(-5px); }
+
+.dest-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.dest-info { padding: 16px; }
+.dest-info h4 { font-size: 16px; margin-bottom: 4px; }
+.dest-info p { font-size: 13px; color: var(--text-gray); }
+
+/* --- Footer --- */
+.footer {
+    background-color: #1c2930;
+    color: white;
+    padding: 60px 0 20px;
+}
+
+.footer-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.footer-col h3 {
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: #fff;
+}
+
+.footer-col ul { list-style: none; }
+
+.footer-col ul li { margin-bottom: 12px; }
+
+.footer-col ul a {
+    color: #96a5b1;
+    text-decoration: none;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.footer-col ul a:hover { color: #fff; }
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #2d3e48;
+    color: #96a5b1;
+    font-size: 14px;
+}
+
+/* Responsive cơ bản */
+@media (max-width: 992px) {
+    .promo-grid, .destinations-grid { grid-template-columns: repeat(2, 1fr); }
+    .search-form { flex-direction: column; align-items: stretch; }
+    .btn-search { justify-content: center; }
+    .nav-links { display: none; /* Giấu menu trên mobile */ }
+}
+@media (max-width: 768px) {
+    .promo-grid, .destinations-grid, .footer-grid { grid-template-columns: 1fr; }
+    .hero { height: 300px; }
+    .search-wrapper { margin-top: -60px; }
+    .tab { font-size: 13px; padding: 12px; }
+}
