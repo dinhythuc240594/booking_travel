@@ -1,6 +1,6 @@
 
 from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum, TypeDecorator
+from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum, TypeDecorator, Numeric
 from sqlalchemy.orm import DeclarativeBase, sessionmaker, relationship
 import enum
 import datetime
@@ -10,6 +10,130 @@ from config import envConfig as ecf
 
 class Base(DeclarativeBase):
     pass
+
+
+class ArticleStatusEnum(enum.Enum):
+    draft = "draft"
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
+    def __str__(self):
+        return self.value
+    
+    @classmethod
+    def from_string(cls, value):
+        """Convert string to TourStatus enum"""
+        if value is None:
+            return None
+        if isinstance(value, cls):
+            return value
+        try:
+            # Try to get enum by value
+            for status in cls:
+                if status.value == value:
+                    return status
+        except (ValueError, AttributeError):
+            pass
+        return None
+
+class BookingTypeEnum(enum.Enum):
+    hotel = "hotel"
+    tour = "tour"
+
+    def __str__(self):
+        return self.value
+    
+    @classmethod
+    def from_string(cls, value):
+        """Convert string to TourStatus enum"""
+        if value is None:
+            return None
+        if isinstance(value, cls):
+            return value
+        try:
+            # Try to get enum by value
+            for status in cls:
+                if status.value == value:
+                    return status
+        except (ValueError, AttributeError):
+            pass
+        return None
+
+class BookingStatusEnum(enum.Enum):
+    pending = "pending"
+    confirmed = "confirmed"
+    cancelled = "cancelled"
+    completed = "completed"
+
+    def __str__(self):
+        return self.value
+    
+    @classmethod
+    def from_string(cls, value):
+        """Convert string to TourStatus enum"""
+        if value is None:
+            return None
+        if isinstance(value, cls):
+            return value
+        try:
+            # Try to get enum by value
+            for status in cls:
+                if status.value == value:
+                    return status
+        except (ValueError, AttributeError):
+            pass
+        return None
+
+class PaymentMethodEnum(enum.Enum):
+    credit_card = "credit_card"
+    paypal = "paypal"
+    bank_transfer = "bank_transfer"
+    cash = "cash"
+
+    def __str__(self):
+        return self.value
+    
+    @classmethod
+    def from_string(cls, value):
+        """Convert string to TourStatus enum"""
+        if value is None:
+            return None
+        if isinstance(value, cls):
+            return value
+        try:
+            # Try to get enum by value
+            for status in cls:
+                if status.value == value:
+                    return status
+        except (ValueError, AttributeError):
+            pass
+        return None
+
+class PaymentStatusEnum(enum.Enum):
+    pending = "pending"
+    successful = "successful"
+    failed = "failed"
+    refunded = "refunded"
+
+    def __str__(self):
+        return self.value
+    
+    @classmethod
+    def from_string(cls, value):
+        """Convert string to TourStatus enum"""
+        if value is None:
+            return None
+        if isinstance(value, cls):
+            return value
+        try:
+            # Try to get enum by value
+            for status in cls:
+                if status.value == value:
+                    return status
+        except (ValueError, AttributeError):
+            pass
+        return None
 
 
 class TourStatus(enum.Enum):
@@ -80,14 +204,14 @@ class TourStatusType(TypeDecorator):
 
 
 class UserRole(enum.Enum):
-    
+
+    CUSTOMER = "customer"
     ADMIN = "admin"
-    EDITOR = "editor"
-    USER = "user"
+    STAFF = "staff"
 
     def __str__(self):
         return self.value
-    
+
     @classmethod
     def from_string(cls, value):
         """Convert string to UserRole enum"""
@@ -148,70 +272,112 @@ class User(Base):
     """table user"""
     __tablename__ = 'users'
     
-    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(String(50), nullable=False, unique=True)
     email = Column(String(100), nullable=False, unique=True)
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(100), nullable=True)
-    phone = Column(String(20), nullable=True)
+    phone_number = Column(String(20), nullable=True)
     avatar = Column(String(255), nullable=True)  # URL to avatar image
-    role = Column(UserRoleType(), default=UserRole.USER)
+    role = Column(UserRoleType(), default=UserRole.CUSTOMER)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
     
     # Relationships
-    created_news = relationship("News", foreign_keys="News.created_by", back_populates="creator")
-    approved_news = relationship("News", foreign_keys="News.approved_by", back_populates="approver")
-    saved_news = relationship("SavedNews", back_populates="user", cascade="all, delete-orphan")
-    viewed_news = relationship("ViewedNews", back_populates="user", cascade="all, delete-orphan")
-    comments = relationship("Comment", back_populates="user", cascade="all, delete-orphan")
+    bookings = relationship("Booking", back_populates="user", cascade="all, delete-orphan")
+    articles_authored = relationship("Article", foreign_keys="[Article.author_id]", back_populates="author")
+    articles_reviewed = relationship("Article", foreign_keys="[Article.reviewer_id]", back_populates="reviewer")
+
+
+class Article(Base):
+    __tablename__ = 'articles'
+    
+    article_id = Column(Integer, primary_key=True, autoincrement=True)
+    author_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
+    reviewer_id = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"), nullable=True)
+    title = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+    status = Column(Enum(ArticleStatusEnum), default=ArticleStatusEnum.draft)
+    
+    created_at = Column(DateTime, default=datetime.datetime.now())
+    updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
+
+    author = relationship("User", foreign_keys=[author_id], back_populates="articles_authored")
+    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="articles_reviewed")
+
+
+class Location(Base):
+    __tablename__ = 'locations'
+    
+    location_id = Column(Integer, primary_key=True, autoincrement=True)
+    city = Column(String(100), nullable=False)
+    country = Column(String(100), nullable=False)
+    description = Column(Text)
+
+    # Relationships
+    hotels = relationship("Hotel", back_populates="location", cascade="all, delete")
+    tours = relationship("Tour", back_populates="location", cascade="all, delete")
+
+
+class Hotel(Base):
+    __tablename__ = 'hotels'
+    
+    hotel_id = Column(Integer, primary_key=True, autoincrement=True)
+    location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"))
+    name = Column(String(150), nullable=False)
+    star_rating = Column(Integer)
+    price_per_night = Column(Numeric(10, 2), nullable=False)
+    address = Column(String(255))
+
+    # Relationships
+    location = relationship("Location", back_populates="hotels")
 
 
 class Tours(Base):
     """table tours"""
     __tablename__ = 'tours'
     
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    title = Column(String(255), nullable=False)
-    slug = Column(String(255), nullable=False, unique=True)
-    summary = Column(Text, nullable=True)
-    content = Column(Text, nullable=False)
-    thumbnail = Column(String(255), nullable=True)
-    images = Column(Text, nullable=True)  # JSON array of image URLs
+    tour_id = Column(Integer, primary_key=True, autoincrement=True)
+    location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"))
+    name = Column(String(255), nullable=False)
+    description = Column(Text)
+    duration_days = Column(Integer, nullable=False)
+    price_per_person = Column(Numeric(10, 2), nullable=False)
     
-    # Foreign keys
-    category_id = Column(Integer, ForeignKey('categories.id'), nullable=False)
-    created_by = Column(Integer, ForeignKey('users.id'), nullable=False)
-    approved_by = Column(Integer, ForeignKey('users.id'), nullable=True)
+    location = relationship("Location", back_populates="tours")
+
+
+class Booking(Base):
+    __tablename__ = 'bookings'
     
-    # Author info (for API articles)
-    author = Column(String(255), nullable=True)
-    
-    # Status and visibility
-    status = Column(TourStatusType(), default=TourStatus.DRAFT)
-    is_featured = Column(Boolean, default=False)
-    is_hot = Column(Boolean, default=False)
-    is_api = Column(Boolean, default=False)
-    view_count = Column(Integer, default=0)
-    
-    # SEO
-    meta_title = Column(String(255), nullable=True)
-    meta_description = Column(Text, nullable=True)
-    meta_keywords = Column(String(255), nullable=True)
-    
-    is_deleted = Column(Boolean, default=False)
-    tags_string = Column(Text, nullable=True)
-    
-    # Timestamps
-    published_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.datetime.now())
-    updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
-    
+    booking_id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
+    booking_type = Column(Enum(BookingTypeEnum), nullable=False)
+    reference_id = Column(Integer, nullable=False) # Chứa ID của Hotel hoặc Tour
+    check_in_date = Column(DateTime)
+    check_out_date = Column(DateTime)
+    total_price = Column(Numeric(10, 2), nullable=False)
+    booking_status = Column(Enum(BookingStatusEnum), default=BookingStatusEnum.pending)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+
     # Relationships
-    category = relationship("Category", back_populates="tours")
-    creator = relationship("User", foreign_keys=[created_by], back_populates="created_tours")
-    approver = relationship("User", foreign_keys=[approved_by], back_populates="approved_tours")
+    user = relationship("User", back_populates="bookings")
+    payments = relationship("Payment", back_populates="booking", cascade="all, delete-orphan")
+
+
+class Payment(Base):
+    __tablename__ = 'payments'
+    
+    payment_id = Column(Integer, primary_key=True, autoincrement=True)
+    booking_id = Column(Integer, ForeignKey('bookings.booking_id', ondelete="CASCADE"), nullable=False)
+    amount = Column(Numeric(10, 2), nullable=False)
+    payment_method = Column(Enum(PaymentMethodEnum), nullable=False)
+    payment_status = Column(Enum(PaymentStatusEnum), default=PaymentStatusEnum.pending)
+    payment_date = Column(DateTime, default=datetime.datetime.now)
+
+    # Relationships
+    booking = relationship("Booking", back_populates="payments")
 
 
 class SavedTours(Base):
@@ -245,7 +411,7 @@ class ViewedTours(Base):
 
 
 class NewsletterSubscription(Base):
-    """table register newsletter"""
+    """table register news letter"""
     __tablename__ = 'newsletter_subscriptions'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
