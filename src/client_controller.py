@@ -1,8 +1,8 @@
 
-from flask import Blueprint, render_template, request, jsonify, abort, redirect, url_for, flash, session, current_app
+from flask import render_template, request, jsonify, abort, redirect, url_for, flash, session
 import pytz
 from datetime import datetime, timedelta
-
+from utils import validate_email, validate_password, validate_phone, hash_password
 from database import (
     get_session,
     TourStatus,
@@ -15,6 +15,8 @@ from models import (
     ToursModel,
     UserModel,
 )
+from user_service import UserService
+
 
 class Controller():
 
@@ -100,7 +102,7 @@ class Controller():
         
         user = self.user_model.authenticate(username, password)
         
-        if user and user.is_active and user.role == db.UserRole.USER:
+        if user and user.is_active and user.role == UserRole.CUSTOMER:
             session['user_id'] = user.id
             session['username'] = user.username
             session['full_name'] = user.full_name or user.username
@@ -122,8 +124,6 @@ class Controller():
         Page register user
         Route: POST /register
         """
-
-        from utils import validate_email, validate_password, validate_phone
         
         # Validation
         errors = []
@@ -172,16 +172,16 @@ class Controller():
                 user = self.user_model.create(
                     username=username,
                     email=email,
-                    password=password,
+                    password=hash_password(password),
                     full_name=full_name if full_name else None,
                     phone=phone_clean,
-                    role=db.UserRole.USER
+                    role=UserRole.CUSTOMER
                 )
                 
-                flash('Đăng ký thành công! Vui lòng đăng nhập', 'success')
-                return redirect(url_for('client.user_login'))
+                if user:
+                    return jsonify({"message": "User created", "user_id": user.user_id}), 201
             except Exception as e:
-                flash('Có lỗi xảy ra khi đăng ký. Vui lòng thử lại', 'error')
+                return jsonify({"error": "Failed to create user", "message": str(e)}), 400
 
     def forgot_password(self):
         """
@@ -209,15 +209,15 @@ class Controller():
                 expires_at = datetime.utcnow() + timedelta(hours=1)  # Token hết hạn sau 1 giờ
                 
                 # Vô hiệu hóa các token cũ của user này
-                old_tokens = self.db_session.query(db.PasswordResetToken).filter(
-                    db.PasswordResetToken.user_id == user.id,
-                    db.PasswordResetToken.used == False
+                old_tokens = self.db_session.query(PasswordResetToken).filter(
+                    PasswordResetToken.user_id == user.id,
+                    PasswordResetToken.used == False
                 ).all()
                 for old_token in old_tokens:
                     old_token.used = True
                 
                 # Tạo token mới
-                reset_token_obj = db.PasswordResetToken(
+                reset_token_obj = PasswordResetToken(
                     user_id=user.id,
                     token=reset_token,
                     expires_at=expires_at
@@ -238,7 +238,7 @@ class Controller():
         Page tour detail
         Route: GET /tours/<tours_slug>
         """
-        db_session = db.get_session()
+        db_session = self.db_session
         try:
 
             print(f"Slug received: {tours_slug}")
@@ -314,7 +314,7 @@ class Controller():
         Search tours by keyword
         Route: GET /search?q=<keyword>
         """
-        db_session = db.get_session()
+        db_session = self.db_session
         try:
 
             tours_model = self.tours_model(db_session)

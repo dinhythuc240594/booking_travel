@@ -4,6 +4,8 @@ from sqlalchemy import desc, func, or_
 from datetime import datetime
 from typing import List, Optional
 import database as db
+from booking_service import BookingService
+from user_service import UserService
 import utils
 
 
@@ -281,7 +283,7 @@ class UserModel:
     
     def get_by_id(self, user_id: int) -> Optional[db.User]:
         """Get user follow ID"""
-        return self.db.query(db.User).filter(db.User.id == user_id).first()
+        return UserService.get_user_by_id(user_id)
     
     def create(self, username: str, email: str, password: str, 
                full_name: str = None, phone: str = None, 
@@ -300,19 +302,16 @@ class UserModel:
         Returns:
             User object
         """
-        
-        user = db.User(
-            username=username,
-            email=email,
-            password_hash=utils.hash_password(password),
-            full_name=full_name,
-            phone=phone,
-            role=role
-        )
-        
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
+
+        user = UserService.create_user(
+                username=username,
+                email=email,
+                password_hash=password,
+                full_name=full_name if full_name else None,
+                phone_number=phone,
+                role=role
+            )
+
         return user
     
     def authenticate(self, username: str, password: str) -> Optional[db.User]:
@@ -364,3 +363,23 @@ class UserModel:
             return True
         
         return False
+
+
+class BookingModel:
+    """Model class management Booking"""
+    
+    def __init__(self, db_session: Session):
+        self.db = db_session
+
+    def create_combo_booking_api(self, user_id: int, hotel_id: int, nights: int, tour_id: int, persons: int, payment_method_str: str) -> db.Booking:
+        """Create booking follow combo API"""
+        booking = BookingService.create_combo_booking(
+            user_id=user_id, hotel_id=hotel_id, nights=nights,
+            tour_id=tour_id, persons=persons, payment_method=db.PaymentMethodEnum.from_string(payment_method_str)
+        )
+
+        return booking
+
+    def cancel_booking_api(self, booking_id: int) -> bool:
+        success = BookingService.cancel_booking(booking_id)
+        return success
