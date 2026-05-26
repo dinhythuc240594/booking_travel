@@ -1,6 +1,9 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
 
+import database as db
+from composite_partern import CategoryComposite, ArticleLeaf
+
 # hash password before save into db
 def hash_password(password: str) -> str:
     return generate_password_hash(password)
@@ -50,3 +53,17 @@ def validate_phone(site, phone: str) -> tuple:
         return False, msg
     
     return True, ""
+
+def build_category_tree(session, category_record) -> CategoryComposite:
+    node = CategoryComposite(category_record)
+    
+    articles = session.query(db.Article).filter_by(category_id=category_record.category_id).all()
+    for article in articles:
+        node.add_child(ArticleLeaf(article))
+    
+    sub_categories = session.query(db.ArticleCategory).filter_by(parent_id=category_record.category_id).all()
+    for sub_cat in sub_categories:
+        child_tree = build_category_tree(session, sub_cat)
+        node.add_child(child_tree)
+    
+    return node

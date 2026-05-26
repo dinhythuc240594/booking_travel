@@ -456,6 +456,61 @@ class ToursRejection(Base):
     rejector = relationship("User", foreign_keys=[rejected_by])
 
 
+class ArticleCategory(Base):
+
+    __tablename__ = 'article_categories'
+    
+    category_id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False, unique=True)
+    slug = Column(String(100), nullable=False, unique=True)
+    description = Column(Text, nullable=True)
+    parent_id = Column(Integer, ForeignKey('article_categories.category_id'), nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    
+    # Relationships
+    parent = relationship("ArticleCategory", remote_side=[category_id], backref="children")
+    articles = relationship("Article", back_populates="category")
+
+
+class ArticleTag(Base):
+    """Bảng thẻ tag cho bài viết"""
+    __tablename__ = 'article_tags'
+    
+    tag_id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False, unique=True)
+    slug = Column(String(50), nullable=False, unique=True)
+    created_at = Column(DateTime, default=datetime.datetime.now)
+
+
+class ArticleTagLink(Base):
+    """Bảng trung gian N-N giữa Article và Tag"""
+    __tablename__ = 'article_tag_links'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    article_id = Column(Integer, ForeignKey('articles.article_id', ondelete="CASCADE"), nullable=False)
+    tag_id = Column(Integer, ForeignKey('article_tags.tag_id', ondelete="CASCADE"), nullable=False)
+
+
+class ArticleComment(Base):
+    """Bảng bình luận cho bài viết"""
+    __tablename__ = 'article_comments'
+    
+    comment_id = Column(Integer, primary_key=True, autoincrement=True)
+    article_id = Column(Integer, ForeignKey('articles.article_id', ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
+    parent_id = Column(Integer, ForeignKey('article_comments.comment_id', ondelete="CASCADE"), nullable=True)
+    
+    content = Column(Text, nullable=False)
+    is_active = Column(Boolean, default=True)
+    
+    created_at = Column(DateTime, default=datetime.datetime.now)
+    updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
+    
+    article = relationship("Article", back_populates="comments")
+    parent = relationship("ArticleComment", remote_side=[comment_id], backref="replies")
+
+
 class Setting(Base):
     """table setting for system"""
     __tablename__ = 'settings'

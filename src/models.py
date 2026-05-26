@@ -7,6 +7,7 @@ import database as db
 from booking_service import BookingService
 from user_service import UserService
 import utils
+from related_service import RelatedService
 
 
 class ToursModel:
@@ -371,15 +372,60 @@ class BookingModel:
     def __init__(self, db_session: Session):
         self.db = db_session
 
-    def create_combo_booking_api(self, user_id: int, hotel_id: int, nights: int, tour_id: int, persons: int, payment_method_str: str) -> db.Booking:
-        """Create booking follow combo API"""
-        booking = BookingService.create_combo_booking(
-            user_id=user_id, hotel_id=hotel_id, nights=nights,
-            tour_id=tour_id, persons=persons, payment_method=db.PaymentMethodEnum.from_string(payment_method_str)
+    def create_combo_booking(self, user_id: int, hotel_id: int, nights: int, tour_id: int, persons: int, payment_method_str: str) -> bool:
+        """
+        Create booking follow combo API. 
+        Note: BookingService trả về boolean (True/False) cho giao dịch này.
+        """
+        # Convert string to Enum payment method
+        payment_method = db.PaymentMethodEnum.from_string(payment_method_str)
+        if not payment_method:
+            payment_method = db.PaymentMethodEnum.credit_card # Default fallback
+
+        success = BookingService.create_combo_booking(
+            user_id=user_id, 
+            hotel_id=hotel_id, 
+            nights=nights,
+            tour_id=tour_id, 
+            persons=persons, 
+            payment_method=payment_method
         )
-
-        return booking
-
-    def cancel_booking_api(self, booking_id: int) -> bool:
-        success = BookingService.cancel_booking(booking_id)
         return success
+
+    def get_by_id(self, booking_id: int) -> Optional[db.Booking]:
+        """Đọc thông tin Booking qua ID"""
+        return BookingService.get_booking_by_id(booking_id)
+
+    def update_status(self, booking_id: int, new_status: db.BookingStatusEnum) -> bool:
+        """Cập nhật trạng thái Booking"""
+        return BookingService.update_booking_status(booking_id, new_status)
+
+    def cancel_booking(self, booking_id: int) -> bool:
+        """Hủy Booking (Soft logic)"""
+        return BookingService.cancel_booking(booking_id)
+
+
+class RelatedActivityModel:
+    """Model class management Related user activities (History, Saved, Viewed)"""
+    
+    def __init__(self, db_session: Session):
+        self.db = db_session
+
+    def get_booking_history(self, user_id: int) -> List[db.Booking]:
+        """
+        Lấy toàn bộ lịch sử Booking của một người dùng kèm theo chi tiết thanh toán
+        """
+        return RelatedService.get_user_booking_history(user_id)
+
+    def save_tour(self, user_id: int, tour_id: int) -> bool:
+        """
+        Chức năng 'Yêu thích/Lưu lại' Tour
+        """
+        return RelatedService.save_tour_for_later(user_id, tour_id)
+
+    def record_tour_view(self, user_id: int, tour_id: int) -> None:
+        """
+        Ghi nhận lịch sử xem Tour của người dùng
+        """
+        # RelatedService.record_viewed_tour không trả về giá trị, chỉ thực thi commit
+        RelatedService.record_viewed_tour(user_id, tour_id)
