@@ -45,7 +45,7 @@ class AdminController:
         if 'user_id' in session and 'role' in session:
             if session['role'] == UserRole.ADMIN.value:
                 return redirect(url_for('admin.dashboard'))
-            elif session['role'] == UserRole.EDITOR.value:
+            elif session['role'] == UserRole.STAFF.value:
                 return redirect(url_for('admin.editor_dashboard'))
         
         if request.method == 'POST':
@@ -60,7 +60,7 @@ class AdminController:
             
             user = self.user_model.authenticate(username, password)
             
-            if user and user.is_active and user.role in [UserRole.ADMIN, UserRole.EDITOR]:
+            if user and user.is_active and user.role in [UserRole.ADMIN, UserRole.STAFF]:
                 # Lưu session đăng nhập
                 session['user_id'] = user.id
                 session['username'] = user.username
@@ -3627,8 +3627,8 @@ class AdminController:
                 return jsonify({'success': False, 'error': password_error}), 400
             
             # Convert role string to enum
-            role_map = {'admin': UserRole.ADMIN, 'editor': UserRole.EDITOR, 'user': UserRole.USER}
-            role = role_map.get(role_str.lower(), UserRole.USER)
+            role_map = {'admin': UserRole.ADMIN, 'staff': UserRole.STAFF, 'user': UserRole.CUSTOMER}
+            role = role_map.get(role_str.lower(), UserRole.CUSTOMER)
             
             # Create user
             user = self.user_model.create(
@@ -3703,7 +3703,7 @@ class AdminController:
             if phone is not None:
                 user.phone = phone if phone else None
             if role_str:
-                role_map = {'admin': UserRole.ADMIN, 'editor': UserRole.EDITOR, 'user': UserRole.USER}
+                role_map = {'admin': UserRole.ADMIN, 'staff': UserRole.STAFF, 'user': UserRole.CUSTOMER}
                 if role_str.lower() in role_map:
                     user.role = role_map[role_str.lower()]
             

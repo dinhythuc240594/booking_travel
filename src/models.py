@@ -1,6 +1,6 @@
 
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, func, or_
+from sqlalchemy import desc, or_
 from datetime import datetime
 from typing import List, Optional
 import database as db
@@ -288,7 +288,7 @@ class UserModel:
     
     def create(self, username: str, email: str, password: str, 
                full_name: str = None, phone: str = None, 
-               role: db.UserRole = db.UserRole.USER) -> db.User:
+               role: db.UserRole = db.UserRole.CUSTOMER) -> db.User:
         """
         Create new user
         
@@ -298,7 +298,7 @@ class UserModel:
             password: Password hashed
             full_name: Get full name
             phone: Phone
-            role: Role (default is USER)
+            role: Role (default is CUSTOMER)
             
         Returns:
             User object

@@ -8,14 +8,14 @@ from database import (
     TourStatus,
     UserRole,
     ViewedTours,
-    SavedTours, PasswordResetToken,
+    SavedTours, 
+    PasswordResetToken,
 )
 
 from models import (
     ToursModel,
     UserModel,
 )
-from user_service import UserService
 
 
 class Controller():
@@ -57,7 +57,7 @@ class Controller():
         
         user = self.user_model.authenticate(username, password)
         
-        if user and user.is_active and user.role == UserRole.USER:
+        if user and user.is_active and user.role == UserRole.CUSTOMER:
             session['user_id'] = user.id
             session['username'] = user.username
             session['full_name'] = user.full_name or user.username
@@ -259,6 +259,7 @@ class Controller():
 
             is_saved = False
             user_id = None
+
             if 'user_id' in session:
                 user_id = session['user_id']
 

@@ -10,7 +10,7 @@ class envConfig():
     SECRET_KEY = secrets.token_hex(32)
     
     # Database configuration
-    DATABASE_URL = 'mysql+pymysql://root:123456789@localhost:3306/tours_db'
+    DATABASE_URL = 'mysql+pymysql://root:123456789@localhost:3306/BookingTravel'
     
     # Session configuration
     PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
