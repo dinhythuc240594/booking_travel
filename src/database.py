@@ -11,12 +11,76 @@ from config import envConfig as ecf
 class Base(DeclarativeBase):
     pass
 
+class TourStatus(enum.Enum):
+    DRAFT = "draft"
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    PUBLISHED = "published"
+
+    def __str__(self):
+        return self.value
+    
+    @classmethod
+    def from_string(cls, value):
+        """Convert string to TourStatus enum"""
+        if value is None:
+            return None
+        if isinstance(value, cls):
+            return value
+        try:
+            # Try to get enum by value
+            for status in cls:
+                if status.value == value:
+                    return status
+        except (ValueError, AttributeError):
+            pass
+        return None
+    
+class TourStatusType(TypeDecorator):
+    """Custom type decorator for TourStatus enum"""
+    impl = String(20)
+    cache_ok = True
+    
+    def __init__(self):
+        super(TourStatusType, self).__init__(length=20)
+    
+    def process_bind_param(self, value, dialect):
+        """Convert enum to string when saving to database"""
+        if value is None:
+            return None
+        if isinstance(value, TourStatus):
+            return value.value
+        if isinstance(value, str):
+            return value
+        return str(value)
+    
+    def process_result_value(self, value, dialect):
+        """Convert string to enum when reading from database"""
+        if value is None:
+            return None
+        if isinstance(value, TourStatus):
+            return value
+        # Convert string to enum
+        if isinstance(value, str):
+            # Try to find enum by value
+            value_lower = value.lower()
+            for status in TourStatus:
+                if status.value.lower() == value_lower:
+                    return status
+            # If not found, try TourStatus.from_string
+            result = TourStatus.from_string(value)
+            if result:
+                return result
+        # If all else fails, return None or raise error
+        return None
 
 class ArticleStatusEnum(enum.Enum):
-    draft = "draft"
-    pending = "pending"
-    approved = "approved"
-    rejected = "rejected"
+    DRAFT = "draft"
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    PUBLISHED = "published"
 
     def __str__(self):
         return self.value
@@ -38,8 +102,8 @@ class ArticleStatusEnum(enum.Enum):
         return None
 
 class BookingTypeEnum(enum.Enum):
-    hotel = "hotel"
-    tour = "tour"
+    HOTEL = "hotel"
+    TOUR = "tour"
 
     def __str__(self):
         return self.value
@@ -136,7 +200,7 @@ class PaymentStatusEnum(enum.Enum):
         return None
 
 
-class TourStatus(enum.Enum):
+class ArticleStatus(enum.Enum):
 
     DRAFT = "draft"
     PENDING = "pending"
@@ -164,19 +228,19 @@ class TourStatus(enum.Enum):
         return None
 
 
-class TourStatusType(TypeDecorator):
-    """Custom type decorator for TourStatus enum"""
+class ArticleStatusType(TypeDecorator):
+    """Custom type decorator for ArticleStatus enum"""
     impl = String(20)
     cache_ok = True
     
     def __init__(self):
-        super(TourStatusType, self).__init__(length=20)
+        super(ArticleStatusType, self).__init__(length=20)
     
     def process_bind_param(self, value, dialect):
         """Convert enum to string when saving to database"""
         if value is None:
             return None
-        if isinstance(value, TourStatus):
+        if isinstance(value, ArticleStatus):
             return value.value
         if isinstance(value, str):
             return value
@@ -186,17 +250,17 @@ class TourStatusType(TypeDecorator):
         """Convert string to enum when reading from database"""
         if value is None:
             return None
-        if isinstance(value, TourStatus):
+        if isinstance(value, ArticleStatus):
             return value
         # Convert string to enum
         if isinstance(value, str):
             # Try to find enum by value
             value_lower = value.lower()
-            for status in TourStatus:
+            for status in ArticleStatus:
                 if status.value.lower() == value_lower:
                     return status
-            # If not found, try TourStatus.from_string
-            result = TourStatus.from_string(value)
+            # If not found, try ArticleStatus.from_string
+            result = ArticleStatus.from_string(value)
             if result:
                 return result
         # If all else fails, return None or raise error
@@ -286,15 +350,16 @@ class User(Base):
     
     # Relationships
     bookings = relationship("Bookings", back_populates="user", cascade="all, delete-orphan")
-    articles_authored = relationship("Article", foreign_keys="[Article.author_id]", back_populates="author")
-    articles_reviewed = relationship("Article", foreign_keys="[Article.reviewer_id]", back_populates="reviewer")
+    articles_authored = relationship("Articles", foreign_keys="[Articles.author_id]", back_populates="author")
+    articles_reviewed = relationship("Articles", foreign_keys="[Articles.reviewer_id]", back_populates="reviewer")
+    articles_approved = relationship("Articles", foreign_keys="[Articles.approved_by]", back_populates="approver")
     saved_tours = relationship("SavedTours", back_populates="user", cascade="all, delete-orphan")
     viewed_tours = relationship("ViewedTours", back_populates="user", cascade="all, delete-orphan")
     newsletter_subscriptions = relationship("NewsletterSubscription", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
 
 
-class Article(Base):
+class Articles(Base):
     __tablename__ = 'articles'
     
     article_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -302,16 +367,25 @@ class Article(Base):
     reviewer_id = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"), nullable=True)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
-    status = Column(Enum(ArticleStatusEnum), default=ArticleStatusEnum.draft)
+    status = Column(Enum(ArticleStatusEnum), default=ArticleStatusEnum.DRAFT)
     category_id = Column(Integer, ForeignKey('article_categories.category_id', ondelete="SET NULL"), nullable=True) 
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
+    summary = Column(String(500), nullable=True)
+    slug = Column(String(255), nullable=False, unique=True)
+    is_deleted = Column(Boolean, default=False)
+    is_published = Column(Boolean, default=True)
+    created_by = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
+    updated_by = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"), nullable=True)
+    published_at = Column(DateTime, nullable=True)
+    approved_by = Column(Integer, ForeignKey('users.user_id'), nullable=True)
 
     author = relationship("User", foreign_keys=[author_id], back_populates="articles_authored")
     reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="articles_reviewed")
     category = relationship("ArticleCategory", back_populates="articles")
     comments = relationship("ArticleComment", back_populates="article", cascade="all, delete-orphan")
     tags = relationship("ArticleTag", secondary="article_tag_links", backref="articles")
+    approver = relationship("User", foreign_keys=[approved_by], back_populates="articles_approved")
 
 
 class Location(Base):
@@ -326,7 +400,7 @@ class Location(Base):
     slug = Column(String(255), nullable=False, unique=True)
     is_deleted = Column(Boolean, default=False)
     is_published = Column(Boolean, default=True)
-    status = Column(Enum(ArticleStatusEnum), default=ArticleStatusEnum.draft)
+    status = Column(Enum(ArticleStatusEnum), default=ArticleStatusEnum.DRAFT)
 
     # Relationships
     hotels = relationship("Hotels", back_populates="location", cascade="all, delete")
@@ -458,18 +532,18 @@ class PasswordResetToken(Base):
     user = relationship("User", foreign_keys=[user_id])
 
 
-class ToursRejection(Base):
-    """table save tours has been reject"""
-    __tablename__ = 'tours_rejections'
+class ArticleRejection(Base):
+    """table save articles has been rejected"""
+    __tablename__ = 'article_rejections'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    tour_id = Column(Integer, ForeignKey('tours.tour_id'), nullable=False)
+    article_id = Column(Integer, ForeignKey('articles.article_id'), nullable=False)
     rejected_by = Column(Integer, ForeignKey('users.user_id'), nullable=False)
     reason = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.now())
     
     # Relationships
-    tours = relationship("Tours", foreign_keys=[tour_id])
+    article = relationship("Article", foreign_keys=[article_id])
     rejector = relationship("User", foreign_keys=[rejected_by])
 
 
@@ -482,6 +556,8 @@ class ArticleCategory(Base):
     slug = Column(String(100), nullable=False, unique=True)
     description = Column(Text, nullable=True)
     parent_id = Column(Integer, ForeignKey('article_categories.category_id'), nullable=True)
+    visible = Column(Boolean, default=True)
+    order_display = Column(Integer, default=0)  # Thuộc tính để sắp xếp danh mục trong menu
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     

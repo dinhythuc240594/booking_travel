@@ -10,12 +10,12 @@ import utils
 from related_service import RelatedService
 
 
-class ToursModel:
-    """Model class managers Tours follow OOP"""
+class ArticleModel:
+    """Model class managers Articles follow OOP"""
     
     def __init__(self, db_session: Session):
         """
-        Initialization ToursModel
+        Initialization ArticlesModel
         
         Args:
             db_session: SQLAlchemy session
@@ -24,19 +24,19 @@ class ToursModel:
     
     def create(self, title: str, content: str, category_id: int, 
                created_by: int, summary: str = None, thumbnail: str = None,
-               slug: str = None, status: db.TourStatus = db.TourStatus.DRAFT) -> db.Tours:
+               slug: str = None, status: db.ArticleStatus = db.ArticleStatus.DRAFT) -> db.Articles:
         """
-        Create tours
+        Create articles
 
         Args:
-            title: Title tour
-            content: Content tour
+            title: Title article
+            content: Content article
             category_id: ID category
             created_by: ID creator
-            summary: Summary tour
+            summary: Summary article
             thumbnail: URL avatar
             slug: URL slug (auto generate if None)
-            status: Status tour
+            status: Status article (default is DRAFT)
             
         Returns:
             News object
@@ -44,7 +44,7 @@ class ToursModel:
         if slug is None:
             slug = self._generate_slug(title)
         
-        tour = db.Tours(
+        article = db.Articles(
             title=title,
             slug=slug,
             content=content,
@@ -55,35 +55,35 @@ class ToursModel:
             status=status
         )
         
-        self.db.add(tour)
+        self.db.add(article)
         self.db.commit()
-        self.db.refresh(tour)
-        return tour
+        self.db.refresh(article)
+        return article
     
-    def get_by_id(self, tour_id: int, include_deleted: bool = False) -> Optional[db.Tours]:
+    def get_by_id(self, article_id: int, include_deleted: bool = False) -> Optional[db.Articles]:
         """
-        Get tours follow ID
+        Get articles follow ID
 
         Args:
-            tour_id: ID tours
-            include_deleted: if True, include tours deleted (for admin)
+            article_id: ID articles
+            include_deleted: if True, include articles deleted (for admin)
         """
-        query = self.db.query(db.Tours).filter(db.Tours.id == tour_id)
+        query = self.db.query(db.Articles).filter(db.Articles.id == article_id)
         if not include_deleted:
-            query = query.filter(db.Tours.is_deleted == False)
+            query = query.filter(db.Articles.is_deleted == False)
         return query.first()
     
-    def get_by_slug(self, slug: str) -> Optional[db.Tours]:
-        """Get tours follow slug (instead get tours deleted)"""
-        return self.db.query(db.Tours).filter(
-            db.Tours.slug == slug,
-            db.Tours.is_deleted == False
+    def get_by_slug(self, slug: str) -> Optional[db.Articles]:
+        """Get articles follow slug (instead get articles deleted)"""
+        return self.db.query(db.Articles).filter(
+            db.Articles.slug == slug,
+            db.Articles.is_deleted == False
         ).first()
     
     def get_all(self, limit: int = None, offset: int = 0, 
-                status: db.TourStatus = None, include_deleted: bool = False) -> List[db.Tours]:
+                status: db.ArticleStatus = None, include_deleted: bool = False) -> List[db.Articles]:
         """
-        List tours
+        List articles follow filter, support pagging
         
         Args:
             limit: amount article
@@ -92,17 +92,17 @@ class ToursModel:
             include_deleted: If True, get article deleted (for admin)
             
         Returns:
-            List of Tours objects
+            List of Articles objects
         """
-        query = self.db.query(db.Tours)
+        query = self.db.query(db.Articles)
         
         if not include_deleted:
-            query = query.filter(db.Tours.is_deleted == False)
+            query = query.filter(db.Articles.is_deleted == False)
         
         if status:
-            query = query.filter(db.Tours.status == status)
+            query = query.filter(db.Articles.status == status)
         
-        query = query.order_by(desc(db.Tours.created_at))
+        query = query.order_by(desc(db.Articles.created_at))
         
         if limit:
             query = query.limit(limit).offset(offset)
@@ -114,44 +114,44 @@ class ToursModel:
         creator_id: int,
         limit: int | None = None,
         offset: int = 0,
-        status: db.TourStatus | None = None,
+        status: db.ArticleStatus | None = None,
         search: str | None = None,
         include_deleted: bool = False,
-    ) -> tuple[list[db.Tours], int]:
+    ) -> tuple[list[db.Articles], int]:
         """
-        List tours follow creator (editor), support pagging and search.
+        List articles follow creator (editor), support pagging and search.
 
         Args:
             creator_id: ID creator (editor)
-            limit: Amount tour for a page
+            limit: Amount article for a page
             offset: Position start
             status: Filter status
             search: Keyword / summary
-            include_deleted: If True, include tour deleted (for admin)
+            include_deleted: If True, include article deleted (for admin)
 
         Returns:
-            (items, total) - list tours and total
+            (items, total) - list articles and total
         """
-        query = self.db.query(db.Tours).filter(db.Tours.created_by == creator_id)
+        query = self.db.query(db.Articles).filter(db.Articles.created_by == creator_id)
 
         if not include_deleted:
-            query = query.filter(db.Tours.is_deleted == False)
+            query = query.filter(db.Articles.is_deleted == False)
 
         if status:
-            query = query.filter(db.Tours.status == status)
+            query = query.filter(db.Articles.status == status)
 
         if search:
             like_pattern = f"%{search}%"
             query = query.filter(
                 or_(
-                    db.Tours.title.ilike(like_pattern),
-                    db.Tours.summary.ilike(like_pattern),
+                    db.Articles.title.ilike(like_pattern),
+                    db.Articles.summary.ilike(like_pattern),
                 )
             )
 
         total = query.count()
 
-        query = query.order_by(desc(db.Tours.created_at))
+        query = query.order_by(desc(db.Articles.created_at))
 
         if limit:
             query = query.limit(limit).offset(offset)
@@ -159,78 +159,78 @@ class ToursModel:
         items = query.all()
         return items, total
 
-    def get_published(self, limit: int = None, offset: int = 0) -> List[db.Tours]:
-        """List tours published (just only tours don't deleted)"""
+    def get_published(self, limit: int = None, offset: int = 0) -> List[db.Articles]:
+        """List articles published (just only articles don't deleted)"""
         return self.get_all(
             limit=limit, 
             offset=offset, 
-            status=db.TourStatus.PUBLISHED
+            status=db.ArticleStatus.PUBLISHED
         )
     
-    def search(self, keyword: str, limit: int = 20) -> List[db.Tours]:
-        """List tours by keyword (just only tours don't deleted)"""
-        return self.db.query(db.Tours).filter(
+    def search(self, keyword: str, limit: int = 20) -> List[db.Articles]:
+        """List articles by keyword (just only articles don't deleted)"""
+        return self.db.query(db.Articles).filter(
             or_(
-                db.Tours.title.ilike(f'%{keyword}%'),
-                db.Tours.content.ilike(f'%{keyword}%'),
-                db.Tours.summary.ilike(f'%{keyword}%')
+                db.Articles.title.ilike(f'%{keyword}%'),
+                db.Articles.content.ilike(f'%{keyword}%'),
+                db.Articles.summary.ilike(f'%{keyword}%')
             ),
-            db.Tours.status == db.TourStatus.PUBLISHED,
-            db.Tours.is_deleted == False
-        ).order_by(desc(db.Tours.created_at)).limit(limit).all()
-    
-    def update(self, tour_id: int, **kwargs) -> Optional[db.Tours]:
+            db.Articles.status == db.ArticleStatus.PUBLISHED,
+            db.Articles.is_deleted == False
+        ).order_by(desc(db.Articles.created_at)).limit(limit).all()
+
+    def update(self, article_id: int, **kwargs) -> Optional[db.Articles]:
         """
-        Update tour
-        
+        Update article
+
         Args:
-            tour_id: Tour ID
+            article_id: Article ID
             **kwargs: Fields need update
             
         Returns:
-            Updated Tours object or None
+            Updated Articles object or None
         """
-        tour = self.get_by_id(tour_id)
-        if not tour:
+        article = self.get_by_id(article_id)
+        if not article:
             return None
         
         for key, value in kwargs.items():
-            if hasattr(tour, key):
-                setattr(tour, key, value)
+            if hasattr(article, key):
+                setattr(article, key, value)
         
-        tour.updated_at = datetime.utcnow()
+        article.updated_at = datetime.utcnow()
         self.db.commit()
-        self.db.refresh(tour)
-        return tour
+        self.db.refresh(article)
+        return article
 
-    def approve(self, tour_id: int, approved_by: int) -> Optional[db.Tours]:
-        """Tour approved"""
+    def approve(self, article_id: int, approved_by: int) -> Optional[db.Articles]:
+        """Article approved"""
         return self.update(
-            tour_id,
-            status=db.TourStatus.PUBLISHED,
+            article_id,
+            status=db.ArticleStatus.PUBLISHED,
             approved_by=approved_by,
             published_at=datetime.utcnow()
         )
     
-    def reject(self, tour_id: int, approved_by: int, reason: str = None) -> Optional[db.Tours]:
+    def reject(self, article_id: int, approved_by: int, reason: str = None) -> Optional[db.Articles]:
         """
-        Tour reject
+        Article reject
         
         Args:
-            tour_id: Tour ID
+            article_id: Article ID
             approved_by: ID user rejected
             reason: Content reject
         """
         result = self.update(
-            tour_id,
-            status=db.TourStatus.REJECTED,
+            article_id,
+            status=db.ArticleStatus.REJECTED,
             approved_by=approved_by
         )
         
-        # Save content reject of tour_rejections
+        # Save content reject of article_rejections
         if result and reason:
-            rejection = db.TourRejection(
-                tour_id=tour_id,
+            rejection = db.ArticleRejection(
+                article_id=article_id,
                 rejected_by=approved_by,
                 reason=reason
             )
@@ -238,25 +238,25 @@ class ToursModel:
             self.db.commit()
         
         return result
-    
-    def delete(self, tour_id: int) -> bool:
+
+    def delete(self, article_id: int) -> bool:
         """
-        delete tour (soft delete) - set is_deleted = True
+        delete article (soft delete) - set is_deleted = True
         """
-        tour = self.get_by_id(tour_id)
-        if not tour:
+        article = self.get_by_id(article_id)
+        if not article:
             return False
         
-        tour.is_deleted = True
-        tour.updated_at = datetime.utcnow()
+        article.is_deleted = True
+        article.updated_at = datetime.utcnow()
         self.db.commit()
         return True
-    
-    def increment_view(self, tour_id: int) -> None:
+
+    def increment_view(self, article_id: int) -> None:
         """increase views"""
-        tour = self.get_by_id(tour_id)
-        if tour:
-            tour.view_count += 1
+        article = self.get_by_id(article_id)
+        if article:
+            article.view_count += 1
             self.db.commit()
     
     def _generate_slug(self, title: str) -> str:
@@ -429,3 +429,56 @@ class RelatedActivityModel:
         """
         # RelatedService.record_viewed_tour không trả về giá trị, chỉ thực thi commit
         RelatedService.record_viewed_tour(user_id, tour_id)
+
+
+class ArticleCategoryModel:
+    """Model class quản lý Category"""
+    
+    def __init__(self, db_session: Session):
+        self.db = db_session
+    
+    def create(self, name: str, slug: str, parent_id: int = None, 
+               description: str = None, icon: str = None) -> db.ArticleCategory:
+        """Tạo danh mục mới"""
+        category = db.ArticleCategory(
+            name=name,
+            slug=slug,
+            parent_id=parent_id,
+            description=description,
+            icon=icon
+        )
+        self.db.add(category)
+        self.db.commit()
+        self.db.refresh(category)
+        return category
+    
+    def get_all(self) -> List[db.ArticleCategory]:
+        """Lấy tất cả danh mục"""
+        return self.db.query(db.ArticleCategory).filter(
+            db.ArticleCategory.visible == True
+        ).order_by(db.ArticleCategory.order_display).all()
+    
+    def get_by_id(self, category_id: int) -> Optional[db.ArticleCategory]:
+        """Lấy danh mục theo ID"""
+        return self.db.query(db.ArticleCategory).filter(db.ArticleCategory.id == category_id).first()
+    
+    def get_by_slug(self, slug: str) -> Optional[db.ArticleCategory]:
+        """Lấy danh mục theo slug"""
+        return self.db.query(db.ArticleCategory).filter(db.ArticleCategory.slug == slug).first()
+
+    def get_descendant_ids(self, parent_id: int) -> list[int]:
+        """Lấy danh sách id danh mục con (mọi cấp) của parent_id."""
+        categories = self.db.query(db.ArticleCategory.id, db.ArticleCategory.parent_id).filter(
+            db.ArticleCategory.visible == True
+        ).all()
+
+        children = []
+        stack = [parent_id]
+        while stack:
+            current = stack.pop()
+            for cat_id, cat_parent in categories:
+                if cat_parent == current:
+                    children.append(cat_id)
+                    stack.append(cat_id)
+
+        return children
