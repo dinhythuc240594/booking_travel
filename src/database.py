@@ -285,9 +285,13 @@ class User(Base):
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
     
     # Relationships
-    bookings = relationship("Booking", back_populates="user", cascade="all, delete-orphan")
+    bookings = relationship("Bookings", back_populates="user", cascade="all, delete-orphan")
     articles_authored = relationship("Article", foreign_keys="[Article.author_id]", back_populates="author")
     articles_reviewed = relationship("Article", foreign_keys="[Article.reviewer_id]", back_populates="reviewer")
+    saved_tours = relationship("SavedTours", back_populates="user", cascade="all, delete-orphan")
+    viewed_tours = relationship("ViewedTours", back_populates="user", cascade="all, delete-orphan")
+    newsletter_subscriptions = relationship("NewsletterSubscription", back_populates="user", cascade="all, delete-orphan")
+    password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
 
 
 class Article(Base):
@@ -299,12 +303,15 @@ class Article(Base):
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
     status = Column(Enum(ArticleStatusEnum), default=ArticleStatusEnum.draft)
-    
+    category_id = Column(Integer, ForeignKey('article_categories.category_id', ondelete="SET NULL"), nullable=True) 
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
 
     author = relationship("User", foreign_keys=[author_id], back_populates="articles_authored")
     reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="articles_reviewed")
+    category = relationship("ArticleCategory", back_populates="articles")
+    comments = relationship("ArticleComment", back_populates="article", cascade="all, delete-orphan")
+    tags = relationship("ArticleTag", secondary="article_tag_links", backref="articles")
 
 
 class Location(Base):
@@ -314,13 +321,19 @@ class Location(Base):
     city = Column(String(100), nullable=False)
     country = Column(String(100), nullable=False)
     description = Column(Text)
+    created_at = Column(DateTime, default=datetime.datetime.now())
+    updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
+    slug = Column(String(255), nullable=False, unique=True)
+    is_deleted = Column(Boolean, default=False)
+    is_published = Column(Boolean, default=True)
+    status = Column(Enum(ArticleStatusEnum), default=ArticleStatusEnum.draft)
 
     # Relationships
-    hotels = relationship("Hotel", back_populates="location", cascade="all, delete")
-    tours = relationship("Tour", back_populates="location", cascade="all, delete")
+    hotels = relationship("Hotels", back_populates="location", cascade="all, delete")
+    tours = relationship("Tours", back_populates="location", cascade="all, delete")
 
 
-class Hotel(Base):
+class Hotels(Base):
     __tablename__ = 'hotels'
     
     hotel_id = Column(Integer, primary_key=True, autoincrement=True)
@@ -340,21 +353,27 @@ class Tours(Base):
     
     tour_id = Column(Integer, primary_key=True, autoincrement=True)
     location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"))
+    slug = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
     description = Column(Text)
     duration_days = Column(Integer, nullable=False)
+    is_published = Column(Boolean, default=False)
+    status = Column(TourStatusType(), default=TourStatus.DRAFT)
+    is_deleted = Column(Boolean, default=False)
     price_per_person = Column(Numeric(10, 2), nullable=False)
-    
+    created_at = Column(DateTime, default=datetime.datetime.now())
+    updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
+
     location = relationship("Location", back_populates="tours")
 
 
-class Booking(Base):
+class Bookings(Base):
     __tablename__ = 'bookings'
     
     booking_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
     booking_type = Column(Enum(BookingTypeEnum), nullable=False)
-    reference_id = Column(Integer, nullable=False) # Chứa ID của Hotel hoặc Tour
+    reference_id = Column(Integer, nullable=False) # Chứa ID của Hotels hoặc Tours
     check_in_date = Column(DateTime)
     check_out_date = Column(DateTime)
     total_price = Column(Numeric(10, 2), nullable=False)
@@ -377,7 +396,7 @@ class Payment(Base):
     payment_date = Column(DateTime, default=datetime.datetime.now)
 
     # Relationships
-    booking = relationship("Booking", back_populates="payments")
+    booking = relationship("Bookings", back_populates="payments")
 
 
 class SavedTours(Base):
@@ -385,9 +404,8 @@ class SavedTours(Base):
     __tablename__ = 'saved_tours'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    tour_id = Column(Integer, ForeignKey('tours.id'), nullable=True)
-    site = Column(String(10), default='vn')
+    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
+    tour_id = Column(Integer, ForeignKey('tours.tour_id'), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now())
     
     # Relationships
@@ -400,11 +418,10 @@ class ViewedTours(Base):
     __tablename__ = 'viewed_tours'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    tour_id = Column(Integer, ForeignKey('tours.id'), nullable=True)
-    site = Column(String(10), default='vn')
+    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
+    tour_id = Column(Integer, ForeignKey('tours.tour_id'), nullable=True)
     viewed_at = Column(DateTime, default=datetime.datetime.now())
-    
+
     # Relationships
     user = relationship("User", back_populates="viewed_tours")
     tour = relationship("Tours", foreign_keys=[tour_id])
@@ -420,7 +437,7 @@ class NewsletterSubscription(Base):
     unsubscribe_token = Column(String(255), nullable=False, unique=True)
     subscribed_at = Column(DateTime, default=datetime.datetime.now())
     unsubscribed_at = Column(DateTime, nullable=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=True)
+    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=True)
     
     # Relationships
     user = relationship("User", foreign_keys=[user_id])
@@ -431,7 +448,7 @@ class PasswordResetToken(Base):
     __tablename__ = 'password_reset_tokens'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
     token = Column(String(255), nullable=False, unique=True)
     expires_at = Column(DateTime, nullable=False)
     used = Column(Boolean, default=False)
@@ -446,13 +463,13 @@ class ToursRejection(Base):
     __tablename__ = 'tours_rejections'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    tour_id = Column(Integer, ForeignKey('tours.id'), nullable=False)
-    rejected_by = Column(Integer, ForeignKey('users.id'), nullable=False)
+    tour_id = Column(Integer, ForeignKey('tours.tour_id'), nullable=False)
+    rejected_by = Column(Integer, ForeignKey('users.user_id'), nullable=False)
     reason = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.now())
     
     # Relationships
-    tour = relationship("Tour", foreign_keys=[tour_id])
+    tours = relationship("Tours", foreign_keys=[tour_id])
     rejector = relationship("User", foreign_keys=[rejected_by])
 
 

@@ -21,14 +21,14 @@ controller = client_controller.Controller
 
 
 class BaseClientView(base.BaseView, controller):
-    pass
+    
+    def __init__(self):
+        super().__init__()
 
 class Home(BaseClientView):
     
     def get(self):
-        
-        site = self.site
-        data = self.list_tours(site=site, limit=10, offset=0)
+        data = self.list_tours(limit=10, offset=0)
 
         return render_template('client/home.html', 
                                tours=data)
@@ -62,7 +62,7 @@ class Login(BaseClientView):
         if request.method == 'POST':
             self.handle_login(site)
 
-        return render_template('client/vn/login.html')
+        return render_template('client/login.html')
     
     def post(self):
         self.checkLogin()
@@ -72,7 +72,7 @@ class Register(BaseClientView):
     
     def get(self):
 
-        return render_template('client/vn/register.html')
+        return render_template('client/register.html')
     
     def post(self):
         self.register()
@@ -82,7 +82,7 @@ class ForgotPassword(BaseClientView):
     
     def get(self):
 
-        return render_template('client/vn/forgot_password.html')
+        return render_template('client/forgot_password.html')
     
     def post(self):
         self.forgot_password()
@@ -91,34 +91,34 @@ class ForgotPassword(BaseClientView):
 class Introducing(BaseClientView):
     
     def get(self):
-        return render_template('client/vn/introducing.html')
+        return render_template('client/introducing.html')
 
 
 class Security(BaseClientView):
     
     def get(self):
-        return render_template('client/vn/security.html')
+        return render_template('client/security.html')
 
 
 class Term(BaseClientView):
     
     def get(self):
-        return render_template('client/vn/term_of_service.html')
+        return render_template('client/term_of_service.html')
 
 
 class Contact(BaseClientView):
     
     def get(self):
-        return render_template('client/vn/contact.html')
+        return render_template('client/contact.html')
 
 
 class Guide(BaseClientView):
     
     def get(self):
-        return render_template('client/vn/guide.html')
+        return render_template('client/guide.html')
 
 
-client_bp.add_url_rule('/', 'home0', Home.as_view('home0'))
+client_bp.add_url_rule('/', 'home', Home.as_view('home'))
 client_bp.add_url_rule('/home', 'home1', Home.as_view('home1'))
 client_bp.add_url_rule('/search', 'search', Search.as_view('search'))
 client_bp.add_url_rule('/tours/<tours_slug>', 'tours_detail', ToursDetail.as_view('tours_detail'))

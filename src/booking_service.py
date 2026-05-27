@@ -1,16 +1,16 @@
-from database import get_session, Booking, BookingTypeEnum, BookingStatusEnum, PaymentMethodEnum, Hotel, Tours
+from database import get_session, Bookings, BookingTypeEnum, BookingStatusEnum, PaymentMethodEnum, Hotels, Tours
 from command_partern import CreateBookingCommand, ProcessPaymentCommand, DBTransactionInvoker
-from composite_partern import HotelBookingItem, TourBookingItem, BookingPackage
+from composite_partern import HotelsBookingItem, TourBookingItem, BookingPackage
 
 class BookingService:
     
     @staticmethod
     def create_combo_booking(user_id: int, hotel_id: int, nights: int, tour_id: int, persons: int, payment_method: PaymentMethodEnum):
-        """Tạo booking kết hợp (Hotel + Tour) sử dụng Composite và Command Pattern"""
+        """Tạo booking kết hợp (Hotels + Tours) sử dụng Composite và Command Pattern"""
         session = get_session()
         try:
             # 1. Fetch dữ liệu để tính toán
-            hotel = session.query(Hotel).get(hotel_id)
+            hotel = session.query(Hotels).get(hotel_id)
             tour = session.query(Tours).get(tour_id)
             
             if not hotel and not tour:
@@ -21,7 +21,7 @@ class BookingService:
             combo = BookingPackage(package_name=f"Combo Du lịch của User {user_id}")
             
             if hotel:
-                combo.add_item(HotelBookingItem(hotel, nights))
+                combo.add_item(HotelsBookingItem(hotel, nights))
             if tour:
                 combo.add_item(TourBookingItem(tour, persons))
             
@@ -31,7 +31,7 @@ class BookingService:
             invoker = DBTransactionInvoker()
             commands = []
 
-            # Tạo danh sách các lệnh Booking và Payment tương ứng
+            # Tạo danh sách các lệnh Bookings và Payment tương ứng
             if hotel:
                 hotel_cmd = CreateBookingCommand(
                     user_id=user_id, 
@@ -64,19 +64,19 @@ class BookingService:
 
     @staticmethod
     def get_booking_by_id(booking_id: int):
-        """Đọc thông tin Booking"""
+        """Đọc thông tin sau khi đã tạo booking để xác nhận (sử dụng cho mục đích test)"""
         session = get_session()
         try:
-            return session.query(Booking).filter(Booking.booking_id == booking_id).first()
+            return session.query(Bookings).filter(Bookings.booking_id == booking_id).first()
         finally:
             session.close()
 
     @staticmethod
     def update_booking_status(booking_id: int, new_status: BookingStatusEnum):
-        """Cập nhật trạng thái Booking thủ công (VD: từ pending sang completed)"""
+        """Cập nhật trạng thái Bookings thủ công (VD: từ pending sang completed)"""
         session = get_session()
         try:
-            booking = session.query(Booking).filter(Booking.booking_id == booking_id).first()
+            booking = session.query(Bookings).filter(Bookings.booking_id == booking_id).first()
             if booking:
                 booking.booking_status = new_status
                 session.commit()
@@ -90,5 +90,5 @@ class BookingService:
 
     @staticmethod
     def cancel_booking(booking_id: int):
-        """Hủy Booking (Soft logic) thay vì xóa khỏi CSDL"""
+        """Hủy Bookings (Soft logic) thay vì xóa khỏi CSDL"""
         return BookingService.update_booking_status(booking_id, BookingStatusEnum.cancelled)

@@ -22,6 +22,10 @@ class Controller():
 
     """Mangaer controller - manage related user, tours, ..."""
     
+    # db_session = get_session()
+    # tours_model = ToursModel(db_session)
+    # user_model = UserModel(db_session)
+
     def __init__(self):
         """initialize controller"""
         self.db_session = get_session()
@@ -35,8 +39,7 @@ class Controller():
         """
         db_session = self.db_session
         try:
-            tours_model = self.tours_model(db_session)
-            latest_tours = tours_model.get_published(limit=limit, offset=offset)
+            latest_tours = self.tours_model.get_published(limit=limit, offset=offset)
 
             return latest_tours
         finally:
@@ -69,7 +72,7 @@ class Controller():
                 return redirect(url_for('client.en_index'))
             else:
                 flash('Đăng nhập thành công', 'success')
-                return redirect(url_for('client.index'))
+                return redirect(url_for('client.home'))
         else:
             if site == 'en':
                 print('Username or password is incorrect')
@@ -114,7 +117,7 @@ class Controller():
                 session.permanent = False
 
             flash('Đăng nhập thành công', 'success')
-            return redirect(url_for('client.index'))
+            return redirect(url_for('client.home'))
         else:
             flash('Tên đăng nhập hoặc mật khẩu không đúng', 'error')
             return redirect(url_for('client.user_login'))
@@ -294,7 +297,7 @@ class Controller():
             
             format_time = lambda x: x.astimezone(pytz.timezone(time_zone)).strftime(time_format)
 
-            return render_template('client/vn/tours_detail.html',
+            return render_template('client/tours_detail.html',
                                  tours=tours,
                                  is_saved=is_saved,
                                  user_id=user_id,

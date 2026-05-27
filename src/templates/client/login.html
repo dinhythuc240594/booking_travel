@@ -1,5 +1,5 @@
-{% extends '/client/en/base.html' %}
-{% block title %}Login - VnNews International{% endblock %}
+{% extends '/client/base.html' %}
+{% block title %}Đăng nhập - VnBookingTravel{% endblock %}
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style_client.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style_register.css') }}">
@@ -10,12 +10,12 @@
             <div class="col-md-6 col-lg-5">
     <div class="login-container">
         <div class="login-header">
-            <h1><i class="fas fa-newspaper"></i> VnNews International</h1>
-            <p>Login to your account</p>
+            <h1><i class="fas fa-newspaper"></i> VnBookingTravel</h1>
+            <p>Đăng nhập tài khoản</p>
         </div>
         
         <div class="login-body">
-            <h2 class="login-title">Login</h2>
+            <h2 class="login-title">Đăng nhập</h2>
             
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
@@ -29,24 +29,24 @@
             {% endwith %}
             
             <form method="POST" action="{{ url_for('client.user_login') }}">
-                <input type="hidden" name="site" value="en">
+                <input type="hidden" name="site" value="vn">
                 <div class="form-group">
-                    <label class="form-label">Username or Email</label>
+                    <label class="form-label">Tên đăng nhập hoặc Email</label>
                     <div class="input-group">
                         <span class="input-group-text">
                             <i class="fas fa-user"></i>
                         </span>
-                        <input type="text" class="form-control" name="username" id="username" placeholder="Enter username or email" required>
+                        <input type="text" class="form-control" name="username" id="username" placeholder="Nhập tên đăng nhập hoặc email" required>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Password</label>
+                    <label class="form-label">Mật khẩu</label>
                     <div class="input-group">
                         <span class="input-group-text">
                             <i class="fas fa-lock"></i>
                         </span>
-                        <input type="password" class="form-control" name="password" id="password" placeholder="Enter password" required>
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Nhập mật khẩu" required>
                         <span class="input-group-text password-toggle" id="togglePassword">
                             <i class="fas fa-eye"></i>
                         </span>
@@ -56,21 +56,21 @@
                 <div class="form-check mb-3">
                     <input class="form-check-input" type="checkbox" id="remember" name="remember">
                     <label class="form-check-label" for="remember">
-                        Remember me
+                        Ghi nhớ đăng nhập
                     </label>
                 </div>
                 
                 <div class="mb-3">
-                    <a href="{{ url_for('client.en_forgot_password') }}" class="forgot-password-link">Forgot password?</a>
+                    <a href="{{ url_for('client.forgot_password') }}" class="forgot-password-link">Quên mật khẩu?</a>
                 </div>
                 
                 <button type="submit" class="btn btn-login">
-                    <i class="fas fa-sign-in-alt me-2"></i> Login
+                    <i class="fas fa-sign-in-alt me-2"></i> Đăng nhập
                 </button>
             </form>
             
             <div class="register-link">
-                <p>Don't have an account? <a href="{{ url_for('client.en_register') }}">Register now</a></p>
+                <p>Chưa có tài khoản? <a href="{{ url_for('client.register') }}">Đăng ký ngay</a></p>
             </div>
         </div>
     </div>

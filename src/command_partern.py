@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import datetime
 
 from database import (
-    Booking, 
+    Bookings, 
     Payment, 
     BookingStatusEnum, 
     BookingTypeEnum, 
@@ -14,7 +14,7 @@ from database import (
 
 #######
 # Command Pattern sẽ quản lý các giao dịch (transactions) thông qua SQLAlchemy Session. 
-# Nó giúp lưu dữ liệu xuống bảng Booking và Payment, đồng thời xử lý undo() bằng cách cập nhật trạng thái 
+# Nó giúp lưu dữ liệu xuống bảng Bookings và Payment, đồng thời xử lý undo() bằng cách cập nhật trạng thái 
 # (ví dụ: chuyển từ pending sang cancelled hoặc refunded dựa trên Enum của bạn).
 #######
 
@@ -31,7 +31,7 @@ class DatabaseCommand(ABC):
 
 
 class CreateBookingCommand(DatabaseCommand):
-    """Lệnh tạo Booking (Hotel hoặc Tour)"""
+    """Lệnh tạo Bookings (Hotels hoặc Tours)"""
     def __init__(self, user_id: int, booking_type, reference_id: int, total_price: float):
         self.user_id = user_id
         self.booking_type = booking_type # BookingTypeEnum.hotel hoặc tour
@@ -40,8 +40,8 @@ class CreateBookingCommand(DatabaseCommand):
         self.booking_record = None # Lưu lại record để undo
 
     def execute(self, session) -> None:
-        # Sử dụng model Booking từ database.py
-        self.booking_record = Booking(
+        # Sử dụng model Bookings từ database.py
+        self.booking_record = Bookings(
             user_id=self.user_id,
             booking_type=self.booking_type,
             reference_id=self.reference_id,
@@ -50,17 +50,17 @@ class CreateBookingCommand(DatabaseCommand):
         )
         session.add(self.booking_record)
         session.flush() # Lấy ID tạm thời mà chưa commit hẳn
-        print(f"✅ Đã tạo Booking (ID tạm: {self.booking_record.booking_id}) loại {self.booking_type.value}.")
+        print(f"✅ Đã tạo Bookings (ID tạm: {self.booking_record.booking_id}) loại {self.booking_type.value}.")
 
     def undo(self, session) -> None:
         if self.booking_record:
             # Hủy vé thay vì xóa record (lịch sử)
             self.booking_record.booking_status = BookingStatusEnum.cancelled
-            print(f"🔄 Đã HỦY Booking (ID: {self.booking_record.booking_id}). Trạng thái: {BookingStatusEnum.cancelled.value}")
+            print(f"🔄 Đã HỦY Bookings (ID: {self.booking_record.booking_id}). Trạng thái: {BookingStatusEnum.cancelled.value}")
 
 
 class ProcessPaymentCommand(DatabaseCommand):
-    """Lệnh thanh toán cho Booking"""
+    """Lệnh thanh toán cho Bookings"""
     def __init__(self, booking_command: CreateBookingCommand, amount: float, payment_method):
         self.booking_command = booking_command
         self.amount = amount
@@ -80,9 +80,9 @@ class ProcessPaymentCommand(DatabaseCommand):
         session.add(self.payment_record)
         session.flush()
         
-        # Cập nhật trạng thái Booking thành confirmed
+        # Cập nhật trạng thái Bookings thành confirmed
         self.booking_command.booking_record.booking_status = BookingStatusEnum.confirmed
-        print(f"💳 Đã thanh toán ${self.amount} qua {self.payment_method.value}. Booking đã Confirm.")
+        print(f"💳 Đã thanh toán ${self.amount} qua {self.payment_method.value}. Bookings đã Confirm.")
 
     def undo(self, session) -> None:
         if self.payment_record:

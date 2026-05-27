@@ -1,5 +1,5 @@
-{% extends '/client/en/base.html' %}
-{% block title %}Search - VnNews International{% endblock %}
+{% extends '/client/base.html' %}
+{% block title %}Tìm kiếm - VnBookingTravel{% endblock %}
 {% block head %}
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style_client.css') }}">
 {% endblock %}
@@ -13,22 +13,22 @@
                     <!-- Breadcrumb -->
                     <nav aria-label="breadcrumb" class="mb-4">
                         <ol class="breadcrumb">
-                            <li class="breadcrumb-item"><a href="{{ url_for('client.en_index') }}">Home</a></li>
-                            <li class="breadcrumb-item active" aria-current="page">Search</li>
+                            <li class="breadcrumb-item"><a href="{{ url_for('client.home') }}">Trang chủ</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">Tìm kiếm</li>
                         </ol>
                     </nav>
 
                     <!-- Search Header -->
                     <div class="search-header mb-4">
                         <h1 class="search-title">
-                            <i class="fas fa-search"></i> Search Results
+                            <i class="fas fa-search"></i> Kết quả tìm kiếm
                         </h1>
                         {% if keyword %}
                         <p class="text-muted">
-                            Found <strong>{{ news_list|length }}</strong> results for the keyword: <strong>"{{ keyword }}"</strong>
+                            Tìm thấy <strong>{{ news_list|length }}</strong> kết quả cho từ khóa: <strong>"{{ keyword }}"</strong>
                         </p>
                         {% else %}
-                        <p class="text-muted">Please enter a keyword to search</p>
+                        <p class="text-muted">Vui lòng nhập từ khóa để tìm kiếm</p>
                         {% endif %}
                     </div>
 
@@ -49,7 +49,7 @@
                                         <div class="col-md-8">
                                             <div class="news-content">
                                                 <h3 class="news-title">
-                                                    <a href="{{ url_for('client.en_news_detail', news_slug=news.slug) }}">{{ news.title }}</a>
+                                                    <a href="{{ url_for('client.news_detail', news_slug=news.slug) }}">{{ news.title }}</a>
                                                 </h3>
                                                 <p class="news-description">
                                                     {{ news.summary or news.content|get_description }}
@@ -72,7 +72,7 @@
                                 <ul class="pagination justify-content-center">
                                     {% if page > 1 %}
                                     <li class="page-item">
-                                        <a class="page-link" href="{{ url_for('client.search', q=keyword, page=page-1) }}">Previous</a>
+                                        <a class="page-link" href="{{ url_for('client.search', q=keyword, page=page-1) }}">Trước</a>
                                     </li>
                                     {% endif %}
                                     
@@ -89,22 +89,22 @@
                                     {% endfor %}
                                     
                                     <li class="page-item">
-                                        <a class="page-link" href="{{ url_for('client.search', q=keyword, page=page+1) }}">Next</a>
+                                        <a class="page-link" href="{{ url_for('client.search', q=keyword, page=page+1) }}">Sau</a>
                                     </li>
                                 </ul>
                             </nav>
                             {% endif %}
                             {% else %}
                             <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle"></i> No results found for the keyword "<strong>{{ keyword }}</strong>". Please try again with a different keyword.
+                                <i class="fas fa-exclamation-triangle"></i> Không tìm thấy kết quả nào cho từ khóa "<strong>{{ keyword }}</strong>". Vui lòng thử lại với từ khóa khác.
                             </div>
                             {% endif %}
                         {% else %}
                         <div class="search-empty">
                             <div class="text-center py-5">
                                 <i class="fas fa-search fa-3x text-muted mb-3"></i>
-                                <h3>Enter a keyword to search</h3>
-                                <p class="text-muted">Search for news, articles by the keyword you are interested in</p>
+                                <h3>Nhập từ khóa để tìm kiếm</h3>
+                                <p class="text-muted">Tìm kiếm tin tức, bài viết theo từ khóa bạn quan tâm</p>
                             </div>
                         </div>
                         {% endif %}
@@ -116,7 +116,7 @@
                     <!-- Most Read -->
                     <aside class="sidebar-widget">
                         <h3 class="widget-title">
-                            <i class="fas fa-fire"></i> View more
+                            <i class="fas fa-fire"></i> Xem nhiều
                         </h3>
                         <div class="most-read-list">
                             {% if hot_news %}
@@ -124,13 +124,13 @@
                                 <article class="most-read-item">
                                     <span class="rank">{{ loop.index }}</span>
                                     <div class="content">
-                                        <h4><a href="{{ url_for('client.en_news_detail', news_slug=news.slug) }}">{{ news.title }}</a></h4>
+                                        <h4><a href="{{ url_for('client.news_detail', news_slug=news.slug) }}">{{ news.title }}</a></h4>
                                         <span class="meta"><i class="far fa-eye"></i> {{ news.view_count|format_view }}</span>
                                     </div>
                                 </article>
                                 {% endfor %}
                             {% else %}
-                                <p class="text-muted text-center">No hot news</p>
+                                <p class="text-muted text-center">Chưa có tin nóng</p>
                             {% endif %}
                         </div>
                     </aside>
@@ -138,11 +138,11 @@
                     <!-- Popular Searches -->
                     <aside class="sidebar-widget">
                         <h3 class="widget-title">
-                            <i class="fas fa-tags"></i> Popular Searches
+                            <i class="fas fa-tags"></i> Từ khóa phổ biến
                         </h3>
                         <div class="popular-searches">
                             {% for category in categories %}
-                                <a href="{{ url_for('client.en_search', q=category.name) }}" class="badge bg-secondary me-2 mb-2">{{ category.name }}</a>
+                                <a href="{{ url_for('client.search', q=category.name) }}" class="badge bg-secondary me-2 mb-2">{{ category.name }}</a>
                             {% endfor %}
                         </div>
                     </aside>
@@ -152,6 +152,6 @@
     </main>
 {% endblock %}
 {% block scripts %}
-{% include 'client/en/hot_news.html' %}
+{% include 'client/hot_news.html' %}
 {% endblock %}
 

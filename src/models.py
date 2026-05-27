@@ -367,7 +367,7 @@ class UserModel:
 
 
 class BookingModel:
-    """Model class management Booking"""
+    """Model class management Bookings"""
     
     def __init__(self, db_session: Session):
         self.db = db_session
@@ -392,16 +392,16 @@ class BookingModel:
         )
         return success
 
-    def get_by_id(self, booking_id: int) -> Optional[db.Booking]:
-        """Đọc thông tin Booking qua ID"""
+    def get_by_id(self, booking_id: int) -> Optional[db.Bookings]:
+        """Đọc thông tin Bookings qua ID"""
         return BookingService.get_booking_by_id(booking_id)
 
     def update_status(self, booking_id: int, new_status: db.BookingStatusEnum) -> bool:
-        """Cập nhật trạng thái Booking"""
+        """Cập nhật trạng thái Bookings (VD: từ pending sang completed)"""
         return BookingService.update_booking_status(booking_id, new_status)
 
     def cancel_booking(self, booking_id: int) -> bool:
-        """Hủy Booking (Soft logic)"""
+        """Hủy Bookings (Soft logic)"""
         return BookingService.cancel_booking(booking_id)
 
 
@@ -411,9 +411,9 @@ class RelatedActivityModel:
     def __init__(self, db_session: Session):
         self.db = db_session
 
-    def get_booking_history(self, user_id: int) -> List[db.Booking]:
+    def get_booking_history(self, user_id: int) -> List[db.Bookings]:
         """
-        Lấy toàn bộ lịch sử Booking của một người dùng kèm theo chi tiết thanh toán
+        Lấy toàn bộ lịch sử Bookings của một người dùng kèm theo chi tiết thanh toán
         """
         return RelatedService.get_user_booking_history(user_id)
 
