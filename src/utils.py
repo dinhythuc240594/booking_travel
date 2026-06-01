@@ -20,24 +20,24 @@ def validate_email(email: str) -> bool:
     return bool(re.match(pattern, email))
 
 # valid format password
-def validate_password(site: str, password: str) -> tuple:
+def validate_password(password: str) -> tuple:
 
     if not password:
-        return False, "Mật khẩu không được để trống" if site == 'vn' else 'Password do not empty'
+        return False, "Mật khẩu không được để trống"
     
     if len(password) < 6:
-        return False, "Mật khẩu phải có ít nhất 6 ký tự" if site == 'vn' else 'The password must have at least 6 characters.'
+        return False, "Mật khẩu phải có ít nhất 6 ký tự"
     
     if len(password) > 50:
-        return False, "Mật khẩu không được vượt quá 50 ký tự" if site == 'vn' else 'Passwords must not exceed 50 characters.'
+        return False, "Mật khẩu không được vượt quá 50 ký tự"
     
     return True, ""
 
 # valid format phone number
-def validate_phone(site, phone: str) -> tuple:
+def validate_phone(phone: str) -> tuple:
 
     if not phone:
-        return False, "Số điện thoại không được để trống" if site == 'vn' else "The phone number do not empty"
+        return False, "Số điện thoại không được để trống"
     
     # remove space and  -
     phone_clean = phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
@@ -48,7 +48,7 @@ def validate_phone(site, phone: str) -> tuple:
     pattern = r'^(\+84|0)(3[2-9]|5[6|8|9]|7[0|6-9]|8[1-6|8|9]|9[0-9])[0-9]{7}$'
     
     if not re.match(pattern, phone_clean):
-        msg = "Số điện thoại không đúng định dạng (ví dụ: 0912345678 hoặc +84912345678)" if site == 'vn' else "The phone number is not in the correct format (e.g., 0912345678 or +84912345678)"
+        msg = "Số điện thoại không đúng định dạng (ví dụ: 0912345678 hoặc +84912345678)"
         return False, msg
     
     return True, ""

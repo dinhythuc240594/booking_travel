@@ -29,7 +29,7 @@ class Home(BaseClientView):
     
     def get(self):
         data = self.list_tour(limit=10, offset=0)
-
+        
         return render_template('client/home.html', 
                                tour=data)
 
@@ -39,29 +39,22 @@ class Search(BaseClientView):
     def get(self):
         keyword = request.args.get('q', '').strip()
         page = request.args.get('page', 1, type=int)
-
         data = self.search_tours(keyword, page)
+        
         return render_template('client/search.html', tour=data)
 
 
 class ToursDetail(BaseClientView):
     
     def get(self, tours_slug):
-        
         tour = self.tours_detail(tours_slug)
-        if not tour:
-            abort(404)
+        
         return render_template('client/tours_detail.html', tour=tour)
 
 
 class Login(BaseClientView):
     
     def get(self):
-        site = session.get('site')
-
-        if request.method == 'POST':
-            self.handle_login(site)
-
         return render_template('client/login.html')
     
     def post(self):
@@ -71,7 +64,6 @@ class Login(BaseClientView):
 class Register(BaseClientView):
     
     def get(self):
-
         return render_template('client/register.html')
     
     def post(self):
@@ -81,7 +73,6 @@ class Register(BaseClientView):
 class ForgotPassword(BaseClientView):
     
     def get(self):
-
         return render_template('client/forgot_password.html')
     
     def post(self):
@@ -122,9 +113,11 @@ client_bp.add_url_rule('/', 'home', Home.as_view('home'))
 client_bp.add_url_rule('/home', 'home1', Home.as_view('home1'))
 client_bp.add_url_rule('/search', 'search', Search.as_view('search'))
 client_bp.add_url_rule('/tour/<tours_slug>', 'tours_detail', ToursDetail.as_view('tours_detail'))
-client_bp.add_url_rule('/signin', 'login', Login.as_view('login'))
+
+client_bp.add_url_rule('/signin', 'user_login', Login.as_view('user_login'))
 client_bp.add_url_rule('/signup', 'register', Register.as_view('register'))
 client_bp.add_url_rule('/forgot_password', 'forgot_password', ForgotPassword.as_view('forgot_password'))
+
 client_bp.add_url_rule('/introducing', 'introducing', Introducing.as_view('introducing'))
 client_bp.add_url_rule('/security', 'security', Security.as_view('security'))
 client_bp.add_url_rule('/term', 'term_of_service', Term.as_view('term_of_service'))

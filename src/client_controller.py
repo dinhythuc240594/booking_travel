@@ -3,6 +3,7 @@ from flask import render_template, request, jsonify, abort, redirect, url_for, f
 import pytz
 from datetime import datetime, timedelta
 from utils import validate_email, validate_password, validate_phone, hash_password
+from email_utils import generate_token, send_password_reset_email
 from database import (
     get_session,
     TourStatus,
@@ -17,6 +18,7 @@ from models import (
     UserModel,
 )
 
+PER_PAGE = 25
 
 class Controller():
 
@@ -45,18 +47,14 @@ class Controller():
         finally:
             db_session.close()
 
-    def handle_login(self, site):
+    def handle_login(self):
 
         username = request.form.get('username')
         password = request.form.get('password')
 
         if self.user_model.is_locked_user(username):
-            if site == 'en':
-                flash('Account has been locked. Please contact administrator', 'error')
-                return redirect(url_for('client.en_user_login'))
-            else:
-                flash('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên', 'error')
-                return redirect(url_for('client.user_login'))
+            flash('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên', 'error')
+            return redirect(url_for('client.user_login'))
         
         user = self.user_model.authenticate(username, password)
         
@@ -65,23 +63,13 @@ class Controller():
             session['username'] = user.username
             session['full_name'] = user.full_name or user.username
             session['role'] = user.role.value
-            
-            
-            if site == 'en':
-                flash('Login successful', 'success')
-                return redirect(url_for('client.en_index'))
-            else:
-                flash('Đăng nhập thành công', 'success')
-                return redirect(url_for('client.home'))
+
+            flash('Đăng nhập thành công', 'success')
+            return redirect(url_for('client.home'))
         else:
-            if site == 'en':
-                print('Username or password is incorrect')
-                flash('Username or password is incorrect', 'error')
-                return redirect(url_for('client.en_user_login'))
-            else:
-                print('Tên đăng nhập hoặc mật khẩu không đúng')
-                flash('Tên đăng nhập hoặc mật khẩu không đúng', 'error')
-                return redirect(url_for('client.user_login'))
+            print('Tên đăng nhập hoặc mật khẩu không đúng')
+            flash('Tên đăng nhập hoặc mật khẩu không đúng', 'error')
+            return redirect(url_for('client.user_login'))
 
 
     def checkLogin(self):
@@ -89,19 +77,14 @@ class Controller():
         Check login for user
         """
         
-        site = session.get('site')
         username = request.form.get('username')
         password = request.form.get('password')
         remember = True if request.form.get('remember') == 'on' else False
 
         # check status locked of account before authentication
         if self.user_model.is_locked_user(username):
-            if site == 'en':
-                flash('Account has been locked. Please contact administrator', 'error')
-                return redirect(url_for('client.en_user_login'))
-            else:
-                flash('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên', 'error')
-                return redirect(url_for('client.user_login'))
+            flash('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên', 'error')
+            return redirect(url_for('client.user_login'))
         
         user = self.user_model.authenticate(username, password)
         
@@ -192,16 +175,12 @@ class Controller():
         Route: POST /forgot-password
         """
         email = request.form.get('email', '').strip().lower()
-        site = session.get('site')
-
-        from utils import validate_email
-        from email_utils import generate_token, send_password_reset_email
         
         # Validation
         if not email:
-            flash('Email không được để trống' if site == 'vn' else 'Email is required', 'error')
+            flash('Email không được để trống')
         elif not validate_email(email):
-            flash('Email không đúng định dạng' if site == 'vn' else 'Invalid email format', 'error')
+            flash('Email không đúng định dạng')
         else:
             # Tìm user
             user = self.user_model.get_by_email(email)
@@ -229,12 +208,12 @@ class Controller():
                 self.db_session.commit()
                 
                 # Gửi email reset
-                send_password_reset_email(user.email, reset_token, site)
+                send_password_reset_email(user.email, reset_token)
             
             # Luôn hiển thị thông báo thành công (bảo mật)
-            success_msg = 'Nếu email tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu đến email của bạn.' if site == 'vn' else 'If the email exists in our system, we have sent a password reset link to your email.'
+            success_msg = 'Nếu email tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu đến email của bạn. Vui lòng kiểm tra hộp thư của bạn.'
             flash(success_msg, 'success')
-            return redirect(url_for('client.user_login', site=site))
+            return redirect(url_for('client.user_login'))
 
     def tours_detail(self, tours_slug: str):
         """
@@ -269,14 +248,12 @@ class Controller():
                 existing_viewed = db_session.query(Viewedtour).filter(
                     Viewedtour.user_id == user_id,
                     Viewedtour.tour_id == tour.id,
-                    Viewedtour.site == 'vn'
                 ).first()
                 
                 if not existing_viewed:
                     viewed_tour = Viewedtour(
                         user_id=user_id,
                         tour_id=tour.id,
-                        site='vn'
                     )
                     db_session.add(viewed_tour)
                     db_session.commit()
@@ -288,7 +265,6 @@ class Controller():
                 saved_tour = db_session.query(Savedtour).filter(
                     Savedtour.user_id == user_id,
                     Savedtour.tour_id == tour.id,
-                    Savedtour.site == 'vn'
                 ).first()
                 is_saved = saved_tour is not None
 
@@ -321,16 +297,12 @@ class Controller():
         db_session = self.db_session
         try:
 
-            tours_model = self.tours_model(db_session)
+            tours_model = self.tour_model(db_session)
 
             if not keyword:
                 return []
-            
-            per_page = 25
-            offset = (page - 1) * per_page
-            
-            tours_list = tours_model.search(keyword, limit=per_page + offset)
-            tours_list = tours_list[offset:offset + per_page]
+
+            tours_list = tours_model.search_tour(keyword, page=page, per_page=PER_PAGE)
             
             return tours_list
         finally:

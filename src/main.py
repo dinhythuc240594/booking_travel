@@ -12,7 +12,6 @@ from database import init_db
 
 from client_routes import client_bp
 from admin_routes import admin_bp
-from tour_routes import tour_bp
 
 load_dotenv()  # Load varibale enviroment from file .env
 
@@ -42,7 +41,6 @@ def create_app():
 
     app.register_blueprint(client_bp)
     app.register_blueprint(admin_bp)
-    app.register_blueprint(tour_bp)
 
     # Debug: Log mọi request
     @app.before_request
@@ -62,19 +60,11 @@ def create_app():
     # Đăng ký Jinja2 filters
     @app.template_filter('datetime_format')
     def datetime_format_filter(dt):
-        """Format datetime theo site: vn hoặc en"""
         if dt is None:
             return ''
-        
-        # Xác định site từ request path
-        site = session['site']
-        
-        # Thiết lập time_format và time_zone theo site
+
         time_format = '%d-%m-%Y %H:%M'
-        if site == 'vn':
-            time_zone = 'Asia/Ho_Chi_Minh'
-        else:  # en
-            time_zone = 'UTC'
+        time_zone = 'Asia/Ho_Chi_Minh'
         
         # Đảm bảo datetime có timezone
         if dt.tzinfo is None:
@@ -89,50 +79,30 @@ def create_app():
     def timeago_filter(dt):
         """Format datetime thành 'X giờ trước', 'X ngày trước'"""
         if dt is None:
-            return "Vừa xong" if session['site'] == 'vn' else "Just now"
-        
-        # Xác định site từ request path
-        site = session['site']
+            return "Vừa xong"
         
         # Đảm bảo datetime có timezone
         if dt.tzinfo is None:
             dt = dt.replace(tzinfo=timezone.utc)
         
         # Chuyển sang timezone tương ứng
-        if site == 'vn':
-            tz = pytz.timezone('Asia/Ho_Chi_Minh')
-            now = datetime.now(tz)
-            dt = dt.astimezone(tz)
-        else:  # en
-            tz = pytz.timezone('UTC')
-            now = datetime.now(tz)
-            dt = dt.astimezone(tz)
+        tz = pytz.timezone('Asia/Ho_Chi_Minh')
+        now = datetime.now(tz)
+        dt = dt.astimezone(tz)
         
         diff = now - dt
         
         # Format theo ngôn ngữ
-        if site == 'vn':
-            if diff.days > 0:
-                return f"{diff.days} ngày trước"
-            elif diff.seconds >= 3600:
-                hours = diff.seconds // 3600
-                return f"{hours} giờ trước"
-            elif diff.seconds >= 60:
-                minutes = diff.seconds // 60
-                return f"{minutes} phút trước"
-            else:
-                return "Vừa xong"
-        else:  # en
-            if diff.days > 0:
-                return f"{diff.days} days ago"
-            elif diff.seconds >= 3600:
-                hours = diff.seconds // 3600
-                return f"{hours} hours ago"
-            elif diff.seconds >= 60:
-                minutes = diff.seconds // 60
-                return f"{minutes} minutes ago"
-            else:
-                return "Just now"
+        if diff.days > 0:
+            return f"{diff.days} ngày trước"
+        elif diff.seconds >= 3600:
+            hours = diff.seconds // 3600
+            return f"{hours} giờ trước"
+        elif diff.seconds >= 60:
+            minutes = diff.seconds // 60
+            return f"{minutes} phút trước"
+        else:
+            return "Vừa xong"
 
     @app.template_filter('format_view')
     def format_view_filter(count):

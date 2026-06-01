@@ -211,8 +211,19 @@ class TourModel:
             return False
 
     def get_public_tours(self, limit: int = 20, offset: int = 0) -> List[db.Tour]:
-        """Lấy danh sách Tour công khai (visible=True) có phân trang"""
-        return self.db.query(db.Tour).filter(db.Tour.visible == True).order_by(db.Tour.tour_id.desc()).limit(limit).offset(offset).all()
+        """Lấy danh sách Tour công khai (is_published=True) có phân trang"""
+        return self.db.query(db.Tour).filter(db.Tour.is_published == True).order_by(db.Tour.tour_id.desc()).limit(limit).offset(offset).all()
+
+    def search_tour(self, keyword: str, page: int = 1, per_page: int = 10) -> List[db.Tour]:
+        """Tìm kiếm Tour theo từ khóa trên tên và mô tả, có phân trang"""
+        offset = (page - 1) * per_page
+        return self.db.query(db.Tour).filter(
+            db.Tour.is_published == True,
+            or_(
+                db.Tour.name.ilike(f'%{keyword}%'),
+                db.Tour.description.ilike(f'%{keyword}%')
+            )
+        ).order_by(db.Tour.tour_id.desc()).limit(per_page).offset(offset).all()
 
 
 class RelatedActivityModel:

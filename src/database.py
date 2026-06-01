@@ -255,28 +255,18 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(100), nullable=True)
     phone_number = Column(String(20), nullable=True)
-    avatar = Column(String(255), nullable=True)  # URL to avatar image
+    avatar = Column(String(255), nullable=True)
     role = Column(UserRoleType(), default=UserRole.CUSTOMER)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
-
-
-class Customer(User):
-
-    # Relationships Customer
+    
+    # Từ Customer
     bookings = relationship("Bookings", back_populates="user", cascade="all, delete-orphan")
     newsletter_subscriptions = relationship("NewsletterSubscription", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
 
-
-class Admin(User):
-    pass
-
-
-class Writer(User):
-
-    # Relationships Writer
+    # Từ Writer
     tour_authored = relationship("Tour", foreign_keys="[Tour.author_id]", back_populates="author")
     tour_reviewed = relationship("Tour", foreign_keys="[Tour.reviewer_id]", back_populates="reviewer")
     tour_approved = relationship("Tour", foreign_keys="[Tour.approved_by]", back_populates="approver")
@@ -427,6 +417,8 @@ class Tour(Base):
     location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"))
     duration_days = Column(Integer, nullable=False)
     price_per_person = Column(Numeric(10, 2), nullable=False)
+    thumbnail = Column(String(255), nullable=True)
+    view_count = Column(Integer, default=0)
 
 
     author = relationship("User", foreign_keys=[author_id], back_populates="tour_authored")
@@ -478,7 +470,7 @@ class Savedtour(Base):
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
     tour_id = Column(Integer, ForeignKey('tour.tour_id'), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now())
-    
+
     # Relationships
     user = relationship("User", back_populates="saved_tour")
     tour = relationship("Tour", foreign_keys=[tour_id])

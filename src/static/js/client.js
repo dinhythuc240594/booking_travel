@@ -1,7 +1,7 @@
 
 UI_CLIENT = {
 
-    SITE: localStorage.getItem('site') || 'vn',
+    SITE: 'vn',
 
     homeMainContent: async function(){
         UI_CLIENT.updateDateTime();
@@ -56,7 +56,7 @@ UI_CLIENT = {
                     const location = data.results[0];
                     const latitude = location.latitude;
                     const longitude = location.longitude;
-                    const cityName = site == 'en' ? 'Ho Chi Minh City' : 'TP. Hồ Chí Minh';
+                    const cityName = 'TP. Hồ Chí Minh';
                     
                     // Get current weather
                     return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=Asia/Ho_Chi_Minh`)
@@ -104,7 +104,6 @@ UI_CLIENT = {
     },
 
     displayWeather: function name(cityName, weatherData) {
-        const site = window.location.pathname.split('/')[1];
         const weatherWidget = $('#weather-widget');
         const current = weatherData.current;
         

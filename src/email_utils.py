@@ -130,56 +130,22 @@ def send_email(to_email, subject, body_html, body_text=None):
         return False
 
 
-def send_newsletter_subscription_email(email, unsubscribe_token, site='vn'):
+def send_newsletter_subscription_email(email, unsubscribe_token):
     """
     Gửi email xác nhận đăng ký newsletter
     
     Args:
         email: Email người đăng ký
         unsubscribe_token: Token để hủy đăng ký
-        site: 'vn' hoặc 'en'
         
     Returns:
         True nếu gửi thành công
     """
     try:
-        # Tạo URL hủy đăng ký
-        if site == 'en':
-            unsubscribe_url = url_for('client.newsletter_unsubscribe', token=unsubscribe_token, _external=True)
-        else:
-            unsubscribe_url = url_for('client.newsletter_unsubscribe', token=unsubscribe_token, _external=True)
-        
-        if site == 'en':
-            subject = "Newsletter Subscription Confirmation"
-            body_html = f"""
-            <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #2c3e50;">Thank you for subscribing to our newsletter!</h2>
-                    <p>You have successfully subscribed to our newsletter. We will send you the latest news and updates.</p>
-                    <p>If you did not subscribe to this newsletter, please ignore this email.</p>
-                    <p>To unsubscribe, click the link below:</p>
-                    <p style="margin: 20px 0;">
-                        <a href="{unsubscribe_url}" style="background-color: #e74c3c; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Unsubscribe</a>
-                    </p>
-                    <p style="color: #7f8c8d; font-size: 12px; margin-top: 30px;">
-                        This is an automated email. Please do not reply.
-                    </p>
-                </div>
-            </body>
-            </html>
-            """
-            body_text = f"""Thank you for subscribing to our newsletter!
-
-You have successfully subscribed to our newsletter. We will send you the latest news and updates.
-
-If you did not subscribe to this newsletter, please ignore this email.
-
-To unsubscribe, visit: {unsubscribe_url}
-"""
-        else:
-            subject = "Xác nhận đăng ký nhận bản tin"
-            body_html = f"""
+        unsubscribe_url = url_for('client.newsletter_unsubscribe', token=unsubscribe_token, _external=True)
+    
+        subject = "Xác nhận đăng ký nhận bản tin"
+        body_html = f"""
             <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -196,15 +162,15 @@ To unsubscribe, visit: {unsubscribe_url}
                 </div>
             </body>
             </html>
-            """
-            body_text = f"""Cảm ơn bạn đã đăng ký nhận bản tin!
+        """
+        body_text = f"""Cảm ơn bạn đã đăng ký nhận bản tin!
 
-Bạn đã đăng ký nhận bản tin thành công. Chúng tôi sẽ gửi cho bạn những tin tức và cập nhật mới nhất.
+            Bạn đã đăng ký nhận bản tin thành công. Chúng tôi sẽ gửi cho bạn những tin tức và cập nhật mới nhất.
 
-Nếu bạn không đăng ký nhận bản tin này, vui lòng bỏ qua email này.
+            Nếu bạn không đăng ký nhận bản tin này, vui lòng bỏ qua email này.
 
-Để hủy đăng ký, truy cập: {unsubscribe_url}
-"""
+            Để hủy đăng ký, truy cập: {unsubscribe_url}
+        """
         
         return send_email(email, subject, body_html, body_text)
         
@@ -213,14 +179,13 @@ Nếu bạn không đăng ký nhận bản tin này, vui lòng bỏ qua email n�
         return False
 
 
-def send_password_reset_email(user_email, reset_token, site='vn'):
+def send_password_reset_email(user_email, reset_token):
     """
     Gửi email reset mật khẩu
     
     Args:
         user_email: Email người dùng
         reset_token: Token để reset mật khẩu
-        site: 'vn' hoặc 'en'
         
     Returns:
         True nếu gửi thành công
@@ -229,66 +194,35 @@ def send_password_reset_email(user_email, reset_token, site='vn'):
         # Tạo URL reset mật khẩu
         reset_url = url_for('client.reset_password', token=reset_token, _external=True)
         
-        if site == 'en':
-            subject = "Password Reset Request"
-            body_html = f"""
-            <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #2c3e50;">Password Reset Request</h2>
-                    <p>You have requested to reset your password. Click the link below to reset your password:</p>
-                    <p style="margin: 20px 0;">
-                        <a href="{reset_url}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Reset Password</a>
-                    </p>
-                    <p>This link will expire in 1 hour.</p>
-                    <p>If you did not request a password reset, please ignore this email. Your password will remain unchanged.</p>
-                    <p style="color: #7f8c8d; font-size: 12px; margin-top: 30px;">
-                        This is an automated email. Please do not reply.
-                    </p>
-                </div>
-            </body>
-            </html>
-            """
-            body_text = f"""Password Reset Request
+        subject = "Yêu cầu đặt lại mật khẩu"
+        body_html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h2 style="color: #2c3e50;">Yêu cầu đặt lại mật khẩu</h2>
+                <p>Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng nhấp vào liên kết bên dưới để đặt lại mật khẩu:</p>
+                <p style="margin: 20px 0;">
+                    <a href="{reset_url}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Đặt lại mật khẩu</a>
+                </p>
+                <p>Liên kết này sẽ hết hạn sau 1 giờ.</p>
+                <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này. Mật khẩu của bạn sẽ không thay đổi.</p>
+                <p style="color: #7f8c8d; font-size: 12px; margin-top: 30px;">
+                    Đây là email tự động. Vui lòng không trả lời email này.
+                </p>
+            </div>
+        </body>
+        </html>
+        """
+        body_text = f"""Yêu cầu đặt lại mật khẩu
 
-You have requested to reset your password. Click the link below to reset your password:
+            Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng nhấp vào liên kết bên dưới để đặt lại mật khẩu:
 
-{reset_url}
+            {reset_url}
 
-This link will expire in 1 hour.
+            Liên kết này sẽ hết hạn sau 1 giờ.
 
-If you did not request a password reset, please ignore this email. Your password will remain unchanged.
-"""
-        else:
-            subject = "Yêu cầu đặt lại mật khẩu"
-            body_html = f"""
-            <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #2c3e50;">Yêu cầu đặt lại mật khẩu</h2>
-                    <p>Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng nhấp vào liên kết bên dưới để đặt lại mật khẩu:</p>
-                    <p style="margin: 20px 0;">
-                        <a href="{reset_url}" style="background-color: #3498db; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Đặt lại mật khẩu</a>
-                    </p>
-                    <p>Liên kết này sẽ hết hạn sau 1 giờ.</p>
-                    <p>Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này. Mật khẩu của bạn sẽ không thay đổi.</p>
-                    <p style="color: #7f8c8d; font-size: 12px; margin-top: 30px;">
-                        Đây là email tự động. Vui lòng không trả lời email này.
-                    </p>
-                </div>
-            </body>
-            </html>
-            """
-            body_text = f"""Yêu cầu đặt lại mật khẩu
-
-Bạn đã yêu cầu đặt lại mật khẩu. Vui lòng nhấp vào liên kết bên dưới để đặt lại mật khẩu:
-
-{reset_url}
-
-Liên kết này sẽ hết hạn sau 1 giờ.
-
-Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này. Mật khẩu của bạn sẽ không thay đổi.
-"""
+            Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này. Mật khẩu của bạn sẽ không thay đổi.
+        """
         
         return send_email(user_email, subject, body_html, body_text)
         
