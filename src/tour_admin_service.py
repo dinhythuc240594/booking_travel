@@ -42,15 +42,15 @@ class TourAdminService:
         session = get_session()
         invoker = DBTransactionInvoker()
         
-        # Đã map đúng các trường của Tour
+        # Mapping đúng cấu trúc bảng Tour
         tour_data = {
             'title': data.get('title'),
             'slug': data.get('slug'), 
             'content': data.get('content'),
             'summary': data.get('summary'),
             'thumbnail': data.get('thumbnail'),
-            'author_id': data.get('user_id'), # Map sang author_id
-            'location_id': data.get('location_id'),
+            'author_id': data.get('user_id'),    # SỬA: Map sang author_id
+            'location_id': data.get('location_id'), # SỬA: Map sang location_id thay vì category
             'duration_days': data.get('duration_days', 1),
             'price_per_person': data.get('price_per_person', 0.0),
             'status': data.get('status', TourStatus.DRAFT),
@@ -61,7 +61,7 @@ class TourAdminService:
         command = CreateTourCommand(tour_data)
         try:
             invoker.execute_transaction(session, [command])
-            tour_id = command.tour_record.tour_id # Sửa lại tour_id thay vì id
+            tour_id = command.tour_record.tour_id
 
             new_content, new_thumb, images_json = TourAdminService.process_images_and_content(
                 tour_data['content'], tour_data['thumbnail'], tour_id
@@ -94,7 +94,7 @@ class TourAdminService:
             'summary': data.get('summary'),
             'thumbnail': new_thumb,
             'images': images_json,
-            'location_id': data.get('location_id'),
+            'location_id': data.get('location_id'), # Sửa thành location_id
             'duration_days': data.get('duration_days'),
             'price_per_person': data.get('price_per_person'),
             'status': data.get('status'),

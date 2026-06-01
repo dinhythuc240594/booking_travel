@@ -39,13 +39,12 @@ class Controller():
         List latest tour
         Route: GET /
         """
-        db_session = self.db_session
         try:
             latest_tour = self.tour_model.get_public_tours(limit=limit, offset=offset)
 
             return latest_tour
         finally:
-            db_session.close()
+            self.db_session.close()
 
     def handle_login(self):
 
@@ -59,7 +58,7 @@ class Controller():
         user = self.user_model.authenticate(username, password)
         
         if user and user.is_active and user.role == UserRole.CUSTOMER:
-            session['user_id'] = user.id
+            session['user_id'] = user.user_id
             session['username'] = user.username
             session['full_name'] = user.full_name or user.username
             session['role'] = user.role.value
@@ -71,8 +70,7 @@ class Controller():
             flash('Tên đăng nhập hoặc mật khẩu không đúng', 'error')
             return redirect(url_for('client.user_login'))
 
-
-    def checkLogin(self):
+    def check_login(self):
         """
         Check login for user
         """
@@ -89,7 +87,7 @@ class Controller():
         user = self.user_model.authenticate(username, password)
         
         if user and user.is_active and user.role == UserRole.CUSTOMER:
-            session['user_id'] = user.id
+            session['user_id'] = user.user_id
             session['username'] = user.username
             session['full_name'] = user.full_name or user.username
             session['role'] = user.role.value
@@ -192,7 +190,7 @@ class Controller():
                 
                 # Vô hiệu hóa các token cũ của user này
                 old_tokens = self.db_session.query(PasswordResetToken).filter(
-                    PasswordResetToken.user_id == user.id,
+                    PasswordResetToken.user_id == user.user_id,
                     PasswordResetToken.used == False
                 ).all()
                 for old_token in old_tokens:
@@ -200,7 +198,7 @@ class Controller():
                 
                 # Tạo token mới
                 reset_token_obj = PasswordResetToken(
-                    user_id=user.id,
+                    user_id=user.user_id,
                     token=reset_token,
                     expires_at=expires_at
                 )
@@ -220,12 +218,11 @@ class Controller():
         Page tour detail
         Route: GET /tour/<tours_slug>
         """
-        db_session = self.db_session
         try:
 
             print(f"Slug received: {tours_slug}")
             
-            tour_model = self.tour_model(db_session)
+            tour_model = self.tour_model
             
             tour = tour_model.get_by_slug(tours_slug)
             print(f"Tour found: {tour}")
@@ -245,26 +242,26 @@ class Controller():
             if 'user_id' in session:
                 user_id = session['user_id']
 
-                existing_viewed = db_session.query(Viewedtour).filter(
+                existing_viewed = self.db_session.query(Viewedtour).filter(
                     Viewedtour.user_id == user_id,
-                    Viewedtour.tour_id == tour.id,
+                    Viewedtour.tour_id == tour.tour_id,
                 ).first()
                 
                 if not existing_viewed:
                     viewed_tour = Viewedtour(
                         user_id=user_id,
-                        tour_id=tour.id,
+                        tour_id=tour.tour_id,
                     )
-                    db_session.add(viewed_tour)
-                    db_session.commit()
+                    self.db_session.add(viewed_tour)
+                    self.db_session.commit()
                 else:
 
                     existing_viewed.viewed_at = datetime.utcnow()
-                    db_session.commit()
+                    self.db_session.commit()
 
-                saved_tour = db_session.query(Savedtour).filter(
+                saved_tour = self.db_session.query(Savedtour).filter(
                     Savedtour.user_id == user_id,
-                    Savedtour.tour_id == tour.id,
+                    Savedtour.tour_id == tour.tour_id,
                 ).first()
                 is_saved = saved_tour is not None
 
@@ -279,7 +276,7 @@ class Controller():
                                  user_id=user_id,
                                  format_time=format_time)
         except Exception as e:
-            db_session.rollback()
+            self.db_session.rollback()
             
             import traceback
             print(f"Error in tours_detail: {str(e)}")
@@ -287,23 +284,22 @@ class Controller():
             
             abort(404)
         finally:
-            db_session.close()
+            self.db_session.close()
     
     def search_tours(self, keyword, page):
         """
         Search tour by keyword
         Route: GET /search?q=<keyword>
         """
-        db_session = self.db_session
         try:
 
-            tours_model = self.tour_model(db_session)
+            tours_model = self.tour_model
 
             if not keyword:
                 return []
 
-            tours_list = tours_model.search_tour(keyword, page=page, per_page=PER_PAGE)
+            tours_list = tours_model.search(keyword, page=page, per_page=PER_PAGE)
             
             return tours_list
         finally:
-            db_session.close()
+            self.db_session.close()

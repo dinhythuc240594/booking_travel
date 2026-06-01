@@ -14,7 +14,6 @@ class BookingService:
             tour = session.query(Tour).get(tour_id)
             
             if not hotel and not tour:
-                print("❌ Không tìm thấy dịch vụ nào để book.")
                 return False
 
             # 2. Sử dụng Composite Pattern để tạo gói và tính giá
@@ -57,7 +56,6 @@ class BookingService:
             return True
 
         except Exception as e:
-            print(f"❌ Xảy ra lỗi ngoại lệ: {e}")
             return False
         finally:
             session.close()

@@ -22,7 +22,6 @@ class UserService:
             return new_user
         except Exception as e:
             session.rollback()
-            print(f"❌ Lỗi khi tạo user: {e}")
             return None
         finally:
             session.close()
@@ -54,7 +53,6 @@ class UserService:
             return True
         except Exception as e:
             session.rollback()
-            print(f"❌ Lỗi khi cập nhật user: {e}")
             return False
         finally:
             session.close()
@@ -72,7 +70,6 @@ class UserService:
             return False
         except Exception as e:
             session.rollback()
-            print(f"❌ Lỗi khi xóa user: {e}")
             return False
         finally:
             session.close()

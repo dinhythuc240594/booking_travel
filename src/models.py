@@ -1,4 +1,6 @@
 
+from typing import Optional
+
 from flask import jsonify, session
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
@@ -185,12 +187,11 @@ class TourModel:
         self.db = db_session
     
     def create(self, title: str, content: str, location_id: int, 
-               author_id: int, duration_days: int, price_per_person: float, 
+               author_id: int, duration_days: int = 1, price_per_person: float = 0.0,
                summary: str = None, thumbnail: str = None, images: str = None,
-               is_hot: bool = False, is_featured: bool = False,
                slug: str = None, status: db.TourStatus = db.TourStatus.DRAFT) -> db.Tour:
         if slug is None:
-            slug = utils.generate_slug(title)
+            slug = self._generate_slug(title)
         
         tour = db.Tour(
             title=title,
@@ -203,8 +204,6 @@ class TourModel:
             author_id=author_id,
             duration_days=duration_days,
             price_per_person=price_per_person,
-            is_hot=is_hot,
-            is_featured=is_featured,
             status=status
         )
         self.db.add(tour)
@@ -219,10 +218,13 @@ class TourModel:
         return query.first()
     
     def get_by_slug(self, slug: str) -> db.Tour:
-        return self.db.query(db.Tour).filter(db.Tour.slug == slug, db.Tour.is_deleted == False).first()
+        return self.db.query(db.Tour).filter(
+            db.Tour.slug == slug,
+            db.Tour.is_deleted == False
+        ).first()
     
     def get_all(self, limit: int = None, offset: int = 0, 
-                status: db.TourStatus = None, include_deleted: bool = False) -> list:
+                status: db.TourStatus = None, include_deleted: bool = False) -> list[db.Tour]:
         query = self.db.query(db.Tour)
         if not include_deleted:
             query = query.filter(db.Tour.is_deleted == False)
@@ -233,10 +235,10 @@ class TourModel:
             query = query.limit(limit).offset(offset)
         return query.all()
 
-    def get_by_creator(self, author_id: int, limit: int = None, offset: int = 0,
+    def get_by_author(self, author_id: int, limit: int = None, offset: int = 0,
                        status: db.TourStatus = None, search: str = None, 
                        include_deleted: bool = False) -> tuple[list[db.Tour], int]:
-        query = self.db.query(db.Tour).filter(db.Tour.author_id == author_id)
+        query = self.db.query(db.Tour).filter(db.Tour.author_id == author_id) # Sửa từ created_by
         if not include_deleted:
             query = query.filter(db.Tour.is_deleted == False)
         if status:
@@ -277,12 +279,37 @@ class TourModel:
     
     def delete(self, tour_id: int) -> bool:
         tour = self.get_by_id(tour_id)
-        if not tour:
-            return False
+        if not tour: return False
         tour.is_deleted = True
         tour.updated_at = datetime.datetime.utcnow()
         self.db.commit()
         return True
+    
+    def search(self, keyword: str, limit: int = None, offset: int = 0) -> list[db.Tour]:
+        like_pattern = f"%{keyword}%"
+        query = self.db.query(db.Tour).filter(
+            db.Tour.is_deleted == False,
+            or_(db.Tour.title.ilike(like_pattern), db.Tour.summary.ilike(like_pattern))
+        ).order_by(desc(db.Tour.created_at))
+        if limit:
+            query = query.limit(limit).offset(offset)
+        return query.all()
+
+    def get_public_tours(self, limit: int = None, offset: int = 0) -> list[db.Tour]:
+        query = self.db.query(db.Tour).filter(
+            db.Tour.status == db.TourStatus.PUBLISHED,
+            db.Tour.is_deleted == False
+        ).order_by(desc(db.Tour.created_at))
+        if limit:
+            query = query.limit(limit).offset(offset)
+        return query.all()
+
+    def _generate_slug(self, title: str) -> str:
+        import re
+        slug = title.lower()
+        slug = re.sub(r'[^\w\s-]', '', slug)
+        slug = re.sub(r'[-\s]+', '-', slug)
+        return slug.strip('-')
 
 
 class RelatedActivityModel:

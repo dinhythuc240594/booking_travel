@@ -10,6 +10,7 @@ from src.tour_admin_service import TourAdminService
 from utils import validate_email, validate_password, generate_slug
 from email_utils import send_email
 from database import (
+    Bookings,
     Tour,
     TourRejection,
     TourStatus,
@@ -67,7 +68,7 @@ class AdminController:
             
             if user and user.is_active and user.role in [UserRole.ADMIN, UserRole.STAFF]:
                 # Lưu session đăng nhập
-                session['user_id'] = user.id
+                session['user_id'] = user.user_id
                 session['username'] = user.username
                 session['role'] = user.role.value
                 
@@ -86,7 +87,7 @@ class AdminController:
                     return redirect(url_for('admin.editor_dashboard'))
             else:
                 flash('Tên đăng nhập hoặc mật khẩu không đúng', 'error')
-        print(f"=== DEBUG login ===")
+
         return render_template('admin/login.html')
     
     def logout(self):
@@ -133,7 +134,7 @@ class AdminController:
         
         # Lấy tour của editor (chỉ dùng để thống kê nhanh)
         all_tours = self.tour_model.get_all()
-        my_tours = [t for t in all_tours if t.created_by == user_id]
+        my_tours = [t for t in all_tours if t.author_id == user_id]
         
         draft_tours = [t for t in my_tours if t.status == TourStatus.DRAFT]
         pending_tours = [t for t in my_tours if t.status == TourStatus.PENDING]
@@ -202,14 +203,14 @@ class AdminController:
             tour = self.tour_model.create(
                 title=title,
                 content=content,
-                created_by=user_id,
+                author_id=user_id,
                 summary=summary,
                 thumbnail=thumbnail,
                 status=tour_status
             )
             
             flash('Tạo tour thành công', 'success')
-            return redirect(url_for('admin.tours_edit', tour_id=tour.id))
+            return redirect(url_for('admin.tours_edit', tour_id=tour.tour_id))
     
     def tours_edit(self, tour_id: int):
         """
@@ -226,7 +227,7 @@ class AdminController:
         user_id = session.get('user_id')
         user = self.user_model.get_by_id(user_id)
         
-        if user.role != UserRole.ADMIN and tour.created_by != user_id:
+        if user.role != UserRole.ADMIN and tour.author_id != user_id:
             flash('Bạn không có quyền chỉnh sửa tour này', 'error')
             return redirect(url_for('admin.tours_list'))
         
@@ -315,8 +316,8 @@ class AdminController:
             return redirect(request.referrer or url_for('admin.dashboard'))
         
         # Lấy thông tin tác giả
-        creator = self.user_model.get_by_id(tour.created_by)
-        if creator and creator.email:
+        author = self.user_model.get_by_id(tour.author_id)
+        if author and author.email:
             try:
                 # Tạo link tour
                 tour_url = url_for('client.tours_detail', slug=tour.slug, _external=True)
@@ -379,7 +380,7 @@ class AdminController:
                         <h2>Thông báo từ chối bài viết</h2>
                     </div>
                     <div class="content">
-                        <p>Xin chào <strong>{creator.full_name or creator.username}</strong>,</p>
+                        <p>Xin chào <strong>{author.full_name or author.username}</strong>,</p>
                         
                         <p>Chúng tôi rất tiếc phải thông báo rằng tour của bạn đã bị từ chối:</p>
                         
@@ -410,13 +411,13 @@ class AdminController:
                 
                 # Gửi email
                 email_sent = send_email(
-                    to_email=creator.email,
+                    to_email=author.email,
                     subject=email_subject,
                     body_html=email_body_html
                 )
                 
                 if not email_sent:
-                    print(f"Warning: Không thể gửi email từ chối đến {creator.email}")
+                    print(f"Warning: Không thể gửi email từ chối đến {author.email}")
                 
             except Exception as e:
                 print(f"Error sending rejection email: {str(e)}")
@@ -510,8 +511,8 @@ class AdminController:
 
         offset = (page - 1) * per_page
 
-        items, total = self.tour_model.get_by_creator(
-            creator_id=user_id,
+        items, total = self.tour_model.get_by_author(
+            author_id=user_id,
             limit=per_page,
             offset=offset,
             status=status,
@@ -554,7 +555,7 @@ class AdminController:
         return jsonify({
             'success': True,
             'data': {
-                'id': user.id,
+                'user_id': user.user_id,
                 'username': user.username,
                 'name': user.full_name or user.username,
                 'role': user.role.value,
@@ -579,7 +580,7 @@ class AdminController:
             limit = 20
         
         items = self.db_session.query(Tour).filter(
-            Tour.created_by == user_id,
+            Tour.author_id == user_id,
             Tour.is_deleted == False,  # Chỉ lấy bài chưa bị xóa
             or_(
                 Tour.status == TourStatus.PUBLISHED,
@@ -593,12 +594,12 @@ class AdminController:
         notifications = []
         for tour in items:
             notification = {
-                'id': tour.id,
+                'tour_id': tour.tour_id,
                 'title': tour.title,
                 'status': tour.status.value,
                 'published_at': tour.published_at.isoformat() if tour.published_at else None,
                 'updated_at': tour.updated_at.isoformat() if tour.updated_at else None,
-                'approved_by': tour.approver.username if getattr(tour, "approver", None) else None,
+                'reviewer_id': tour.reviewer_id if getattr(tour, "reviewer_id", None) else None,
             }
             notifications.append(notification)
 
@@ -611,15 +612,15 @@ class AdminController:
     def _tour_to_dict(self, tour) -> dict:
         """Chuyển đổi Tour object thành dictionary dùng chung cho admin & client"""
         return {
-            'id': tour.id,
+            'tour_id': tour.tour_id,
             'title': tour.title,
             'slug': tour.slug,
             'status': tour.status.value if getattr(tour, "status", None) else None,
             'summary': getattr(tour, "summary", None),
             'thumbnail': getattr(tour, "thumbnail", None),
             'visible': getattr(tour, "visible", True),
-            'created_by': tour.creator.username if getattr(tour, "creator", None) else None,
-            'approved_by': tour.approver.username if getattr(tour, "approver", None) else None,
+            'author_id': tour.author_id if getattr(tour, "author_id", None) else None,
+            'reviewer_id': tour.reviewer_id if getattr(tour, "reviewer_id", None) else None,
             'view_count': getattr(tour, "view_count", 0),
             'created_at': tour.created_at.isoformat() if getattr(tour, "created_at", None) else None,
             'published_at': tour.published_at.isoformat() if getattr(tour, "published_at", None) else None,
@@ -658,39 +659,39 @@ class AdminController:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
         total = self.db_session.query(Tour).filter(
-            Tour.created_by == user_id
+            Tour.author_id == user_id
         ).count() or 0
         
         pending_count = self.db_session.query(Tour).filter(
-            Tour.created_by == user_id, Tour.status == TourStatus.PENDING
+            Tour.author_id == user_id, Tour.status == TourStatus.PENDING
         ).count() or 0
         
         approved_count = self.db_session.query(Tour).filter(
-            Tour.created_by == user_id, Tour.status == TourStatus.PUBLISHED
+            Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
         ).count() or 0
         
         published_count = self.db_session.query(Tour).filter(
-            Tour.created_by == user_id, Tour.status == TourStatus.PUBLISHED
+            Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
         ).count() or 0
         
         rejected_count = self.db_session.query(Tour).filter(
-            Tour.created_by == user_id, Tour.status == TourStatus.REJECTED
+            Tour.author_id == user_id, Tour.status == TourStatus.REJECTED
         ).count() or 0
         
         draft_count = self.db_session.query(Tour).filter(
-            Tour.created_by == user_id, Tour.status == TourStatus.DRAFT
+            Tour.author_id == user_id, Tour.status == TourStatus.DRAFT
         ).count() or 0
 
         tour_approved = self.db_session.query(Tour).filter(
-            Tour.created_by == user_id, Tour.status == TourStatus.PUBLISHED
+            Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
         ).order_by(Tour.published_at.desc()).first()
 
         tour_update = self.db_session.query(Tour).filter(
-            Tour.created_by == user_id, Tour.status == TourStatus.DRAFT, Tour.updated_at > Tour.created_at
+            Tour.author_id == user_id, Tour.status == TourStatus.DRAFT, Tour.updated_at > Tour.created_at
         ).order_by(Tour.created_at.desc()).first()
 
         tour_newest = self.db_session.query(Tour).filter(
-            Tour.created_by == user_id
+            Tour.author_id == user_id
         ).order_by(Tour.created_at.desc()).first()
 
         return jsonify({
@@ -715,9 +716,9 @@ class AdminController:
         return jsonify({
             'success': True,
             'data': [{
-                'id': tour.id,
+                'tour_id': tour.tour_id,
                 'title': tour.title,
-                'author': tour.creator.username if tour.creator else 'N/A',
+                'author': tour.author.username if tour.author else 'N/A',
                 'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
                 'status': tour.status.value
             } for tour in tour]
@@ -730,9 +731,9 @@ class AdminController:
         return jsonify({
             'success': True,
             'data': [{
-                'id': tour.id,
+                'tour_id': tour.tour_id,
                 'title': tour.title,
-                'author': tour.creator.username if tour.creator else 'N/A',
+                'author': tour.author.username if tour.author else 'N/A',
                 'date': tour.published_at.strftime('%d/%m/%Y %H:%M') if tour.published_at else '',
                 'views': tour.view_count
             } for tour in tour]
@@ -744,7 +745,7 @@ class AdminController:
         news_tour = self.tour_model.get_all(status=TourStatus.REJECTED, limit=100)
         
         # Lấy thông tin từ chối từ database
-        tour_ids = [t.id for t in news_tour]
+        tour_ids = [t.tour_id for t in news_tour]
         
         # Query rejection reasons
         news_rejections = {}
@@ -766,11 +767,11 @@ class AdminController:
         
         # Thêm bài viết trong nước
         for tour in news_tour:
-            rejection_info = news_rejections.get(tour.id, {})
+            rejection_info = news_rejections.get(tour.tour_id, {})
             data.append({
-                'id': tour.id,
+                'tour_id': tour.tour_id,
                 'title': tour.title,
-                'author': tour.creator.username if tour.creator else 'N/A',
+                'author': tour.author.username if tour.author else 'N/A',
                 'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
                 'type': 'tour',
                 'rejection_reason': rejection_info.get('reason', ''),
@@ -855,14 +856,14 @@ class AdminController:
                 'message': 'Bài viết không tồn tại'
             }), 404
         
-        # Xác định author: nếu là bài từ API thì dùng author field, không thì dùng creator
-        author_name = tour.author if (hasattr(tour, 'is_api') and tour.is_api and hasattr(tour, 'author') and tour.author) else (tour.creator.username if tour.creator else 'N/A')
-        author_full_name = tour.author if (hasattr(tour, 'is_api') and tour.is_api and hasattr(tour, 'author') and tour.author) else (tour.creator.full_name if tour.creator and tour.creator.full_name else tour.creator.username if tour.creator else 'N/A')
+        # Xác định author: nếu là bài từ API thì dùng author field, không thì dùng author.username hoặc author.full_name nếu có
+        author_name = tour.author if (hasattr(tour, 'is_api') and tour.is_api and hasattr(tour, 'author') and tour.author) else (tour.author.username if tour.author else 'N/A')
+        author_full_name = tour.author if (hasattr(tour, 'is_api') and tour.is_api and hasattr(tour, 'author') and tour.author) else (tour.author.full_name if tour.author and tour.author.full_name else tour.author.username if tour.author else 'N/A')
         
         return jsonify({
             'success': True,
             'data': {
-                'id': tour.id,
+                'tour_id': tour.tour_id,
                 'title': tour.title,
                 'slug': tour.slug,
                 'summary': tour.summary or '',
@@ -870,8 +871,8 @@ class AdminController:
                 'thumbnail': tour.thumbnail or '',
                 'author': author_name,
                 'author_full_name': author_full_name,
-                'approver': tour.approver.username if tour.approver else None,
-                'approver_full_name': tour.approver.full_name if tour.approver and tour.approver.full_name else (tour.approver.username if tour.approver else None),
+                'reviewer': tour.reviewer.username if tour.reviewer else None,
+                'reviewer_full_name': tour.reviewer.full_name if tour.reviewer and tour.reviewer.full_name else (tour.reviewer.username if tour.reviewer else None),
                 'is_api': tour.is_api if hasattr(tour, 'is_api') else False,
                 'status': tour.status.value,
                 'created_at': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
@@ -988,8 +989,6 @@ class AdminController:
         Trang thông tin cá nhân của user
         Route: GET /profile
         """
-        print(f"=== DEBUG profile ===")
-        print(f"Session: {session}")
         if 'user_id' not in session:
             flash('Vui lòng đăng nhập để xem thông tin cá nhân', 'error')
             return redirect(url_for('admin.login'))
@@ -1000,9 +999,13 @@ class AdminController:
             session.clear()
             return redirect(url_for('admin.login'))
         
-        booking = self.db_session.query(BookingModel).filter(
-            BookingModel.user_id == user.id
-        ).order_by(BookingModel.created_at.desc()).limit(20).all()
+        user = self.db_session.query(User).filter(
+            User.user_id == session['user_id']
+        ).first()
+
+        booking = self.db_session.query(Bookings).filter(
+            Bookings.user_id == user.user_id
+        ).order_by(Bookings.created_at.desc()).limit(20).all()
 
         return render_template('admin/profile.html', 
                              user=user, 
@@ -1051,7 +1054,7 @@ class AdminController:
             users_data = []
             for user in users:
                 users_data.append({
-                    'id': user.id,
+                    'user_id': user.user_id,
                     'username': user.username,
                     'email': user.email,
                     'full_name': user.full_name,
@@ -1126,7 +1129,7 @@ class AdminController:
                 'success': True,
                 'message': 'Tạo tài khoản thành công',
                 'user': {
-                    'id': user.id,
+                    'user_id': user.user_id,
                     'username': user.username,
                     'email': user.email,
                     'role': user.role.value
@@ -1155,7 +1158,7 @@ class AdminController:
                 return jsonify({
                     'success': True,
                     'user': {
-                        'id': user.id,
+                        'user_id': user.user_id,
                         'username': user.username,
                         'email': user.email,
                         'full_name': user.full_name,

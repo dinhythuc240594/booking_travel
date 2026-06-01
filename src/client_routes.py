@@ -58,7 +58,7 @@ class Login(BaseClientView):
         return render_template('client/login.html')
     
     def post(self):
-        self.checkLogin()
+        self.check_login()
 
 
 class Register(BaseClientView):

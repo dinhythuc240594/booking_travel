@@ -62,12 +62,12 @@ class CreateBookingCommand(DatabaseCommand):
     """Lệnh tạo Booking (Hotel hoặc Tour) cho Khách hàng"""
     def __init__(self, user_id: int, booking_type, reference_id: int, total_price: float, check_in_date: datetime = None, check_out_date: datetime = None):
         self.user_id = user_id
-        self.booking_type = booking_type # BookingTypeEnum.hotel hoặc tour
+        self.booking_type = booking_type
         self.reference_id = reference_id
         self.check_in_date = check_in_date
         self.check_out_date = check_out_date
         self.total_price = total_price
-        self.booking_record = None # Lưu lại record để undo
+        self.booking_record = None
 
     def execute(self, session) -> None:
         self.booking_record = Bookings(
@@ -80,11 +80,10 @@ class CreateBookingCommand(DatabaseCommand):
             booking_status=BookingStatusEnum.pending
         )
         session.add(self.booking_record)
-        session.flush() # Lấy ID tạm thời mà chưa commit hẳn
+        session.flush()
 
     def undo(self, session) -> None:
         if self.booking_record:
-            # Hủy vé thay vì xóa record (để giữ lịch sử)
             self.booking_record.booking_status = BookingStatusEnum.cancelled
 
 
@@ -240,9 +239,9 @@ class SoftDeleteTourCommand(DatabaseCommand):
 class ApproveTourCommand(DatabaseCommand):
 
     """Lệnh Admin duyệt Tour"""
-    def __init__(self, tour_id: int, approved_by: int):
+    def __init__(self, tour_id: int, reviewer_id: int):
         self.tour_id = tour_id
-        self.approved_by = approved_by
+        self.reviewer_id = reviewer_id
         self.tour_record = None
         self.old_status = None
 
@@ -251,14 +250,14 @@ class ApproveTourCommand(DatabaseCommand):
         if self.tour_record:
             self.old_status = self.tour_record.status
             self.tour_record.status = TourStatus.PUBLISHED
-            self.tour_record.approved_by = self.approved_by
+            self.tour_record.reviewer_id = self.reviewer_id
             self.tour_record.published_at = datetime.datetime.utcnow()
             session.flush()
 
     def undo(self, session) -> None:
         if self.tour_record and self.old_status:
             self.tour_record.status = self.old_status
-            self.tour_record.approved_by = None
+            self.tour_record.reviewer_id = None
             self.tour_record.published_at = None
 
 
@@ -278,7 +277,7 @@ class RejectTourCommand(DatabaseCommand):
         if self.tour_record:
             self.old_status = self.tour_record.status
             self.tour_record.status = TourStatus.REJECTED
-            self.tour_record.approved_by = self.rejected_by
+            self.tour_record.reviewer_id = self.rejected_by
             
             # Lưu log lý do từ chối
             self.rejection_record = TourRejection(
@@ -292,7 +291,7 @@ class RejectTourCommand(DatabaseCommand):
     def undo(self, session) -> None:
         if self.tour_record and self.old_status:
             self.tour_record.status = self.old_status
-            self.tour_record.approved_by = None
+            self.tour_record.reviewer_id = None
         if self.rejection_record:
             session.delete(self.rejection_record)
 
@@ -310,10 +309,15 @@ class ChangeTourStatusCommand(DatabaseCommand):
     def execute(self, session) -> None:
         self.tour_record = session.query(Tour).get(self.tour_id)
         if self.tour_record:
-            self.old_status = self.tour_record.status
+            self.old_status = self.tour_record.status 
             self.tour_record.status = self.new_status
+            
             if self.reviewer_id:
-                self.tour_record.reviewer_id = self.reviewer_id
+                self.tour_record.reviewer_id = self.reviewer_id # Sửa mapping
+                
+            if self.new_status == TourStatus.PUBLISHED:
+                self.tour_record.published_at = datetime.datetime.now()
+
             session.flush()
 
     def undo(self, session) -> None:
