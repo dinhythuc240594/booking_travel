@@ -398,11 +398,11 @@ class AdminController:
                         <p>Vui lòng xem xét lại tour và chỉnh sửa theo góp ý trên trước khi gửi lại để duyệt.</p>
                         
                         <p>Trân trọng,<br>
-                        <strong>Ban biên tập VnNews</strong></p>
+                        <strong>Ban biên tập BookingTravel</strong></p>
                     </div>
                     <div class="footer">
                         <p>Đây là email tự động. Vui lòng không trả lời email này.</p>
-                        <p>© 2024 VnNews. All rights reserved.</p>
+                        <p>© 2024 BookingTravel. All rights reserved.</p>
                     </div>
                 </body>
                 </html>
@@ -1267,13 +1267,13 @@ class AdminController:
                     'error': f'Thiếu cài đặt: {", ".join(missing_fields)}'
                 }), 400
 
-            subject = "Test Email - VnNews"
+            subject = "Test Email - BookingTravel"
             body_html = """
             <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                 <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
                     <h2 style="color: #2c3e50;">Email Test thành công!</h2>
-                    <p>Đây là email test từ hệ thống VnNews.</p>
+                    <p>Đây là email test từ hệ thống BookingTravel.</p>
                     <p>Nếu bạn nhận được email này, có nghĩa là cài đặt SMTP của bạn đã hoạt động đúng.</p>
                     <p style="color: #7f8c8d; font-size: 12px; margin-top: 30px;">
                         Đây là email tự động. Vui lòng không trả lời email này.
@@ -1284,7 +1284,7 @@ class AdminController:
             """
             body_text = """Email Test thành công!
 
-Đây là email test từ hệ thống VnNews.
+Đây là email test từ hệ thống BookingTravel.
 
 Nếu bạn nhận được email này, có nghĩa là cài đặt SMTP của bạn đã hoạt động đúng.
 """

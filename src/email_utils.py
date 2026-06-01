@@ -53,7 +53,7 @@ def get_smtp_config():
                         'username': settings_dict.get('smtp_username', ''),
                         'password': settings_dict.get('smtp_password', ''),
                         'sender': settings_dict.get('smtp_from_email') or settings_dict.get('smtp_username', ''),
-                        'prefix': '[VnNews] '
+                        'prefix': '[BookingTravel] '
                     }
         except Exception as e:
             print(f"Error reading SMTP settings from database: {str(e)}")
@@ -71,7 +71,7 @@ def get_smtp_config():
         'username': '',
         'password': '',
         'sender': '',
-        'prefix': '[VnNews] '
+        'prefix': '[BookingTravel] '
     }
 
 

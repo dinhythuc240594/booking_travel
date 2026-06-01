@@ -63,7 +63,7 @@ MyLang = {
     },
     
     vn: {
-        TITLE: 'News - Trang Tin Tức'
+        TITLE: 'News - Trang Du Lịch'
         ,NAME_PAGE: 'News'
         ,HOME: 'Trang chủ'
         ,NOTIFICATION: 'Thông báo'
