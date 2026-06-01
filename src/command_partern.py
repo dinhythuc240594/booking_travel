@@ -2,13 +2,13 @@ from abc import ABC, abstractmethod
 import datetime
 
 from database import (
+    TourRejection,
+    Setting,
     Bookings, 
     Payment, 
     BookingStatusEnum, 
-    BookingTypeEnum, 
-    PaymentMethodEnum, 
+    User, 
     PaymentStatusEnum,
-    Tour,
     TourStatus,
     NewsletterSubscription,
     Tour)
@@ -21,6 +21,7 @@ from database import (
 
 
 class DatabaseCommand(ABC):
+
     """Interface Command tương tác với SQLAlchemy Session"""
     @abstractmethod
     def execute(self, session) -> None:
@@ -31,37 +32,65 @@ class DatabaseCommand(ABC):
         pass
 
 
+class DBTransactionInvoker:
+
+    """Invoker quản lý transaction. Thực thi và tự động Rollback (Undo) nếu lỗi"""
+    def __init__(self):
+        self._history = []
+
+    def execute_transaction(self, session, commands: list[DatabaseCommand]):
+        try:
+            for command in commands:
+                command.execute(session)
+                self._history.append(command)
+            
+            session.commit() # Commit tất cả nếu mọi thứ suôn sẻ
+            self._history.clear()
+            
+        except Exception as e:
+            # Chạy undo logic cho các command đã execute thành công từ dưới lên trên
+            for command in reversed(self._history):
+                command.undo(session)
+            
+            # Commit các trạng thái Rollback (như Hủy/Hoàn tiền) xuống DB
+            session.commit()
+            raise e # Ném lỗi ra ngoài cho Controller/Service xử lý
+
+
 class CreateBookingCommand(DatabaseCommand):
-    """Lệnh tạo Bookings (Hotels hoặc Tour)"""
-    def __init__(self, user_id: int, booking_type, reference_id: int, total_price: float):
+
+    """Lệnh tạo Booking (Hotel hoặc Tour) cho Khách hàng"""
+    def __init__(self, user_id: int, booking_type, reference_id: int, total_price: float, check_in_date: datetime = None, check_out_date: datetime = None):
         self.user_id = user_id
         self.booking_type = booking_type # BookingTypeEnum.hotel hoặc tour
         self.reference_id = reference_id
+        self.check_in_date = check_in_date
+        self.check_out_date = check_out_date
         self.total_price = total_price
         self.booking_record = None # Lưu lại record để undo
 
     def execute(self, session) -> None:
-        # Sử dụng model Bookings từ database.py
         self.booking_record = Bookings(
             user_id=self.user_id,
             booking_type=self.booking_type,
             reference_id=self.reference_id,
+            check_in_date=self.check_in_date,
+            check_out_date=self.check_out_date,
             total_price=self.total_price,
             booking_status=BookingStatusEnum.pending
         )
         session.add(self.booking_record)
         session.flush() # Lấy ID tạm thời mà chưa commit hẳn
-        print(f"✅ Đã tạo Bookings (ID tạm: {self.booking_record.booking_id}) loại {self.booking_type.value}.")
 
     def undo(self, session) -> None:
         if self.booking_record:
-            # Hủy vé thay vì xóa record (lịch sử)
+            # Hủy vé thay vì xóa record (để giữ lịch sử)
             self.booking_record.booking_status = BookingStatusEnum.cancelled
-            print(f"🔄 Đã HỦY Bookings (ID: {self.booking_record.booking_id}). Trạng thái: {BookingStatusEnum.cancelled.value}")
 
 
 class ProcessPaymentCommand(DatabaseCommand):
-    """Lệnh thanh toán cho Bookings"""
+
+    """Lệnh thanh toán cho Booking"""
     def __init__(self, booking_command: CreateBookingCommand, amount: float, payment_method):
         self.booking_command = booking_command
         self.amount = amount
@@ -69,7 +98,6 @@ class ProcessPaymentCommand(DatabaseCommand):
         self.payment_record = None
 
     def execute(self, session) -> None:
-        # Lấy booking_id từ command trước đó
         booking_id = self.booking_command.booking_record.booking_id
         
         self.payment_record = Payment(
@@ -83,43 +111,15 @@ class ProcessPaymentCommand(DatabaseCommand):
         
         # Cập nhật trạng thái Bookings thành confirmed
         self.booking_command.booking_record.booking_status = BookingStatusEnum.confirmed
-        print(f"💳 Đã thanh toán ${self.amount} qua {self.payment_method.value}. Bookings đã Confirm.")
 
     def undo(self, session) -> None:
         if self.payment_record:
             # Đổi trạng thái sang Refunded
             self.payment_record.payment_status = PaymentStatusEnum.refunded
-            print(f"💸 Đã HOÀN TIỀN (Refunded) thanh toán (ID: {self.payment_record.payment_id}).")
-
-
-class DBTransactionInvoker:
-    """Invoker quản lý transaction. Thực thi và tự động Rollback (Undo) nếu lỗi"""
-    def __init__(self):
-        self._history = []
-
-    def execute_transaction(self, session, commands: list[DatabaseCommand]):
-        try:
-            for command in commands:
-                command.execute(session)
-                self._history.append(command)
-            
-            session.commit() # Commit tất cả nếu mọi thứ suôn sẻ
-            print("🚀 GIAO DỊCH THÀNH CÔNG VÀ ĐƯỢC LƯU VÀO DATABASE!")
-            self._history.clear()
-            
-        except Exception as e:
-            print(f"\n❌ LỖI HỆ THỐNG PHÁT SINH: {str(e)}")
-            print("⏳ Đang tiến hành Rollback trạng thái qua Undo logic...")
-            # Chạy undo logic cho các command đã execute thành công
-            for command in reversed(self._history):
-                command.undo(session)
-            
-            # Commit các trạng thái Hủy/Hoàn tiền xuống DB
-            session.commit()
-            print("✅ Đã xử lý Hủy/Hoàn tiền thành công.")
 
 
 class ChangetourtatusCommand(DatabaseCommand):
+
     """Lệnh thay đổi trạng thái bài viết (Duyệt/Xuất bản/Từ chối)"""
     def __init__(self, tour_id: int, new_status: TourStatus, reviewer_id: int = None):
         self.tour_id = tour_id
@@ -141,17 +141,16 @@ class ChangetourtatusCommand(DatabaseCommand):
                 self.tour_record.published_at = datetime.datetime.now()
 
             session.flush()
-            print(f"✅ Đã chuyển trạng thái tour {self.tour_id} thành {self.new_status.value}.")
 
     def undo(self, session) -> None:
         if self.tour_record and self.old_status:
             # Khôi phục lại trạng thái cũ trước khi thay đổi
             self.tour_record.status = self.old_status
-            print(f"🔄 Đã ROLLBACK trạng thái tour {self.tour_id} về {self.old_status.value}.")
 
 
 class SubscribeNewsletterCommand(DatabaseCommand):
-    """Lệnh đăng ký nhận tin Newsletter"""
+
+    """Lệnh khách hàng đăng ký nhận tin Newsletter"""
     def __init__(self, email: str, unsubscribe_token: str, user_id: int = None):
         self.email = email
         self.unsubscribe_token = unsubscribe_token
@@ -167,61 +166,225 @@ class SubscribeNewsletterCommand(DatabaseCommand):
         )
         session.add(self.subscription_record)
         session.flush()
-        print(f"📧 Đã đăng ký Newsletter cho email: {self.email}.")
 
     def undo(self, session) -> None:
         if self.subscription_record:
             self.subscription_record.is_active = False
-            self.subscription_record.unsubscribed_at = datetime.datetime.now()
-            print(f"🔄 Đã HỦY đăng ký Newsletter cho email: {self.email}.")
+            self.subscription_record.unsubscribed_at = datetime.datetime.utcnow()
 
 
 class CreateTourCommand(DatabaseCommand):
-    """Lệnh tạo Tour du lịch mới"""
-    def __init__(self, location_id: int, name: str, description: str, duration_days: int, price_per_person: float):
-        self.location_id = location_id
-        self.name = name
-        self.description = description
-        self.duration_days = duration_days
-        self.price_per_person = price_per_person
+
+    """Lệnh tạo Tour du lịch/Bài viết mới"""
+    def __init__(self, tour_data: dict):
+        self.data = tour_data
         self.tour_record = None
 
     def execute(self, session) -> None:
-        self.tour_record = Tour(
-            location_id=self.location_id,
-            name=self.name,
-            description=self.description,
-            duration_days=self.duration_days,
-            price_per_person=self.price_per_person
-        )
+        self.tour_record = Tour(**self.data)
         session.add(self.tour_record)
-        session.flush() # Lấy ID tạm thời
-        print(f"🚌 Đã tạo Tour: '{self.name}' (ID tạm: {self.tour_record.tour_id}).")
+        session.flush()
 
     def undo(self, session) -> None:
         if self.tour_record:
-            # Hủy quá trình tạo (Hard delete nếu đang trong transaction bị lỗi)
             session.delete(self.tour_record)
-            print(f"🔄 Đã HỦY quá trình tạo Tour '{self.name}'.")
 
 
-class UpdateTourPriceCommand(DatabaseCommand):
-    """Lệnh cập nhật giá Tour với khả năng hoàn tác"""
-    def __init__(self, tour_id: int, new_price: float):
+class UpdateTourCommand(DatabaseCommand):
+
+    """Lệnh cập nhật thông tin Tour"""
+    def __init__(self, tour_id: int, update_data: dict):
         self.tour_id = tour_id
-        self.new_price = new_price
-        self.old_price = None
+        self.update_data = update_data
+        self.tour_record = None
+        self.old_data = {}
+
+    def execute(self, session) -> None:
+        self.tour_record = session.query(Tour).get(self.tour_id)
+        if self.tour_record:
+            for key, value in self.update_data.items():
+                if hasattr(self.tour_record, key):
+                    self.old_data[key] = getattr(self.tour_record, key) # Lưu lại giá trị cũ
+                    setattr(self.tour_record, key, value)
+            self.tour_record.updated_at = datetime.datetime.utcnow()
+            session.flush()
+
+    def undo(self, session) -> None:
+        if self.tour_record and self.old_data:
+            # Khôi phục lại từng trường dữ liệu
+            for key, value in self.old_data.items():
+                setattr(self.tour_record, key, value)
+
+
+class SoftDeleteTourCommand(DatabaseCommand):
+
+    """Lệnh xóa mềm Tour (Ẩn khỏi hệ thống)"""
+    def __init__(self, tour_id: int):
+        self.tour_id = tour_id
+        self.tour_record = None
+        self.was_deleted = False
+
+    def execute(self, session) -> None:
+        self.tour_record = session.query(Tour).get(self.tour_id)
+        if self.tour_record:
+            self.was_deleted = self.tour_record.is_deleted
+            self.tour_record.is_deleted = True
+            self.tour_record.updated_at = datetime.datetime.utcnow()
+            session.flush()
+
+    def undo(self, session) -> None:
+        if self.tour_record and not self.was_deleted:
+            self.tour_record.is_deleted = False
+
+
+class ApproveTourCommand(DatabaseCommand):
+
+    """Lệnh Admin duyệt Tour"""
+    def __init__(self, tour_id: int, approved_by: int):
+        self.tour_id = tour_id
+        self.approved_by = approved_by
+        self.tour_record = None
+        self.old_status = None
+
+    def execute(self, session) -> None:
+        self.tour_record = session.query(Tour).get(self.tour_id)
+        if self.tour_record:
+            self.old_status = self.tour_record.status
+            self.tour_record.status = TourStatus.PUBLISHED
+            self.tour_record.approved_by = self.approved_by
+            self.tour_record.published_at = datetime.datetime.utcnow()
+            session.flush()
+
+    def undo(self, session) -> None:
+        if self.tour_record and self.old_status:
+            self.tour_record.status = self.old_status
+            self.tour_record.approved_by = None
+            self.tour_record.published_at = None
+
+
+class RejectTourCommand(DatabaseCommand):
+
+    """Lệnh Admin từ chối Tour (Đổi trạng thái + Ghi log lý do)"""
+    def __init__(self, tour_id: int, rejected_by: int, reason: str):
+        self.tour_id = tour_id
+        self.rejected_by = rejected_by
+        self.reason = reason
+        self.tour_record = None
+        self.rejection_record = None
+        self.old_status = None
+
+    def execute(self, session) -> None:
+        self.tour_record = session.query(Tour).get(self.tour_id)
+        if self.tour_record:
+            self.old_status = self.tour_record.status
+            self.tour_record.status = TourStatus.REJECTED
+            self.tour_record.approved_by = self.rejected_by
+            
+            # Lưu log lý do từ chối
+            self.rejection_record = TourRejection(
+                tour_id=self.tour_id,
+                rejected_by=self.rejected_by,
+                reason=self.reason
+            )
+            session.add(self.rejection_record)
+            session.flush()
+
+    def undo(self, session) -> None:
+        if self.tour_record and self.old_status:
+            self.tour_record.status = self.old_status
+            self.tour_record.approved_by = None
+        if self.rejection_record:
+            session.delete(self.rejection_record)
+
+
+class ChangeTourStatusCommand(DatabaseCommand):
+
+    """Lệnh thay đổi trạng thái tự do (Hỗ trợ Tool Admin)"""
+    def __init__(self, tour_id: int, new_status: TourStatus, reviewer_id: int = None):
+        self.tour_id = tour_id
+        self.new_status = new_status
+        self.reviewer_id = reviewer_id
+        self.old_status = None
         self.tour_record = None
 
     def execute(self, session) -> None:
         self.tour_record = session.query(Tour).get(self.tour_id)
         if self.tour_record:
-            self.old_price = self.tour_record.price_per_person
-            self.tour_record.price_per_person = self.new_price
+            self.old_status = self.tour_record.status
+            self.tour_record.status = self.new_status
+            if self.reviewer_id:
+                self.tour_record.reviewer_id = self.reviewer_id
             session.flush()
-            print(f"💰 Đã cập nhật giá Tour ID {self.tour_id} thành ${self.new_price}.")
 
     def undo(self, session) -> None:
-        if self.tour_record and self.old_price is not None:
-            self.tour_record.price_per_person = self.old_price
-            print(f"🔄 Đã ROLLBACK giá Tour ID {self.tour_id} về ${self.old_price}.")
+        if self.tour_record and self.old_status:
+            self.tour_record.status = self.old_status
+
+
+class BulkUpdateSettingsCommand(DatabaseCommand):
+
+    """Lệnh cập nhật cấu hình hệ thống (Settings) hàng loạt"""
+    def __init__(self, settings_data: dict):
+        self.settings_data = settings_data
+        self.old_values = {}
+        self.newly_created_keys = []
+
+    def execute(self, session) -> None:
+        for key, value in self.settings_data.items():
+            setting = session.query(Setting).filter(Setting.key == key).first()
+            if setting:
+                self.old_values[key] = setting.value
+                setting.value = value if value else None
+                setting.updated_at = datetime.datetime.utcnow()
+            else:
+                category = 'api' if 'api' in key.lower() or 'token' in key.lower() else ('smtp' if 'mail' in key.lower() or 'smtp' in key.lower() else 'general')
+                new_setting = Setting(key=key, value=value if value else None, category=category)
+                session.add(new_setting)
+                self.newly_created_keys.append(key)
+        session.flush()
+
+    def undo(self, session) -> None:
+        for key, old_val in self.old_values.items():
+            setting = session.query(Setting).filter(Setting.key == key).first()
+            if setting:
+                setting.value = old_val
+        for key in self.newly_created_keys:
+            setting = session.query(Setting).filter(Setting.key == key).first()
+            if setting:
+                session.delete(setting)
+
+
+class CreateAdminUserCommand(DatabaseCommand):
+
+    """Lệnh tạo User mới từ Admin Panel"""
+    def __init__(self, user_data: dict):
+        self.data = user_data
+        self.user_record = None
+
+    def execute(self, session) -> None:
+        self.user_record = User(**self.data)
+        session.add(self.user_record)
+        session.flush()
+
+    def undo(self, session) -> None:
+        if self.user_record:
+            session.delete(self.user_record)
+
+
+class ToggleUserStatusCommand(DatabaseCommand):
+
+    """Lệnh Khóa/Mở Khóa User"""
+    def __init__(self, user_id: int):
+        self.user_id = user_id
+        self.user_record = None
+
+    def execute(self, session) -> None:
+        self.user_record = session.query(User).get(self.user_id)
+        if self.user_record:
+            self.user_record.is_active = not self.user_record.is_active
+            self.user_record.updated_at = datetime.datetime.utcnow()
+            session.flush()
+
+    def undo(self, session) -> None:
+        if self.user_record:
+            self.user_record.is_active = not self.user_record.is_active

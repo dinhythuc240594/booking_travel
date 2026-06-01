@@ -2,10 +2,12 @@ from abc import ABC, abstractmethod
 from typing import List
 
 from database import (
+    Setting,
     Hotels, 
     Tour, 
-    Location, 
-    Tour)
+    Location,
+    TourStatus
+)
 
 #######
 # Composite Pattern sẽ đóng vai trò tính toán giá (total_price) cho giỏ hàng/gói dịch vụ trước khi lưu xuống bảng Bookings. 
@@ -25,9 +27,10 @@ class AbstractBookingItem(ABC):
 
 
 class HotelsBookingItem(AbstractBookingItem):
+
     """Leaf 1: Xử lý giá của Hotels (Giá * Số đêm)"""
-    def __init__(self, hotels, nights: int):
-        self.hotels = hotels  # instance của class Hotels
+    def __init__(self, hotels: Hotels, nights: int):
+        self.hotels = hotels
         self.nights = nights
 
     def get_total_price(self) -> float:
@@ -38,9 +41,10 @@ class HotelsBookingItem(AbstractBookingItem):
 
 
 class TourBookingItem(AbstractBookingItem):
+
     """Leaf 2: Xử lý giá của Tour (Giá * Số người)"""
-    def __init__(self, tour, persons: int):
-        self.tour = tour    # instance của class Tour
+    def __init__(self, tour: Tour, persons: int):
+        self.tour = tour
         self.persons = persons
 
     def get_total_price(self) -> float:
@@ -51,6 +55,7 @@ class TourBookingItem(AbstractBookingItem):
 
 
 class BookingPackage(AbstractBookingItem):
+
     """Composite: Gói combo chứa nhiều Hotels và Tour. Tính tổng giá trị và hiển thị chi tiết."""
     def __init__(self, package_name: str):
         self.package_name = package_name
@@ -58,6 +63,9 @@ class BookingPackage(AbstractBookingItem):
 
     def add_item(self, item: AbstractBookingItem):
         self.items.append(item)
+        
+    def remove_item(self, item: AbstractBookingItem):
+        self.items.remove(item)
 
     def get_total_price(self) -> float:
         return sum(item.get_total_price() for item in self.items)
@@ -69,21 +77,20 @@ class BookingPackage(AbstractBookingItem):
         return details.rstrip()
 
 
-class AbstractLocationNode(ABC):
-    """Component: Interface chung cho việc nhóm Tour theo Địa điểm"""
-    
+class AbstractTourNode(ABC):
+
+    """Component: Interface chung cho việc hiển thị cấu trúc Tour"""
     @abstractmethod
     def get_tour_count(self) -> int:
-        """Đếm số lượng Tour"""
         pass
 
     @abstractmethod
     def show_tours(self, indent: str = "") -> str:
-        """Hiển thị cấu trúc cây"""
         pass
 
 
-class TourLeafNode(AbstractLocationNode):
+class TourLeafNode(AbstractTourNode):
+
     """Leaf: Đại diện cho 1 Tour đơn lẻ."""
     def __init__(self, tour: Tour):
         self.tour = tour
@@ -92,28 +99,80 @@ class TourLeafNode(AbstractLocationNode):
         return 1
 
     def show_tours(self, indent: str = "") -> str:
-        return f"{indent}- 🚌 Tour: {self.tour.name} ({self.tour.duration_days} ngày) - Giá: ${self.tour.price_per_person}"
+        # Cấu hình icon theo trạng thái bài viết/tour
+        if self.tour.status == TourStatus.PUBLISHED:
+            status_icon = "🟢"
+        elif self.tour.status == TourStatus.PENDING:
+            status_icon = "🟡"
+        else:
+            status_icon = "🔴"
+            
+        return f"{indent}- {status_icon} [ID: {self.tour.tour_id}] {self.tour.name} | Trạng thái: {self.tour.status.value}"
 
 
-class LocationCompositeNode(AbstractLocationNode):
-    """Composite: Đại diện cho 1 Khu vực/Địa điểm. Chứa các Tour thuộc khu vực này."""
-    def __init__(self, location: Location):
-        self.location = location
-        self.children: List[AbstractLocationNode] = []
+class TourGroupComposite(AbstractTourNode):
 
-    def add_child(self, component: AbstractLocationNode):
+    """Composite Đa Năng: Nhóm Tour theo Địa điểm, Trạng thái, hoặc Tác giả (Staff)"""
+    def __init__(self, group_name: str, group_type: str = "Thư mục"):
+        self.group_name = group_name
+        self.group_type = group_type # Có thể là "Địa điểm", "Trạng thái", "Tác giả"
+        self.children: List[AbstractTourNode] = []
+
+    def add_child(self, component: AbstractTourNode):
         self.children.append(component)
         
-    def remove_child(self, component: AbstractLocationNode):
+    def remove_child(self, component: AbstractTourNode):
         self.children.remove(component)
 
     def get_tour_count(self) -> int:
-        """Tính tổng số Tour trong địa điểm này"""
+        """Tính tổng số Tour trong nhóm này"""
         return sum(child.get_tour_count() for child in self.children)
 
     def show_tours(self, indent: str = "") -> str:
-        """In ra danh sách Địa điểm và các Tour trực thuộc"""
-        details = f"{indent}📍 ĐỊA ĐIỂM: {self.location.city}, {self.location.country} | Tổng số Tour: {self.get_tour_count()}\n"
+        """In ra danh sách Nhóm và các Tour trực thuộc"""
+        details = f"{indent}📂 {self.group_type.upper()}: {self.group_name} | Tổng số Tour: {self.get_tour_count()}\n"
         for child in self.children:
             details += child.show_tours(indent + "   ") + "\n"
         return details.rstrip()
+
+
+class AbstractSettingNode(ABC):
+
+    """Component: Interface chung cho Cài đặt"""
+    @abstractmethod
+    def to_dict(self) -> dict:
+        pass
+
+
+class SettingLeaf(AbstractSettingNode):
+
+    """Leaf: Một cấu hình đơn lẻ (VD: smtp_port)"""
+    def __init__(self, setting: Setting):
+        self.setting = setting
+
+    def to_dict(self) -> dict:
+        return {
+            self.setting.key: {
+                'value': self.setting.value,
+                'description': self.setting.description,
+                'category': self.setting.category
+            }
+        }
+
+
+class SettingCategoryComposite(AbstractSettingNode):
+
+    """Composite: Một nhóm cấu hình (VD: Thư mục API Settings, SMTP Settings)"""
+    def __init__(self, category_name: str):
+        self.category_name = category_name
+        self.children: List[AbstractSettingNode] = []
+
+    def add(self, component: AbstractSettingNode):
+        self.children.append(component)
+
+    def to_dict(self) -> dict:
+        """Gom toàn bộ dữ liệu của các cấu hình con (trả về JSON cho Frontend)"""
+        category_data = {}
+        for child in self.children:
+            category_data.update(child.to_dict())
+        return {self.category_name: category_data}

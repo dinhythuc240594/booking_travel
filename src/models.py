@@ -1,19 +1,15 @@
 
+from flask import jsonify, session
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
-from datetime import datetime
-from typing import List, Optional
 import database as db
+import utils
 from booking_service import BookingService
 from tour_service import TourService
 from user_service import UserService
-import utils
+from setting_service import SettingService
 from related_service import RelatedService
-
-from sqlalchemy.orm import Session
-from typing import List, Optional, Dict, Any
-import database as db
-
+from tour_admin_service import TourAdminService
 
 class UserModel:
     """Model class management User"""
@@ -21,15 +17,15 @@ class UserModel:
     def __init__(self, db_session: Session):
         self.db = db_session
     
-    def get_by_username(self, username: str) -> Optional[db.User]:
+    def get_by_username(self, username: str) -> db.User:
         """Get user follow username"""
         return self.db.query(db.User).filter(db.User.username == username).first()
     
-    def get_by_email(self, email: str) -> Optional[db.User]:
+    def get_by_email(self, email: str) -> db.User:
         """Get user follow email"""
         return self.db.query(db.User).filter(db.User.email == email).first()
     
-    def get_by_id(self, user_id: int) -> Optional[db.User]:
+    def get_by_id(self, user_id: int) -> db.User:
         """Get user follow ID"""
         return UserService.get_user_by_id(user_id)
     
@@ -62,7 +58,7 @@ class UserModel:
 
         return user
     
-    def authenticate(self, username: str, password: str) -> Optional[db.User]:
+    def authenticate(self, username: str, password: str) -> db.User:
         """
         Valid user with username and password
         
@@ -112,6 +108,36 @@ class UserModel:
         
         return False
 
+    def create_tour(self, data_dict: dict) -> db.Tour:
+
+        # Gọi Service thực thi (Xử lý Command + File)
+        success, message, result_data = TourAdminService.create_tour(data_dict)
+        
+        if success:
+            return jsonify({'success': True, 'message': 'Tạo bài viết thành công', 'data': result_data})
+        return jsonify({'success': False, 'error': message}), 500
+
+
+    def edit_tour(self, tour_id: int, data: dict) -> tuple[bool, str]:
+
+        # Gọi Service xử lý Update (Sẽ tự quét file và execute Command)
+        success, message = TourAdminService.update_tour(tour_id, data)
+        if success:
+            return jsonify({'success': True, 'message': message})
+        return jsonify({'success': False, 'error': message}), 500
+
+
+    # ==========================================
+    # CÁC API QUẢN LÝ USER (Đã dọn dẹp)
+    # ==========================================
+
+    def user_toggle_status(self, user_id: int):
+        # Sử dụng Command Pattern
+        success, message = TourAdminService.user_toggle_status(user_id)
+        if success:
+            return jsonify({'success': True, 'message': message})
+        return jsonify({'success': False, 'error': message}), 500
+
 
 class BookingModel:
     """Model class management Bookings"""
@@ -139,7 +165,7 @@ class BookingModel:
         )
         return success
 
-    def get_by_id(self, booking_id: int) -> Optional[db.Bookings]:
+    def get_by_id(self, booking_id: int) -> db.Bookings:
         """Đọc thông tin Bookings qua ID"""
         return BookingService.get_booking_by_id(booking_id)
 
@@ -180,7 +206,7 @@ class TourModel:
         success = TourService.update_tour_price(tour_id=tour_id, new_price=new_price)
         return success
 
-    def get_tours_by_location_tree(self, location_id: int) -> Optional[Dict[str, Any]]:
+    def get_tours_by_location_tree(self, location_id: int) -> dict:
         """
         Lấy danh sách Tour theo Địa điểm dưới dạng Cây (Composite Pattern),
         kèm theo tổng số lượng Tour.
@@ -188,11 +214,11 @@ class TourModel:
 
         return TourService.get_tours_by_location_tree(location_id=location_id)
 
-    def get_by_id(self, tour_id: int) -> Optional[db.Tour]:
+    def get_by_id(self, tour_id: int) -> db.Tour:
         """Đọc thông tin một Tour cụ thể qua ID"""
         return self.db.query(db.Tour).filter(db.Tour.tour_id == tour_id).first()
     
-    def get_all(self, limit: int = 20, offset: int = 0) -> List[db.Tour]:
+    def get_all(self, limit: int = 20, offset: int = 0) -> list:
         """Lấy danh sách tất cả các Tour (có phân trang)"""
         return self.db.query(db.Tour).order_by(db.Tour.tour_id.desc()).limit(limit).offset(offset).all()
     
@@ -210,11 +236,11 @@ class TourModel:
             print(f"Lỗi khi xóa Tour: {e}")
             return False
 
-    def get_public_tours(self, limit: int = 20, offset: int = 0) -> List[db.Tour]:
+    def get_public_tours(self, limit: int = 20, offset: int = 0) -> list:
         """Lấy danh sách Tour công khai (is_published=True) có phân trang"""
         return self.db.query(db.Tour).filter(db.Tour.is_published == True).order_by(db.Tour.tour_id.desc()).limit(limit).offset(offset).all()
 
-    def search_tour(self, keyword: str, page: int = 1, per_page: int = 10) -> List[db.Tour]:
+    def search_tour(self, keyword: str, page: int = 1, per_page: int = 10) -> list:
         """Tìm kiếm Tour theo từ khóa trên tên và mô tả, có phân trang"""
         offset = (page - 1) * per_page
         return self.db.query(db.Tour).filter(
@@ -232,7 +258,7 @@ class RelatedActivityModel:
     def __init__(self, db_session: Session):
         self.db = db_session
 
-    def get_booking_history(self, user_id: int) -> List[db.Bookings]:
+    def get_booking_history(self, user_id: int) -> list:
         """
         Lấy toàn bộ lịch sử Bookings của một người dùng kèm theo chi tiết thanh toán
         """
@@ -249,5 +275,20 @@ class RelatedActivityModel:
         Ghi nhận lịch sử xem Tour của người dùng
         """
         RelatedService.record_viewed_tour(user_id, tour_id)
+
+
+class SettingModel:
+    """Model quản lý cấu hình hệ thống"""
+    
+    def __init__(self, db_session):
+        self.db = db_session
+
+    def get_all_settings(self, category: str = None) -> dict:
+        """Đọc toàn bộ setting (Hỗ trợ lọc theo category)"""
+        return SettingService.get_settings_grouped(category)
+
+    def update_settings(self, data_dict: dict) -> bool:
+        """Cập nhật nhiều setting cùng lúc"""
+        return SettingService.bulk_update(data_dict)
 
 

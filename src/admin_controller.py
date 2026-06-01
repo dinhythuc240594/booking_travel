@@ -2,11 +2,13 @@ from flask import Blueprint, render_template, request, jsonify, abort, redirect,
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy import or_, desc
-from utils import validate_email, validate_password
-from email_utils import send_email
+import re
 import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
+from src.tour_admin_service import TourAdminService
+from utils import validate_email, validate_password
+from email_utils import send_email
 from database import (
     Tour,
     TourRejection,
@@ -22,7 +24,8 @@ from database import (
 from models import (
     TourModel,
     UserModel,
-    BookingModel
+    BookingModel,
+    SettingModel,
 )
 
 
@@ -34,6 +37,8 @@ class AdminController:
         self.db_session = get_session()
         self.tour_model = TourModel(self.db_session)
         self.user_model = UserModel(self.db_session)
+        self.booking_model = BookingModel(self.db_session)
+        self.setting_model = SettingModel(self.db_session)
     
     def login(self):
         """
@@ -887,7 +892,6 @@ class AdminController:
 
     def _generate_slug(self, title: str, status: str = None) -> str:
         """Tạo slug từ tiêu đề và trạng thái"""
-        import re
         
         # Mapping tiếng Việt sang không dấu
         vietnamese_map = {
@@ -931,272 +935,50 @@ class AdminController:
         return slug
 
     def api_create_tour(self):
-        """API tạo tour mới từ editor form"""
         user_id = session.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
-        
+            
         data = request.json if request.is_json else request.form
         
-        # Lấy dữ liệu từ form
-        title = data.get('title', '').strip()
-        content = data.get('content', '').strip()
-        summary = data.get('summary') or data.get('description', '').strip()
-        thumbnail = data.get('thumbnail', '').strip()
-        status = data.get('status', TourStatus.DRAFT.value)
-        is_hot = data.get('is_hot', False)
-        is_featured = data.get('is_featured', False)
-        
-        # Convert to boolean nếu là string
-        if isinstance(is_hot, str):
-            is_hot = is_hot.lower() in ('true', '1', 'yes', 'on')
-        if isinstance(is_featured, str):
-            is_featured = is_featured.lower() in ('true', '1', 'yes', 'on')
-        
-        # Validation
-        if not title:
-            return jsonify({'success': False, 'error': 'Vui lòng nhập tiêu đề bài viết'}), 400
-        
-        if not content:
-            return jsonify({'success': False, 'error': 'Vui lòng nhập nội dung bài viết'}), 400
+        # Validation cơ bản
+        if not data.get('title'):
+            return jsonify({'success': False, 'error': 'Thiếu tiêu đề'}), 400
 
+        if not data.get('content'):
+            return jsonify({'success': False, 'error': 'Thiếu nội dung'}), 400
+
+        data_dict = dict(data)
+        data_dict['user_id'] = user_id
+        
         try:
-            tour_status = TourStatus(status)
+            status = TourStatus(data.get('status', TourStatus.DRAFT.value))
         except ValueError:
-            tour_status = TourStatus.DRAFT
-        
-        base_slug = self._generate_slug(title, status)
-        slug = base_slug
-        
-        counter = 1
-        while self.db_session.query(Tour).filter(Tour.slug == slug).first():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-        
-        # Extract images từ HTML content
-        import re
-        image_urls = []
-        img_pattern = r'<img[^>]+src=["\']([^"\']+)["\']'
-        matches = re.findall(img_pattern, content)
-        for img_url in matches:
-            if img_url and img_url not in image_urls:
-                image_urls.append(img_url)
-        
-        # Lưu images dưới dạng JSON
-        images_json = None
-        if image_urls:
-            import json
-            images_json = json.dumps(image_urls)
-        
-        try:
-            # Tạo bài viết mới
-            tour = Tour(
-                title=title,
-                slug=slug,
-                content=content,
-                summary=summary,
-                thumbnail=thumbnail,
-                images=images_json,
-                created_by=user_id,
-                status=tour_status,
-                is_hot=bool(is_hot),
-                is_featured=bool(is_featured),
-                published_at=datetime.utcnow() if tour_status == TourStatus.PUBLISHED else None
-            )
+            status = TourStatus.DRAFT
             
-            self.db_session.add(tour)
-            self.db_session.commit()
-            self.db_session.refresh(tour)
-            
-            # Di chuyển ảnh từ temp folder sang folder của bài viết nếu có
-            if tour.id:
-                temp_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', 'temp')
-                news_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', f'news_{tour.id}')
-                
-                if os.path.exists(temp_folder):
-                    os.makedirs(news_folder, exist_ok=True)
-                    # Di chuyển các file từ temp sang news folder
-                    import shutil
-                    for filename in os.listdir(temp_folder):
-                        src_path = os.path.join(temp_folder, filename)
-                        dst_path = os.path.join(news_folder, filename)
-                        if os.path.isfile(src_path):
-                            shutil.move(src_path, dst_path)
-                            # Cập nhật URL trong thumbnail và content nếu cần
-                            if thumbnail and 'temp' in thumbnail:
-                                thumbnail = thumbnail.replace('temp', f'news_{tour.id}')
-                                tour.thumbnail = thumbnail
-                            if images_json:
-                                import json
-                                images = json.loads(images_json)
-                                updated_images = [img.replace('temp', f'news_{tour.id}') if 'temp' in img else img for img in images]
-                                tour.images = json.dumps(updated_images)
-                                # Cập nhật content với URL mới
-                                for old_url, new_url in zip(images, updated_images):
-                                    if old_url != new_url:
-                                        content = content.replace(old_url, new_url)
-                                        tour.content = content
-                    self.db_session.commit()
-            
-            self.db_session.commit()
-        except IntegrityError as e:
-            self.db_session.rollback()
-            # Trả về thông điệp lỗi gốc từ DB (ví dụ: Key (slug)=... already exists.)
-            message = getattr(e, "orig", None)
-            message = str(message) if message else str(e)
-            return jsonify({'success': False, 'error': message}), 400
-        except SQLAlchemyError as e:
-            self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
+        data_dict['status'] = status
+        data_dict['slug'] = self._generate_slug(data.get('title'), status.value)
 
-        return jsonify({
-            'success': True,
-            'message': 'Tạo bài viết thành công',
-            'data': {
-                'id': tour.id,
-                'slug': tour.slug,
-                'title': tour.title
-            }
-        })
+        success, message = self.user_model.create_tour(data_dict)
+        return jsonify({'success': success, 'message': message})
 
     def api_edit_tour(self, tour_id: int):
-        """API chỉnh sửa bài viết theo ID"""
         user_id = session.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
-        data = request.json if request.is_json else request.form
-        tour = self.db_session.query(Tour).filter(Tour.id == tour_id).first()
-        if not tour:
-            return jsonify({'success': False, 'error': 'Bài viết không tồn tại'}), 400
-        
-        # Lấy dữ liệu từ form
-        title = data.get('title', '').strip()
-        content = data.get('content', '').strip()
-        category_id = data.get('category_id') or data.get('category')
-        summary = data.get('summary') or data.get('description', '').strip()
-        thumbnail = data.get('thumbnail', '').strip()
-        status = data.get('status', tour.status.value)
-        is_hot = data.get('is_hot', tour.is_hot if hasattr(tour, 'is_hot') else False)
-        is_featured = data.get('is_featured', tour.is_featured if hasattr(tour, 'is_featured') else False)
-        
-        # Convert to boolean nếu là string
-        if isinstance(is_hot, str):
-            is_hot = is_hot.lower() in ('true', '1', 'yes', 'on')
-        if isinstance(is_featured, str):
-            is_featured = is_featured.lower() in ('true', '1', 'yes', 'on')
-        
-        # Validation
-        if not title:
-            return jsonify({'success': False, 'error': 'Vui lòng nhập tiêu đề bài viết'}), 400
-        
-        if not content:
-            return jsonify({'success': False, 'error': 'Vui lòng nhập nội dung bài viết'}), 400
-        
-        if not category_id:
-            return jsonify({'success': False, 'error': 'Vui lòng chọn danh mục'}), 400
-        
-        try:
-            category_id = int(category_id)
-        except (ValueError, TypeError):
-            return jsonify({'success': False, 'error': 'Danh mục không hợp lệ'}), 400
-        
-        try:
-            tour_status = TourStatus(status)
-        except ValueError:
-            tour_status = tour.status
-        
-        # Tạo slug từ tiêu đề và trạng thái
-        base_slug = self._generate_slug(title, status)
-        slug = base_slug
-        
-        # Kiểm tra slug trùng và thêm số nếu cần (nhưng không trùng với chính nó)
-        counter = 1
-        while self.db_session.query(Tour).filter(Tour.slug == slug, Tour.id != tour_id).first():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-        
-        # Extract images từ HTML content
-        import re
-        image_urls = []
-        img_pattern = r'<img[^>]+src=["\']([^"\']+)["\']'
-        matches = re.findall(img_pattern, content)
-        for img_url in matches:
-            if img_url and img_url not in image_urls:
-                image_urls.append(img_url)
-        
-        # Lưu images dưới dạng JSON
-        images_json = None
-        if image_urls:
-            import json
-            images_json = json.dumps(image_urls)
-        
-        try:
-            # Cập nhật bài viết
-            tour.title = title
-            tour.slug = slug
-            tour.content = content
-            tour.summary = summary
-            tour.thumbnail = thumbnail
-            tour.images = images_json
-            tour.category_id = category_id
-            tour.status = tour_status
-            tour.is_hot = bool(is_hot)
-            tour.is_featured = bool(is_featured)
-            tour.published_at = datetime.utcnow() if tour_status == TourStatus.PUBLISHED else tour.published_at
-            
-            self.db_session.commit()
-            self.db_session.refresh(tour)
-            
-            # Di chuyển ảnh từ temp folder sang folder của bài viết nếu có
-            if tour.id:
-                temp_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', 'temp')
-                news_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', f'news_{tour.id}')
-                
-                if os.path.exists(temp_folder):
-                    os.makedirs(news_folder, exist_ok=True)
-                    # Di chuyển các file từ temp sang news folder
-                    import shutil
-                    for filename in os.listdir(temp_folder):
-                        src_path = os.path.join(temp_folder, filename)
-                        dst_path = os.path.join(news_folder, filename)
-                        if os.path.isfile(src_path):
-                            shutil.move(src_path, dst_path)
-                            # Cập nhật URL trong thumbnail và content nếu cần
-                            if thumbnail and 'temp' in thumbnail:
-                                thumbnail = thumbnail.replace('temp', f'news_{tour.id}')
-                                tour.thumbnail = thumbnail
-                            if images_json:
-                                import json
-                                images = json.loads(images_json)
-                                updated_images = [img.replace('temp', f'news_{tour.id}') if 'temp' in img else img for img in images]
-                                tour.images = json.dumps(updated_images)
-                                # Cập nhật content với URL mới
-                                for old_url, new_url in zip(images, updated_images):
-                                    if old_url != new_url:
-                                        content = content.replace(old_url, new_url)
-                                        tour.content = content
-                    self.db_session.commit()
+        data = dict(request.json if request.is_json else request.form)
 
-            self.db_session.commit()
-        except IntegrityError as e:
-            self.db_session.rollback()
-            message = getattr(e, "orig", None)
-            message = str(message) if message else str(e)
-            return jsonify({'success': False, 'error': message}), 400
-        except SQLAlchemyError as e:
-            self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
-        
-        return jsonify({
-            'success': True,
-            'message': 'Cập nhật bài viết thành công',
-            'data': {
-                'id': tour.id,
-                'slug': tour.slug,
-                'title': tour.title
-            }
-        })
+        for field in ['is_hot', 'is_featured']:
+            if field in data and isinstance(data[field], str):
+                data[field] = data[field].lower() in ('true', '1', 'yes', 'on')
+
+        success, message = self.user_model.edit_tour(tour_id, data)
+        return jsonify({'success': success, 'message': message})
+
+    def api_toggle_user_status(self, user_id: int):
+        success, message = self.user_model.user_toggle_status(user_id)
+        return jsonify({'success': success, 'message': message})
 
     def api_upload_image(self):
         """API upload ảnh cho bài viết"""
@@ -1521,46 +1303,12 @@ class AdminController:
             return jsonify({'success': False, 'error': str(e)}), 500
     
     def api_update_settings(self):
-        """API cập nhật settings"""
-        if 'user_id' not in session:
-            return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+        data = request.json if request.is_json else request.form
+        success = self.setting_model.update_settings(data)
         
-        current_user = self.user_model.get_by_id(session['user_id'])
-        if not current_user or current_user.role != UserRole.ADMIN:
-            return jsonify({'success': False, 'error': 'Permission denied'}), 403
-        
-        try:
-            data = request.json if request.is_json else request.form
-            
-            for key, value in data.items():
-                setting = self.db_session.query(Setting).filter(Setting.key == key).first()
-                if setting:
-                    setting.value = value if value else None
-                    setting.updated_at = datetime.utcnow()
-                else:
-                    # Tạo setting mới nếu chưa tồn tại
-                    category = 'general'
-                    if 'api' in key.lower() or 'token' in key.lower():
-                        category = 'api'
-                    elif 'mail' in key.lower() or 'smtp' in key.lower():
-                        category = 'smtp'
-                    
-                    setting = Setting(
-                        key=key,
-                        value=value if value else None,
-                        category=category
-                    )
-                    self.db_session.add(setting)
-            
-            self.db_session.commit()
-            
-            return jsonify({
-                'success': True,
-                'message': 'Cập nhật cài đặt thành công'
-            })
-        except Exception as e:
-            self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
+        if success:
+            return jsonify({'success': True, 'message': 'Cập nhật cài đặt thành công'})
+        return jsonify({'success': False, 'error': 'Có lỗi khi cập nhật'}), 500
     
     def api_test_email(self):
         """API test gửi email"""
