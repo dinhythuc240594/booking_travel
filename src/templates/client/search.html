@@ -38,7 +38,7 @@
                             {% if news_list %}
                             <div class="news-list">
                                 {% for news in news_list %}
-                                <article class="news-card horizontal-card mb-4">
+                                <tour class="news-card horizontal-card mb-4">
                                     <div class="row g-0">
                                         <div class="col-md-4">
                                             <div class="news-image">
@@ -62,7 +62,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                </article>
+                                </tour>
                                 {% endfor %}
                             </div>
 
@@ -121,13 +121,13 @@
                         <div class="most-read-list">
                             {% if hot_news %}
                                 {% for news in hot_news %}
-                                <article class="most-read-item">
+                                <tour class="most-read-item">
                                     <span class="rank">{{ loop.index }}</span>
                                     <div class="content">
                                         <h4><a href="{{ url_for('client.news_detail', news_slug=news.slug) }}">{{ news.title }}</a></h4>
                                         <span class="meta"><i class="far fa-eye"></i> {{ news.view_count|format_view }}</span>
                                     </div>
-                                </article>
+                                </tour>
                                 {% endfor %}
                             {% else %}
                                 <p class="text-muted text-center">Chưa có tin nóng</p>

@@ -12,100 +12,6 @@ class Base(DeclarativeBase):
     pass
 
 
-class ArticleStatusEnum(enum.Enum):
-    DRAFT = "draft"
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    PUBLISHED = "published"
-
-    def __str__(self):
-        return self.value
-    
-    @classmethod
-    def from_string(cls, value):
-        """Convert string to TourStatus enum"""
-        if value is None:
-            return None
-        if isinstance(value, cls):
-            return value
-        try:
-            # Try to get enum by value
-            for status in cls:
-                if status.value == value:
-                    return status
-        except (ValueError, AttributeError):
-            pass
-        return None
-
-
-class ArticleStatus(enum.Enum):
-
-    DRAFT = "draft"
-    PENDING = "pending"
-    PUBLISHED = "published"
-    HIDDEN = "hidden"
-    REJECTED = "rejected"
-
-    def __str__(self):
-        return self.value
-    
-    @classmethod
-    def from_string(cls, value):
-        """Convert string to TourStatus enum"""
-        if value is None:
-            return None
-        if isinstance(value, cls):
-            return value
-        try:
-            # Try to get enum by value
-            for status in cls:
-                if status.value == value:
-                    return status
-        except (ValueError, AttributeError):
-            pass
-        return None
-
-
-class ArticleStatusType(TypeDecorator):
-    """Custom type decorator for ArticleStatus enum"""
-    impl = String(20)
-    cache_ok = True
-    
-    def __init__(self):
-        super(ArticleStatusType, self).__init__(length=20)
-    
-    def process_bind_param(self, value, dialect):
-        """Convert enum to string when saving to database"""
-        if value is None:
-            return None
-        if isinstance(value, ArticleStatus):
-            return value.value
-        if isinstance(value, str):
-            return value
-        return str(value)
-    
-    def process_result_value(self, value, dialect):
-        """Convert string to enum when reading from database"""
-        if value is None:
-            return None
-        if isinstance(value, ArticleStatus):
-            return value
-        # Convert string to enum
-        if isinstance(value, str):
-            # Try to find enum by value
-            value_lower = value.lower()
-            for status in ArticleStatus:
-                if status.value.lower() == value_lower:
-                    return status
-            # If not found, try ArticleStatus.from_string
-            result = ArticleStatus.from_string(value)
-            if result:
-                return result
-        # If all else fails, return None or raise error
-        return None
-
-
 class TourStatus(enum.Enum):
     DRAFT = "draft"
     PENDING = "pending"
@@ -377,15 +283,15 @@ class Writer(User):
     social_links = Column(Text, nullable=True)  # JSON string containing social media links
 
     # Relationships Writer
-    articles_authored = relationship("Article", foreign_keys="[Article.author_id]", back_populates="author")
-    articles_reviewed = relationship("Article", foreign_keys="[Article.reviewer_id]", back_populates="reviewer")
-    articles_approved = relationship("Article", foreign_keys="[Article.approved_by]", back_populates="approver")
-    saved_articles = relationship("SavedArticles", back_populates="user", cascade="all, delete-orphan")
-    viewed_articles = relationship("ViewedArticles", back_populates="user", cascade="all, delete-orphan")
+    tour_authored = relationship("Tour", foreign_keys="[Tour.author_id]", back_populates="author")
+    tour_reviewed = relationship("Tour", foreign_keys="[Tour.reviewer_id]", back_populates="reviewer")
+    tour_approved = relationship("Tour", foreign_keys="[Tour.approved_by]", back_populates="approver")
+    saved_tour = relationship("Savedtour", back_populates="user", cascade="all, delete-orphan")
+    viewed_tour = relationship("Viewedtour", back_populates="user", cascade="all, delete-orphan")
 
 
-class TourLocation(Base):
-    __tablename__ = 'tour_locations'
+class Location(Base):
+    __tablename__ = 'locations'
     
     location_id = Column(Integer, primary_key=True, autoincrement=True)
     city = Column(String(100), nullable=False)
@@ -396,7 +302,7 @@ class TourLocation(Base):
     slug = Column(String(255), nullable=False, unique=True)
     is_deleted = Column(Boolean, default=False)
     is_published = Column(Boolean, default=True)
-    status = Column(Enum(ArticleStatusEnum), default=ArticleStatusEnum.DRAFT)
+    status = Column(Enum(TourStatus), default=TourStatus.DRAFT)
 
     # Relationships
     hotels = relationship("Hotels", back_populates="location", cascade="all, delete")
@@ -407,34 +313,14 @@ class Hotels(Base):
     __tablename__ = 'hotels'
     
     hotel_id = Column(Integer, primary_key=True, autoincrement=True)
-    location_id = Column(Integer, ForeignKey('tour_locations.location_id', ondelete="SET NULL"))
+    location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"))
     name = Column(String(150), nullable=False)
     star_rating = Column(Integer)
     price_per_night = Column(Numeric(10, 2), nullable=False)
     address = Column(String(255))
 
     # Relationships
-    location = relationship("TourLocation", back_populates="hotels")
-
-
-class Tour(Base):
-    """table tour"""
-    __tablename__ = 'tour'
-    
-    tour_id = Column(Integer, primary_key=True, autoincrement=True)
-    location_id = Column(Integer, ForeignKey('tour_locations.location_id', ondelete="SET NULL"))
-    slug = Column(String(255), nullable=False, unique=True)
-    name = Column(String(255), nullable=False)
-    description = Column(Text)
-    duration_days = Column(Integer, nullable=False)
-    is_published = Column(Boolean, default=False)
-    status = Column(TourStatusType(), default=TourStatus.DRAFT)
-    is_deleted = Column(Boolean, default=False)
-    price_per_person = Column(Numeric(10, 2), nullable=False)
-    created_at = Column(DateTime, default=datetime.datetime.now())
-    updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
-
-    location = relationship("TourLocation", back_populates="tour")
+    location = relationship("Location", back_populates="hotels")
 
 
 class Bookings(Base):
@@ -523,18 +409,17 @@ class Setting(Base):
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
 
-###### Bảng thẻ tag chung cho cả bài viết và tour, nếu cần có thể tách riêng ra 2 bảng Article ######
+###### Bảng thẻ tag chung cho cả bài viết và tour, nếu cần có thể tách riêng ra 2 bảng Tour ######
 
-class Article(Base):
-    __tablename__ = 'article'
-    
-    article_id = Column(Integer, primary_key=True, autoincrement=True)
+class Tour(Base):
+    __tablename__ = 'tour'
+
+    tour_id = Column(Integer, primary_key=True, autoincrement=True)
     author_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
     reviewer_id = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"), nullable=True)
     title = Column(String(255), nullable=False)
     content = Column(Text, nullable=False)
-    status = Column(Enum(ArticleStatusEnum), default=ArticleStatusEnum.DRAFT)
-    category_id = Column(Integer, ForeignKey('article_categories.category_id', ondelete="SET NULL"), nullable=True) 
+    status = Column(Enum(TourStatus), default=TourStatus.DRAFT)
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
     summary = Column(String(500), nullable=True)
@@ -545,76 +430,41 @@ class Article(Base):
     updated_by = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"), nullable=True)
     published_at = Column(DateTime, nullable=True)
     approved_by = Column(Integer, ForeignKey('users.user_id'), nullable=True)
-
-    author = relationship("User", foreign_keys=[author_id], back_populates="articles_authored")
-    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="articles_reviewed")
-    category = relationship("ArticleCategory", back_populates="article")
-    comments = relationship("ArticleComment", back_populates="article", cascade="all, delete-orphan")
-    tags = relationship("ArticleTag", secondary="article_tag_links", backref="article")
-    approver = relationship("User", foreign_keys=[approved_by], back_populates="articles_approved")
+    location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"))
+    duration_days = Column(Integer, nullable=False)
+    price_per_person = Column(Numeric(10, 2), nullable=False)
 
 
-class ArticleRejection(Base):
-    """table save article has been rejected"""
-    __tablename__ = 'article_rejections'
+    author = relationship("User", foreign_keys=[author_id], back_populates="tour_authored")
+    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="tour_reviewed")
+    comments = relationship("TourComment", back_populates="tour", cascade="all, delete-orphan")
+    approver = relationship("User", foreign_keys=[approved_by], back_populates="tour_approved")
+    location = relationship("Location", back_populates="tour")
+
+
+class TourRejection(Base):
+    """table save tour has been rejected"""
+    __tablename__ = 'tour_rejections'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    article_id = Column(Integer, ForeignKey('article.article_id'), nullable=False)
+    tour_id = Column(Integer, ForeignKey('tour.tour_id'), nullable=False)
     rejected_by = Column(Integer, ForeignKey('users.user_id'), nullable=False)
     reason = Column(Text, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.now())
     
     # Relationships
-    article = relationship("Article", foreign_keys=[article_id])
+    tour = relationship("Tour", foreign_keys=[tour_id])
     rejector = relationship("User", foreign_keys=[rejected_by])
 
 
-class ArticleCategory(Base):
-
-    __tablename__ = 'article_categories'
-    
-    category_id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(100), nullable=False, unique=True)
-    slug = Column(String(100), nullable=False, unique=True)
-    description = Column(Text, nullable=True)
-    parent_id = Column(Integer, ForeignKey('article_categories.category_id'), nullable=True)
-    visible = Column(Boolean, default=True)
-    order_display = Column(Integer, default=0)  # Thuộc tính để sắp xếp danh mục trong menu
-    created_at = Column(DateTime, default=datetime.datetime.now)
-    updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    
-    # Relationships
-    parent = relationship("ArticleCategory", remote_side=[category_id], backref="children")
-    article = relationship("Article", back_populates="category")
-
-
-class ArticleTag(Base):
-    """Bảng thẻ tag cho bài viết"""
-    __tablename__ = 'article_tags'
-    
-    tag_id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String(50), nullable=False, unique=True)
-    slug = Column(String(50), nullable=False, unique=True)
-    created_at = Column(DateTime, default=datetime.datetime.now)
-
-
-class ArticleTagLink(Base):
-    """Bảng trung gian N-N giữa Article và Tag"""
-    __tablename__ = 'article_tag_links'
-    
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    article_id = Column(Integer, ForeignKey('article.article_id', ondelete="CASCADE"), nullable=False)
-    tag_id = Column(Integer, ForeignKey('article_tags.tag_id', ondelete="CASCADE"), nullable=False)
-
-
-class ArticleComment(Base):
-    """Bảng bình luận cho bài viết"""
-    __tablename__ = 'article_comments'
+class TourComment(Base):
+    """Bảng bình luận cho tour"""
+    __tablename__ = 'tour_comments'
     
     comment_id = Column(Integer, primary_key=True, autoincrement=True)
-    article_id = Column(Integer, ForeignKey('article.article_id', ondelete="CASCADE"), nullable=False)
+    tour_id = Column(Integer, ForeignKey('tour.tour_id', ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
-    parent_id = Column(Integer, ForeignKey('article_comments.comment_id', ondelete="CASCADE"), nullable=True)
+    parent_id = Column(Integer, ForeignKey('tour_comments.comment_id', ondelete="CASCADE"), nullable=True)
     
     content = Column(Text, nullable=False)
     is_active = Column(Boolean, default=True)
@@ -622,13 +472,13 @@ class ArticleComment(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     
-    article = relationship("Article", back_populates="comments")
-    parent = relationship("ArticleComment", remote_side=[comment_id], backref="replies")
+    tour = relationship("Tour", back_populates="comments")
+    parent = relationship("TourComment", remote_side=[comment_id], backref="replies")
 
 
-class SavedArticles(Base):
-    """table saved article of user"""
-    __tablename__ = 'saved_articles'
+class Savedtour(Base):
+    """table saved tour of user"""
+    __tablename__ = 'saved_tour'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
@@ -636,13 +486,13 @@ class SavedArticles(Base):
     created_at = Column(DateTime, default=datetime.datetime.now())
     
     # Relationships
-    user = relationship("User", back_populates="saved_articles")
+    user = relationship("User", back_populates="saved_tour")
     tour = relationship("Tour", foreign_keys=[tour_id])
 
 
-class ViewedArticles(Base):
-    """table viewed article of user"""
-    __tablename__ = 'viewed_articles'
+class Viewedtour(Base):
+    """table viewed tour of user"""
+    __tablename__ = 'viewed_tour'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
@@ -650,7 +500,7 @@ class ViewedArticles(Base):
     viewed_at = Column(DateTime, default=datetime.datetime.now())
 
     # Relationships
-    user = relationship("User", back_populates="viewed_articles")
+    user = relationship("User", back_populates="viewed_tour")
     tour = relationship("Tour", foreign_keys=[tour_id])
 
 

@@ -8,9 +8,10 @@ from database import (
     BookingTypeEnum, 
     PaymentMethodEnum, 
     PaymentStatusEnum,
-    Article,
-    ArticleStatusEnum,
-    NewsletterSubscription)
+    Tour,
+    TourStatus,
+    NewsletterSubscription,
+    Tour)
 
 #######
 # Command Pattern sẽ quản lý các giao dịch (transactions) thông qua SQLAlchemy Session. 
@@ -118,65 +119,35 @@ class DBTransactionInvoker:
             print("✅ Đã xử lý Hủy/Hoàn tiền thành công.")
 
 
-class CreateArticleCommand(DatabaseCommand):
-    """Lệnh tạo bài viết mới (Draft)"""
-    def __init__(self, author_id: int, category_id: int, title: str, slug: str, content: str):
-        self.author_id = author_id
-        self.category_id = category_id
-        self.title = title
-        self.slug = slug
-        self.content = content
-        self.article_record = None
-
-    def execute(self, session) -> None:
-        self.article_record = Article(
-            author_id=self.author_id,
-            category_id=self.category_id,
-            title=self.title,
-            slug=self.slug,
-            content=self.content,
-            status=ArticleStatusEnum.draft
-        )
-        session.add(self.article_record)
-        session.flush()
-        print(f"📝 Đã tạo bài viết Nháp: '{self.title}' (ID tạm: {self.article_record.article_id}).")
-
-    def undo(self, session) -> None:
-        if self.article_record:
-            # Undo việc tạo bài viết có thể là đánh dấu rejected hoặc xóa mềm
-            self.article_record.status = ArticleStatusEnum.rejected
-            print(f"🔄 Đã HỦY quá trình tạo bài viết (ID: {self.article_record.article_id}). Chuyển sang Rejected.")
-
-
-class ChangeArticleStatusCommand(DatabaseCommand):
+class ChangetourtatusCommand(DatabaseCommand):
     """Lệnh thay đổi trạng thái bài viết (Duyệt/Xuất bản/Từ chối)"""
-    def __init__(self, article_id: int, new_status: ArticleStatusEnum, reviewer_id: int = None):
-        self.article_id = article_id
+    def __init__(self, tour_id: int, new_status: TourStatus, reviewer_id: int = None):
+        self.tour_id = tour_id
         self.new_status = new_status
         self.reviewer_id = reviewer_id
         self.old_status = None
-        self.article_record = None
+        self.tour_record = None
 
     def execute(self, session) -> None:
-        self.article_record = session.query(Article).get(self.article_id)
-        if self.article_record:
-            self.old_status = self.article_record.status # Lưu lại trạng thái cũ để undo
-            self.article_record.status = self.new_status
+        self.tour_record = session.query(Tour).get(self.tour_id)
+        if self.tour_record:
+            self.old_status = self.tour_record.status # Lưu lại trạng thái cũ để undo
+            self.tour_record.status = self.new_status
             
             if self.reviewer_id:
-                self.article_record.reviewer_id = self.reviewer_id
+                self.tour_record.reviewer_id = self.reviewer_id
                 
-            if self.new_status == ArticleStatusEnum.approved:
-                self.article_record.published_at = datetime.datetime.now()
+            if self.new_status == TourStatus.approved:
+                self.tour_record.published_at = datetime.datetime.now()
 
             session.flush()
-            print(f"✅ Đã chuyển trạng thái bài viết {self.article_id} thành {self.new_status.value}.")
+            print(f"✅ Đã chuyển trạng thái tour {self.tour_id} thành {self.new_status.value}.")
 
     def undo(self, session) -> None:
-        if self.article_record and self.old_status:
+        if self.tour_record and self.old_status:
             # Khôi phục lại trạng thái cũ trước khi thay đổi
-            self.article_record.status = self.old_status
-            print(f"🔄 Đã ROLLBACK trạng thái bài viết {self.article_id} về {self.old_status.value}.")
+            self.tour_record.status = self.old_status
+            print(f"🔄 Đã ROLLBACK trạng thái tour {self.tour_id} về {self.old_status.value}.")
 
 
 class SubscribeNewsletterCommand(DatabaseCommand):
@@ -216,7 +187,7 @@ class CreateTourCommand(DatabaseCommand):
         self.tour_record = None
 
     def execute(self, session) -> None:
-        self.tour_record = Tours(
+        self.tour_record = Tour(
             location_id=self.location_id,
             name=self.name,
             description=self.description,
@@ -243,7 +214,7 @@ class UpdateTourPriceCommand(DatabaseCommand):
         self.tour_record = None
 
     def execute(self, session) -> None:
-        self.tour_record = session.query(Tours).get(self.tour_id)
+        self.tour_record = session.query(Tour).get(self.tour_id)
         if self.tour_record:
             self.old_price = self.tour_record.price_per_person
             self.tour_record.price_per_person = self.new_price

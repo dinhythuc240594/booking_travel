@@ -1,37 +1,28 @@
 from flask import Blueprint, render_template, request, jsonify, abort, redirect, url_for, flash, session, current_app
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from sqlalchemy import or_
-from typing import Optional
-from functools import wraps
+from sqlalchemy import or_, desc
 from utils import validate_email, validate_password
 from email_utils import send_email
-import pytz
 import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from database import (
-    ArticleStatus,
-    ArticleTag,
+    Tour,
+    TourRejection,
+    TourStatus,
     get_session,
-    Article,
-    ArticleStatusEnum,
     UserRole,
-    SavedArticles,
-    ViewedArticles,
     NewsletterSubscription,
     PasswordResetToken,
     Setting,
     User,
-    ArticleRejection,
-    ArticleCategory,
-    ArticleComment,
     Tag,
 )
 from models import (
-    ArticleModel,
+    TourModel,
     UserModel,
-    ArticleCategoryModel,
+    BookingModel
 )
 
 
@@ -41,9 +32,8 @@ class AdminController:
     def __init__(self):
         """Khởi tạo controller"""
         self.db_session = get_session()
-        self.articles_model = ArticleModel(self.db_session)
+        self.tour_model = TourModel(self.db_session)
         self.user_model = UserModel(self.db_session)
-        self.article_category_model = ArticleCategoryModel(self.db_session)
     
     def login(self):
         """
@@ -107,26 +97,26 @@ class AdminController:
         Route: GET /admin/dashboard
         """
         # Thống kê
-        total_articles = len(self.articles_model.get_all())
-        published_articles = len(self.articles_model.get_all(status=ArticleStatusEnum.PUBLISHED))
-        pending_articles = len(self.articles_model.get_all(status=ArticleStatusEnum.PENDING))
-        draft_articles = len(self.articles_model.get_all(status=ArticleStatusEnum.DRAFT))
+        total_tour = len(self.tour_model.get_all())
+        published_tour = len(self.tour_model.get_all(status=TourStatus.PUBLISHED))
+        pending_tour = len(self.tour_model.get_all(status=TourStatus.PENDING))
+        draft_tour = len(self.tour_model.get_all(status=TourStatus.DRAFT))
         
-        # Article chờ duyệt
-        pending_list = self.articles_model.get_all(status=ArticleStatusEnum.PENDING, limit=10)
+        # Tour chờ duyệt
+        pending_list = self.tour_model.get_all(status=TourStatus.PENDING, limit=10)
         
-        # Article mới nhất
-        latest_articles = self.articles_model.get_all(limit=10)
+        # Tour mới nhất
+        latest_tours = self.tour_model.get_all(limit=10)
         
         user = self.user_model.get_by_id(session['user_id'])
 
         return render_template('admin/admin.html',
-                             total_articles=total_articles,
-                             published_articles=published_articles,
-                             pending_articles=pending_articles,
-                             draft_articles=draft_articles,
+                             total_tours=total_tour,
+                             published_tours=published_tour,
+                             pending_tours=pending_tour,
+                             draft_tours=draft_tour,
                              pending_list=pending_list,
-                             latest_articles=latest_articles,
+                             latest_tours=latest_tours,
                              user=user)
     
     def editor_dashboard(self):
@@ -136,32 +126,30 @@ class AdminController:
         """
         user_id = session.get('user_id')
         
-        # Lấy article của editor (chỉ dùng để thống kê nhanh)
-        all_articles = self.articles_model.get_all()
-        my_articles = [a for a in all_articles if a.created_by == user_id]
+        # Lấy tour của editor (chỉ dùng để thống kê nhanh)
+        all_tours = self.tour_model.get_all()
+        my_tours = [t for t in all_tours if t.created_by == user_id]
         
-        draft_articles = [a for a in my_articles if a.status == ArticleStatusEnum.DRAFT]
-        pending_articles = [a for a in my_articles if a.status == ArticleStatusEnum.PENDING]
-        published_articles = [a for a in my_articles if a.status == ArticleStatusEnum.PUBLISHED]
-        categories = self.article_category_model.get_all()
+        draft_tours = [t for t in my_tours if t.status == TourStatus.DRAFT]
+        pending_tours = [t for t in my_tours if t.status == TourStatus.PENDING]
+        published_tours = [t for t in my_tours if t.status == TourStatus.PUBLISHED]
         
         user = self.user_model.get_by_id(user_id)
 
         return render_template('editor/editor.html',
-                             draft_articles=draft_articles,
-                             pending_articles=pending_articles,
-                             published_articles=published_articles,
-                             categories=categories,
-                             stat_total=len(my_articles),
-                             stat_draft=len(draft_articles),
-                             stat_pending=len(pending_articles),
-                             stat_published=len(published_articles),
+                             draft_tours=draft_tours,
+                             pending_tours=pending_tours,
+                             published_tours=published_tours,
+                             stat_total=len(my_tours),
+                             stat_draft=len(draft_tours),
+                             stat_pending=len(pending_tours),
+                             stat_published=len(published_tours),
                              user=user)
     
-    def article_list(self):
+    def tour_list(self):
         """
-        Danh sách article
-        Route: GET /admin/article
+        Danh sách tour
+        Route: GET /admin/tour
         """
         status_filter = request.args.get('status', None)
         page = request.args.get('page', 1, type=int)
@@ -171,136 +159,124 @@ class AdminController:
         status = None
         if status_filter:
             try:
-                status = ArticleStatusEnum(status_filter)
+                status = TourStatus(status_filter)
             except ValueError:
                 status = None
         
-        articles_list = self.articles_model.get_all(
+        tour_list = self.tour_model.get_all(
             limit=per_page,
             offset=offset,
             status=status
         )
         
-        categories = self.article_category_model.get_all()
-        
-        return render_template('admin/articles_list.html',
-                             articles_list=articles_list,
-                             categories=categories,
+        return render_template('admin/tours_list.html',
+                             tour_list=tour_list,
                              current_status=status_filter,
                              page=page)
     
-    def articles_create(self):
+    def tour_create(self):
         """
-        Tạo article mới
-        Route: GET /admin/article/create
-        Route: POST /admin/article/create
+        Tạo tour mới
+        Route: GET /admin/tour/create
+        Route: POST /admin/tour/create
         """
         if request.method == 'POST':
             title = request.form.get('title')
             content = request.form.get('content')
-            category_id = request.form.get('category_id', type=int)
             summary = request.form.get('summary')
             thumbnail = request.form.get('thumbnail')
-            status = request.form.get('status', ArticleStatusEnum.DRAFT.value)
+            status = request.form.get('status', TourStatus.DRAFT.value)
             
             user_id = session.get('user_id')
             
             try:
-                article_status = ArticleStatusEnum(status)
+                tour_status = TourStatus(status)
             except ValueError:
-                article_status = ArticleStatusEnum.DRAFT
+                tour_status = TourStatus.DRAFT
             
-            article = self.articles_model.create(
+            tour = self.tour_model.create(
                 title=title,
                 content=content,
-                category_id=category_id,
                 created_by=user_id,
                 summary=summary,
                 thumbnail=thumbnail,
-                status=article_status
+                status=tour_status
             )
             
-            flash('Tạo article thành công', 'success')
-            return redirect(url_for('admin.articles_edit', article_id=article.id))
-        
-        categories = self.article_category_model.get_all()
-        return render_template('admin/articles_create.html', categories=categories)
+            flash('Tạo tour thành công', 'success')
+            return redirect(url_for('admin.tours_edit', tour_id=tour.id))
     
-    def articles_edit(self, article_id: int):
+    def tours_edit(self, tour_id: int):
         """
-        Chỉnh sửa article
-        Route: GET /admin/article/<article_id>/edit
-        Route: POST /admin/article/<article_id>/edit
+        Chỉnh sửa tour
+        Route: GET /admin/tour/<tour_id>/edit
+        Route: POST /admin/tour/<tour_id>/edit
         """
-        article = self.articles_model.get_by_id(article_id)
-        if not article:
-            flash('Không tìm thấy article', 'error')
-            return redirect(url_for('admin.articles_list'))
+        tour = self.tour_model.get_by_id(tour_id)
+        if not tour:
+            flash('Không tìm thấy tour', 'error')
+            return redirect(url_for('admin.tours_list'))
         
         # Kiểm tra quyền
         user_id = session.get('user_id')
         user = self.user_model.get_by_id(user_id)
         
-        if user.role != UserRole.ADMIN and article.created_by != user_id:
-            flash('Bạn không có quyền chỉnh sửa article này', 'error')
-            return redirect(url_for('admin.articles_list'))
+        if user.role != UserRole.ADMIN and tour.created_by != user_id:
+            flash('Bạn không có quyền chỉnh sửa tour này', 'error')
+            return redirect(url_for('admin.tours_list'))
         
         if request.method == 'POST':
             title = request.form.get('title')
             content = request.form.get('content')
-            category_id = request.form.get('category_id', type=int)
             summary = request.form.get('summary')
             thumbnail = request.form.get('thumbnail')
             status = request.form.get('status')
             
             try:
-                article_status = ArticleStatusEnum(status) if status else article.status
+                tour_status = TourStatus(status) if status else tour.status
             except ValueError:
-                article_status = article.status
+                tour_status = tour.status
             
-            self.articles_model.update(
-                article_id,
+            self.tour_model.update(
+                tour_id,
                 title=title,
                 content=content,
-                category_id=category_id,
                 summary=summary,
                 thumbnail=thumbnail,
-                status=article_status
+                status=tour_status
             )
             
-            flash('Cập nhật article thành công', 'success')
-            return redirect(url_for('admin.articles_edit', article_id=article_id))
+            flash('Cập nhật tour thành công', 'success')
+            return redirect(url_for('admin.tours_edit', tour_id=tour_id))
         
-        categories = self.article_category_model.get_all()
-        return render_template('admin/articles_edit.html',
-                             article=article,
-                             categories=categories)
+        return render_template('admin/tours_edit.html',
+                             tour=tour)
     
-    def articles_approve(self, article_id: int):
+    def tours_approve(self, tour_id: int):
         """
-        Duyệt article
-        Route: POST /admin/article/<article_id>/approve
+        Duyệt tour
+        Route: POST /admin/tour/<tour_id>/approve
         """
         user_id = session.get('user_id')
-        article = self.articles_model.approve(article_id, user_id)
+        tour = self.tour_model.approve(tour_id, user_id)
         
         if request.is_json or request.headers.get('Content-Type') == 'application/json':
-            if article:
-                return jsonify({'success': True, 'message': 'Đã duyệt article'})
+            if tour:
+                return jsonify({'success': True, 'message': 'Đã duyệt tour'})
             else:
-                return jsonify({'success': False, 'error': 'Không tìm thấy article'}), 404
+                return jsonify({'success': False, 'error': 'Không tìm thấy tour'}), 404
         
-        if article:
-            flash('Đã duyệt article', 'success')
+        if tour:
+            flash('Đã duyệt tour', 'success')
         else:
-            flash('Không tìm thấy article', 'error')
+            flash('Không tìm thấy tour', 'error')
         
         return redirect(request.referrer or url_for('admin.dashboard'))
     
-    def articles_reject(self, article_id: int):
+    def tours_reject(self, tour_id: int):
         """
-        Từ chối article và gửi email cho tác giả
-        Route: POST /admin/article/<article_id>/reject
+        Từ chối tour và gửi email cho tác giả
+        Route: POST /admin/tour/<tour_id>/reject
         """
         user_id = session.get('user_id')
         
@@ -316,31 +292,31 @@ class AdminController:
             flash('Vui lòng nhập lý do từ chối', 'error')
             return redirect(request.referrer or url_for('admin.dashboard'))
         
-        # Lấy thông tin article trước khi reject
-        article = self.articles_model.get_by_id(article_id, include_deleted=False)
-        if not article:
+        # Lấy thông tin tour trước khi reject
+        tour = self.tour_model.get_by_id(tour_id, include_deleted=False)
+        if not tour:
             if request.is_json or request.headers.get('Content-Type') == 'application/json':
-                return jsonify({'success': False, 'error': 'Không tìm thấy article'}), 404
-            flash('Không tìm thấy article', 'error')
+                return jsonify({'success': False, 'error': 'Không tìm thấy tour'}), 404
+            flash('Không tìm thấy tour', 'error')
             return redirect(request.referrer or url_for('admin.dashboard'))
         
         # Thực hiện reject với lý do
-        rejected_article = self.articles_model.reject(article_id, user_id, reason=reason)
+        rejected_tour = self.tour_model.reject(tour_id, user_id, reason=reason)
         
-        if not rejected_article:
+        if not rejected_tour:
             if request.is_json or request.headers.get('Content-Type') == 'application/json':
-                return jsonify({'success': False, 'error': 'Không thể từ chối article'}), 500
-            flash('Không thể từ chối article', 'error')
+                return jsonify({'success': False, 'error': 'Không thể từ chối tour'}), 500
+            flash('Không thể từ chối tour', 'error')
             return redirect(request.referrer or url_for('admin.dashboard'))
         
         # Lấy thông tin tác giả
-        creator = self.user_model.get_by_id(article.created_by)
+        creator = self.user_model.get_by_id(tour.created_by)
         if creator and creator.email:
             try:
-                # Tạo link article
-                article_url = url_for('client.articles_detail', slug=article.slug, _external=True)
+                # Tạo link tour
+                tour_url = url_for('client.tours_detail', slug=tour.slug, _external=True)
                 
-                email_subject = f"Article của bạn đã bị từ chối: {article.title}"
+                email_subject = f"Tour của bạn đã bị từ chối: {tour.title}"
                 
                 email_body_html = f"""
                 <!DOCTYPE html>
@@ -374,7 +350,7 @@ class AdminController:
                             padding: 15px;
                             margin: 20px 0;
                         }}
-                        .article-link {{
+                        .tour-link {{
                             display: inline-block;
                             background-color: #0066cc;
                             color: white;
@@ -400,21 +376,21 @@ class AdminController:
                     <div class="content">
                         <p>Xin chào <strong>{creator.full_name or creator.username}</strong>,</p>
                         
-                        <p>Chúng tôi rất tiếc phải thông báo rằng article của bạn đã bị từ chối:</p>
+                        <p>Chúng tôi rất tiếc phải thông báo rằng tour của bạn đã bị từ chối:</p>
                         
-                        <h3 style="color: #0066cc;">{article.title}</h3>
+                        <h3 style="color: #0066cc;">{tour.title}</h3>
                         
                         <div class="reason-box">
                             <strong>Lý do từ chối:</strong>
                             <p style="margin-top: 10px; white-space: pre-wrap;">{reason}</p>
                         </div>
                         
-                        <p>Bạn có thể xem lại article của mình tại link sau:</p>
+                        <p>Bạn có thể xem lại tour của mình tại link sau:</p>
                         <div style="text-align: center;">
-                            <a href="{article_url}" class="article-link">Xem article</a>
+                            <a href="{tour_url}" class="tour-link">Xem tour</a>
                         </div>
                         
-                        <p>Vui lòng xem xét lại article và chỉnh sửa theo góp ý trên trước khi gửi lại để duyệt.</p>
+                        <p>Vui lòng xem xét lại tour và chỉnh sửa theo góp ý trên trước khi gửi lại để duyệt.</p>
                         
                         <p>Trân trọng,<br>
                         <strong>Ban biên tập VnNews</strong></p>
@@ -451,30 +427,30 @@ class AdminController:
         flash('Đã từ chối bài viết và gửi email cho tác giả', 'success')
         return redirect(request.referrer or url_for('admin.dashboard'))
     
-    def articles_delete(self, article_id: int):
+    def tour_delete(self, tour_id: int):
         """
-        Xóa mềm article (soft delete) - set is_deleted = True
-        Route: POST /admin/article/<article_id>/delete
+        Xóa mềm tour (soft delete) - set is_deleted = True
+        Route: POST /admin/tour/<tour_id>/delete
         """
-        success = self.articles_model.delete(article_id)
+        success = self.tour_model.delete(tour_id)
         
         if request.is_json or request.headers.get('Content-Type') == 'application/json':
             if success:
-                return jsonify({'success': True, 'message': 'Đã xóa article'})
+                return jsonify({'success': True, 'message': 'Đã xóa tour'})
             else:
-                return jsonify({'success': False, 'error': 'Không tìm thấy article'}), 404
+                return jsonify({'success': False, 'error': 'Không tìm thấy tour'}), 404
         
         if success:
-            flash('Đã xóa article', 'success')
+            flash('Đã xóa tour', 'success')
         else:
-            flash('Không tìm thấy article', 'error')
+            flash('Không tìm thấy tour', 'error')
         
-        return redirect(url_for('admin.articles_list'))
+        return redirect(url_for('admin.tour_list'))
     
-    def api_articles_list(self):
+    def api_tour_list(self):
         """
-        API lấy danh sách article (JSON)
-        Route: GET /admin/api/article
+        API lấy danh sách tour (JSON)
+        Route: GET /admin/api/tour
         """
         status_filter = request.args.get('status', None)
         limit = request.args.get('limit', 20, type=int)
@@ -483,21 +459,21 @@ class AdminController:
         status = None
         if status_filter:
             try:
-                status = ArticleStatus(status_filter)
+                status = TourStatus(status_filter)
             except ValueError:
                 pass
         
-        articles_list = self.articles_model.get_all(limit=limit, offset=offset, status=status)
+        tour_list = self.tour_model.get_all(limit=limit, offset=offset, status=status)
         
         return jsonify({
             'success': True,
-            'data': [self._article_to_dict(article) for article in articles_list]
+            'data': [self._tour_to_dict(tour) for tour in tour_list]
         })
 
-    def api_my_articles(self):
+    def api_my_tour(self):
         """
-        API lấy danh sách bài viết của editor hiện tại (JSON)
-        Route: GET /admin/api/my-article
+        API lấy danh sách tour của editor hiện tại (JSON)
+        Route: GET /admin/api/my-tour
         Query params:
             status: draft|pending|published|rejected|all (mặc định: all)
             page: trang hiện tại (mặc định: 1)
@@ -523,13 +499,13 @@ class AdminController:
         status = None
         if status_str and status_str != "all":
             try:
-                status = ArticleStatus(status_str)
+                status = TourStatus(status_str)
             except ValueError:
                 status = None
 
         offset = (page - 1) * per_page
 
-        items, total = self.articles_model.get_by_creator(
+        items, total = self.tour_model.get_by_creator(
             creator_id=user_id,
             limit=per_page,
             offset=offset,
@@ -542,7 +518,7 @@ class AdminController:
         return jsonify(
             {
                 "success": True,
-                "data": [self._article_to_dict(article) for article in items],
+                "data": [self._tour_to_dict(tour) for tour in items],
                 "pagination": {
                     "page": page,
                     "per_page": per_page,
@@ -596,33 +572,28 @@ class AdminController:
         
         if limit < 1 or limit > 100:
             limit = 20
-
-        # Lấy các bài viết được duyệt hoặc từ chối gần đây của editor này
-        # Sắp xếp theo published_at (nếu có) hoặc updated_at (khi bị từ chối)
-        from sqlalchemy import or_, desc
         
-        items = self.db_session.query(Article).filter(
-            Article.created_by == user_id,
-            Article.is_deleted == False,  # Chỉ lấy bài chưa bị xóa
+        items = self.db_session.query(Tour).filter(
+            Tour.created_by == user_id,
+            Tour.is_deleted == False,  # Chỉ lấy bài chưa bị xóa
             or_(
-                Article.status == ArticleStatusEnum.PUBLISHED,
-                Article.status == ArticleStatusEnum.REJECTED
+                Tour.status == TourStatus.PUBLISHED,
+                Tour.status == TourStatus.REJECTED
             )
         ).order_by(
-            desc(Article.published_at),
-            desc(Article.updated_at)
+            desc(Tour.published_at),
+            desc(Tour.updated_at)
         ).limit(limit).all()
 
         notifications = []
-        for article in items:
+        for tour in items:
             notification = {
-                'id': article.id,
-                'title': article.title,
-                'status': article.status.value,
-                'category_name': article.category.name if getattr(article, "category", None) else None,
-                'published_at': article.published_at.isoformat() if article.published_at else None,
-                'updated_at': article.updated_at.isoformat() if article.updated_at else None,
-                'approved_by': article.approver.username if getattr(article, "approver", None) else None,
+                'id': tour.id,
+                'title': tour.title,
+                'status': tour.status.value,
+                'published_at': tour.published_at.isoformat() if tour.published_at else None,
+                'updated_at': tour.updated_at.isoformat() if tour.updated_at else None,
+                'approved_by': tour.approver.username if getattr(tour, "approver", None) else None,
             }
             notifications.append(notification)
 
@@ -632,45 +603,38 @@ class AdminController:
             "count": len(notifications)
         })
     
-    def _article_to_dict(self, article) -> dict:
-        """Chuyển đổi Article object thành dictionary dùng chung cho admin & client"""
+    def _tour_to_dict(self, tour) -> dict:
+        """Chuyển đổi Tour object thành dictionary dùng chung cho admin & client"""
         return {
-            'id': article.id,
-            'title': article.title,
-            'slug': article.slug,
-            'status': article.status.value if getattr(article, "status", None) else None,
-            # Thông tin danh mục
-            'category': {
-                'id': article.category.id if getattr(article, "category", None) else None,
-                'name': article.category.name if getattr(article, "category", None) else None,
-                'slug': article.category.slug if getattr(article, "category", None) else None,
-            },
-            # Các field phẳng phục vụ cho UI editor & client
-            'category_name': article.category.name if getattr(article, "category", None) else None,
-            'summary': getattr(article, "summary", None),
-            'thumbnail': getattr(article, "thumbnail", None),
-            'visible': getattr(article, "visible", True),
-            'created_by': article.creator.username if getattr(article, "creator", None) else None,
-            'approved_by': article.approver.username if getattr(article, "approver", None) else None,
-            'view_count': getattr(article, "view_count", 0),
-            'created_at': article.created_at.isoformat() if getattr(article, "created_at", None) else None,
-            'published_at': article.published_at.isoformat() if getattr(article, "published_at", None) else None,
+            'id': tour.id,
+            'title': tour.title,
+            'slug': tour.slug,
+            'status': tour.status.value if getattr(tour, "status", None) else None,
+            'category_name': tour.category.name if getattr(tour, "category", None) else None,
+            'summary': getattr(tour, "summary", None),
+            'thumbnail': getattr(tour, "thumbnail", None),
+            'visible': getattr(tour, "visible", True),
+            'created_by': tour.creator.username if getattr(tour, "creator", None) else None,
+            'approved_by': tour.approver.username if getattr(tour, "approver", None) else None,
+            'view_count': getattr(tour, "view_count", 0),
+            'created_at': tour.created_at.isoformat() if getattr(tour, "created_at", None) else None,
+            'published_at': tour.published_at.isoformat() if getattr(tour, "published_at", None) else None,
         }
     
     def api_statistics(self):
         """API lấy thống kê dashboard"""
         
         # Đếm số lượng bài viết theo trạng thái
-        pending_count = self.db_session.query(Article).filter(
-            Article.status == ArticleStatus.PENDING
+        pending_count = self.db_session.query(Tour).filter(
+            Tour.status == TourStatus.PENDING
         ).count() or 0
         
-        approved_count = self.db_session.query(Article).filter(
-            Article.status == ArticleStatus.PUBLISHED
+        approved_count = self.db_session.query(Tour).filter(
+            Tour.status == TourStatus.PUBLISHED
         ).count() or 0
         
-        rejected_count = self.db_session.query(Article).filter(
-            Article.status == ArticleStatus.REJECTED
+        rejected_count = self.db_session.query(Tour).filter(
+            Tour.status == TourStatus.REJECTED
         ).count() or 0
         
         return jsonify({
@@ -689,41 +653,41 @@ class AdminController:
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
-        total = self.db_session.query(Article).filter(
-            Article.created_by == user_id
+        total = self.db_session.query(Tour).filter(
+            Tour.created_by == user_id
         ).count() or 0
         
-        pending_count = self.db_session.query(Article).filter(
-            Article.created_by == user_id, Article.status == ArticleStatus.PENDING
+        pending_count = self.db_session.query(Tour).filter(
+            Tour.created_by == user_id, Tour.status == TourStatus.PENDING
         ).count() or 0
         
-        approved_count = self.db_session.query(Article).filter(
-            Article.created_by == user_id, Article.status == ArticleStatus.PUBLISHED
+        approved_count = self.db_session.query(Tour).filter(
+            Tour.created_by == user_id, Tour.status == TourStatus.PUBLISHED
         ).count() or 0
         
-        published_count = self.db_session.query(Article).filter(
-            Article.created_by == user_id, Article.status == ArticleStatus.PUBLISHED
+        published_count = self.db_session.query(Tour).filter(
+            Tour.created_by == user_id, Tour.status == TourStatus.PUBLISHED
         ).count() or 0
         
-        rejected_count = self.db_session.query(Article).filter(
-            Article.created_by == user_id, Article.status == ArticleStatus.REJECTED
+        rejected_count = self.db_session.query(Tour).filter(
+            Tour.created_by == user_id, Tour.status == TourStatus.REJECTED
         ).count() or 0
         
-        draft_count = self.db_session.query(Article).filter(
-            Article.created_by == user_id, Article.status == ArticleStatus.DRAFT
+        draft_count = self.db_session.query(Tour).filter(
+            Tour.created_by == user_id, Tour.status == TourStatus.DRAFT
         ).count() or 0
 
-        article_approved = self.db_session.query(Article).filter(
-            Article.created_by == user_id, Article.status == ArticleStatus.PUBLISHED
-        ).order_by(Article.published_at.desc()).first()
+        tour_approved = self.db_session.query(Tour).filter(
+            Tour.created_by == user_id, Tour.status == TourStatus.PUBLISHED
+        ).order_by(Tour.published_at.desc()).first()
 
-        article_update = self.db_session.query(Article).filter(
-            Article.created_by == user_id, Article.status == ArticleStatus.DRAFT, Article.updated_at > Article.created_at
-        ).order_by(Article.created_at.desc()).first()
+        tour_update = self.db_session.query(Tour).filter(
+            Tour.created_by == user_id, Tour.status == TourStatus.DRAFT, Tour.updated_at > Tour.created_at
+        ).order_by(Tour.created_at.desc()).first()
 
-        article_newest = self.db_session.query(Article).filter(
-            Article.created_by == user_id
-        ).order_by(Article.created_at.desc()).first()
+        tour_newest = self.db_session.query(Tour).filter(
+            Tour.created_by == user_id
+        ).order_by(Tour.created_at.desc()).first()
 
         return jsonify({
             'success': True,
@@ -734,62 +698,62 @@ class AdminController:
                 'rejected': rejected_count,
                 'approved': approved_count,
                 'draft': draft_count,
-                'article_approved': article_approved.title if article_approved else '',
-                'article_update': article_update.title if article_update else '',
-                'article_newest': article_newest.title if article_newest else ''
+                'tour_approved': tour_approved.title if tour_approved else '',
+                'tour_update': tour_update.title if tour_update else '',
+                'tour_newest': tour_newest.title if tour_newest else ''
             }
         })
 
-    def api_pending_articles(self):
+    def api_pending_tour(self):
         """API lấy danh sách bài viết chờ duyệt"""
-        article = self.articles_model.get_all(status=ArticleStatus.PENDING, limit=100)
+        tour = self.tour_model.get_all(status=TourStatus.PENDING, limit=100)
         
         return jsonify({
             'success': True,
             'data': [{
-                'id': article.id,
-                'title': article.title,
-                'author': article.creator.username if article.creator else 'N/A',
-                'category': article.category.name if article.category else 'N/A',
-                'date': article.created_at.strftime('%d/%m/%Y %H:%M') if article.created_at else '',
-                'status': article.status.value
-            } for article in article]
+                'id': tour.id,
+                'title': tour.title,
+                'author': tour.creator.username if tour.creator else 'N/A',
+                'category': tour.category.name if tour.category else 'N/A',
+                'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
+                'status': tour.status.value
+            } for tour in tour]
         })
     
-    def api_approved_articles(self):
+    def api_approved_tour(self):
         """API lấy danh sách bài viết đã duyệt"""
-        article = self.articles_model.get_all(status=ArticleStatus.PUBLISHED, limit=100)
+        tour = self.tour_model.get_all(status=TourStatus.PUBLISHED, limit=100)
         
         return jsonify({
             'success': True,
             'data': [{
-                'id': article.id,
-                'title': article.title,
-                'author': article.creator.username if article.creator else 'N/A',
-                'category': article.category.name if article.category else 'N/A',
-                'date': article.published_at.strftime('%d/%m/%Y %H:%M') if article.published_at else '',
-                'views': article.view_count
-            } for article in article]
+                'id': tour.id,
+                'title': tour.title,
+                'author': tour.creator.username if tour.creator else 'N/A',
+                'category': tour.category.name if tour.category else 'N/A',
+                'date': tour.published_at.strftime('%d/%m/%Y %H:%M') if tour.published_at else '',
+                'views': tour.view_count
+            } for tour in tour]
         })
     
-    def api_rejected_articles(self):
+    def api_rejected_tour(self):
         """API lấy danh sách bài viết bị từ chối (bao gồm cả news và news_international)"""
         # Lấy bài viết trong nước bị từ chối
-        news_articles = self.articles_model.get_all(status=ArticleStatus.REJECTED, limit=100)
+        news_tour = self.tour_model.get_all(status=TourStatus.REJECTED, limit=100)
         
         # Lấy thông tin từ chối từ database
-        article_ids = [a.id for a in news_articles]
+        tour_ids = [t.id for t in news_tour]
         
         # Query rejection reasons
         news_rejections = {}
-        if article_ids:
-            rejections = self.db_session.query(ArticleRejection).filter(
-                ArticleRejection.article_id.in_(article_ids)
-            ).order_by(ArticleRejection.created_at.desc()).all()
+        if tour_ids:
+            rejections = self.db_session.query(TourRejection).filter(
+                TourRejection.tour_id.in_(tour_ids)
+            ).order_by(TourRejection.created_at.desc()).all()
             # Lấy rejection mới nhất cho mỗi bài viết
             for rej in rejections:
-                if rej.article_id not in news_rejections:
-                    news_rejections[rej.article_id] = {
+                if rej.tour_id not in news_rejections:
+                    news_rejections[rej.tour_id] = {
                         'reason': rej.reason,
                         'rejected_by': rej.rejector.username if rej.rejector else 'N/A',
                         'rejected_at': rej.created_at.strftime('%d/%m/%Y %H:%M') if rej.created_at else ''
@@ -799,14 +763,14 @@ class AdminController:
         data = []
         
         # Thêm bài viết trong nước
-        for article in news_articles:
-            rejection_info = news_rejections.get(article.id, {})
+        for tour in news_tour:
+            rejection_info = news_rejections.get(tour.id, {})
             data.append({
-                'id': article.id,
-                'title': article.title,
-                'author': article.creator.username if article.creator else 'N/A',
-                'category': article.category.name if article.category else 'N/A',
-                'date': article.created_at.strftime('%d/%m/%Y %H:%M') if article.created_at else '',
+                'id': tour.id,
+                'title': tour.title,
+                'author': tour.creator.username if tour.creator else 'N/A',
+                'category': tour.category.name if tour.category else 'N/A',
+                'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
                 'type': 'news',
                 'rejection_reason': rejection_info.get('reason', ''),
                 'rejected_by': rejection_info.get('rejected_by', ''),
@@ -820,22 +784,22 @@ class AdminController:
             'data': data
         })
     
-    def api_rejected_article(self, article_id: int):
+    def api_rejected_tour(self, tour_id: int):
         # Query rejection reasons
-        if article_id:
-            article = self.articles_model.get_by_id(article_id)
-            if article:
-                rejection = self.db_session.query(ArticleRejection).filter(
-                    ArticleRejection.article_id == article_id
+        if tour_id:
+            tour = self.tour_model.get_by_id(tour_id)
+            if tour:
+                rejection = self.db_session.query(TourRejection).filter(
+                    TourRejection.tour_id == tour_id
                 ).first()
                 if rejection:
                     return jsonify({
                         'success': True,
-                        'id': article.id,
-                        'title': article.title,
-                        'author': article.creator.username if article.creator else 'N/A',
-                        'category': article.category.name if article.category else 'N/A',
-                        'date': article.created_at.strftime('%d/%m/%Y %H:%M') if article.created_at else '',
+                        'id': tour.id,
+                        'title': tour.title,
+                        'author': tour.creator.username if tour.creator else 'N/A',
+                        'category': tour.category.name if tour.category else 'N/A',
+                        'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
                         'type': 'news',
                         'rejection_reason': rejection.reason,
                         'rejected_by': rejection.rejector.username if rejection.rejector else 'N/A',
@@ -846,38 +810,37 @@ class AdminController:
             else:
                 return jsonify({'success': False, 'error': 'Bài viết không tồn tại'}), 404
 
-    def api_api_articles(self):
+    def api_api_tour(self):
         """API lấy danh sách bài viết từ API bên ngoài (chỉ hiển thị, không lưu)"""
         # Lấy dữ liệu từ session hoặc cache (tạm thời lưu trong session)
         # Hoặc fetch lại từ API nếu cần
-        api_articles = session.get('api_articles_cache', [])
+        api_tour = session.get('api_tour_cache', [])
         
         return jsonify({
             'success': True,
-            'data': api_articles
+            'data': api_tour
         })
     
     def api_chart_data(self):
         """API lấy dữ liệu cho biểu đồ"""
-        from datetime import datetime, timedelta
         
         # Lấy dữ liệu 7 ngày gần nhất
         end_date = datetime.utcnow()
         start_date = end_date - timedelta(days=7)
 
         # Đếm bài viết mới theo ngày
-        new_articles = self.db_session.query(Article).filter(
-            Article.created_at >= start_date
-        ).group_by(Article.created_at).count()
+        new_tour = self.db_session.query(Tour).filter(
+            Tour.created_at >= start_date
+        ).group_by(Tour.created_at).count()
         
         # Đếm bài được duyệt theo ngày
-        approved_articles = self.db_session.query(Article).filter(
-            Article.published_at >= start_date,
-            Article.status == ArticleStatus.PUBLISHED
-        ).group_by(Article.published_at).count()
+        approved_tour = self.db_session.query(Tour).filter(
+            Tour.published_at >= start_date,
+            Tour.status == TourStatus.PUBLISHED
+        ).group_by(Tour.published_at).count()
         
-        new_dict = {str(item.date): item.count for item in new_articles}
-        approved_dict = {str(item.date): item.count for item in approved_articles}
+        new_dict = {str(item.date): item.count for item in new_tour}
+        approved_dict = {str(item.date): item.count for item in approved_tour}
         
         labels = []
         new_data = []
@@ -907,231 +870,47 @@ class AdminController:
             }
         })
     
-    def api_hot_articles(self):
-        """API lấy danh sách bài viết hot nhất"""
-        article = self.articles_model.get_hot(limit=10)
-        
-        return jsonify({
-            'success': True,
-            'data': [{
-                'title': article.title,
-                'views': article.view_count
-            } for article in article]
-        })
-    
-    def api_article_detail(self, article_id: int):
+    def api_tour_detail(self, tour_id: int):
         """API lấy chi tiết bài viết theo ID"""
-        article = self.articles_model.get_by_id(article_id)
+        tour = self.tour_model.get_by_id(tour_id)
         
-        if not article:
+        if not tour:
             return jsonify({
                 'success': False,
                 'message': 'Bài viết không tồn tại'
             }), 404
         
-        # Lấy tags từ ArticleTag relationship
-        article_tags = self.db_session.query(ArticleTag).filter(ArticleTag.article_id == article.id).all()
-        tag_ids = [at.tag_id for at in article_tags]
-        tags = self.db_session.query(Tag).filter(Tag.id.in_(tag_ids)).all() if tag_ids else []
-        tags_list = [f"#{tag.name}" for tag in tags]
-        tags_string = ' '.join(tags_list) if tags_list else ''
-        
         # Xác định author: nếu là bài từ API thì dùng author field, không thì dùng creator
-        author_name = article.author if (hasattr(article, 'is_api') and article.is_api and hasattr(article, 'author') and article.author) else (article.creator.username if article.creator else 'N/A')
-        author_full_name = article.author if (hasattr(article, 'is_api') and article.is_api and hasattr(article, 'author') and article.author) else (article.creator.full_name if article.creator and article.creator.full_name else article.creator.username if article.creator else 'N/A')
+        author_name = tour.author if (hasattr(tour, 'is_api') and tour.is_api and hasattr(tour, 'author') and tour.author) else (tour.creator.username if tour.creator else 'N/A')
+        author_full_name = tour.author if (hasattr(tour, 'is_api') and tour.is_api and hasattr(tour, 'author') and tour.author) else (tour.creator.full_name if tour.creator and tour.creator.full_name else tour.creator.username if tour.creator else 'N/A')
         
         return jsonify({
             'success': True,
             'data': {
-                'id': article.id,
-                'title': article.title,
-                'slug': article.slug,
-                'summary': article.summary or '',
-                'content': article.content or '',
-                'thumbnail': article.thumbnail or '',
-                'category': article.category.name if article.category else 'N/A',
-                'category_id': article.category_id,
+                'id': tour.id,
+                'title': tour.title,
+                'slug': tour.slug,
+                'summary': tour.summary or '',
+                'content': tour.content or '',
+                'thumbnail': tour.thumbnail or '',
+                'category': tour.category.name if tour.category else 'N/A',
+                'category_id': tour.category_id,
                 'author': author_name,
                 'author_full_name': author_full_name,
-                'approver': article.approver.username if article.approver else None,
-                'approver_full_name': article.approver.full_name if article.approver and article.approver.full_name else (article.approver.username if article.approver else None),
-                'is_api': article.is_api if hasattr(article, 'is_api') else False,
-                'status': article.status.value,
-                'created_at': article.created_at.strftime('%d/%m/%Y %H:%M') if article.created_at else '',
-                'published_at': article.published_at.strftime('%d/%m/%Y %H:%M') if article.published_at else '',
-                'updated_at': article.updated_at.strftime('%d/%m/%Y %H:%M') if article.updated_at else '',
-                'view_count': article.view_count,
-                'is_featured': article.is_featured if hasattr(article, 'is_featured') else False,
-                'is_hot': article.is_hot if hasattr(article, 'is_hot') else False,
-                'is_deleted': article.is_deleted if hasattr(article, 'is_deleted') else False,
-                'tags': tags_string
+                'approver': tour.approver.username if tour.approver else None,
+                'approver_full_name': tour.approver.full_name if tour.approver and tour.approver.full_name else (tour.approver.username if tour.approver else None),
+                'is_api': tour.is_api if hasattr(tour, 'is_api') else False,
+                'status': tour.status.value,
+                'created_at': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
+                'published_at': tour.published_at.strftime('%d/%m/%Y %H:%M') if tour.published_at else '',
+                'updated_at': tour.updated_at.strftime('%d/%m/%Y %H:%M') if tour.updated_at else '',
+                'view_count': tour.view_count,
+                'is_featured': tour.is_featured if hasattr(tour, 'is_featured') else False,
+                'is_hot': tour.is_hot if hasattr(tour, 'is_hot') else False,
+                'is_deleted': tour.is_deleted if hasattr(tour, 'is_deleted') else False,
             }
         })
-    
-    def api_categories(self):
-        """API lấy danh sách danh mục"""
-        categories = self.article_category_model.get_all()
-        
-        return jsonify({
-            'success': True,
-            'data': [{
-                'id': cat.id,
-                'name': cat.name,
-                'slug': cat.slug
-            } for cat in categories]
-        })
-    
-    def api_tags(self):
-        """API lấy danh sách tags để autocomplete"""
-        search = request.args.get('search', '').strip()
-        
-        query = self.db_session.query(Tag).order_by(Tag.name)
-        
-        if search:
-            # Tìm tags có tên chứa search term (không phân biệt hoa thường)
-            query = query.filter(Tag.name.ilike(f'%{search}%'))
-        
-        tags = query.limit(20).all()
-        
-        return jsonify({
-            'success': True,
-            'data': [{
-                'id': tag.id,
-                'name': tag.name,
-                'slug': tag.slug
-            } for tag in tags]
-        })
 
-    def api_create_tag(self):
-        """API tạo hashtag mới"""
-        data = request.get_json(silent=True) or {}
-        name = (data.get('name') or '').strip()
-        slug = (data.get('slug') or '').strip() or None
-
-        if not name:
-            return jsonify({'success': False, 'error': 'Tên hashtag không được để trống'}), 400
-
-        # Chuẩn hóa: bỏ dấu # nếu có
-        if name.startswith('#'):
-            name = name[1:]
-
-        # Nếu không truyền slug, tự sinh từ name
-        if not slug:
-            slug = self._generate_slug(name)
-
-        try:
-            # Kiểm tra trùng slug
-            existing = self.db_session.query(Tag).filter(Tag.slug == slug).first()
-            if existing:
-                return jsonify({'success': False, 'error': 'Hashtag đã tồn tại'}), 400
-
-            tag = Tag(name=name, slug=slug)
-            self.db_session.add(tag)
-            self.db_session.commit()
-
-            return jsonify({
-                'success': True,
-                'data': {
-                    'id': tag.id,
-                    'name': tag.name,
-                    'slug': tag.slug
-                }
-            })
-        except SQLAlchemyError as e:
-            self.db_session.rollback()
-            current_app.logger.exception('Lỗi tạo hashtag: %s', e)
-            return jsonify({'success': False, 'error': 'Không thể tạo hashtag'}), 500
-
-    def api_update_tag(self, tag_id: int):
-        """API cập nhật hashtag"""
-        data = request.get_json(silent=True) or {}
-        name = (data.get('name') or '').strip()
-        slug = (data.get('slug') or '').strip() or None
-
-        if not name:
-            return jsonify({'success': False, 'error': 'Tên hashtag không được để trống'}), 400
-
-        if name.startswith('#'):
-            name = name[1:]
-
-        if not slug:
-            slug = self._generate_slug(name)
-
-        try:
-            tag = self.db_session.query(Tag).filter(Tag.id == tag_id).first()
-            if not tag:
-                return jsonify({'success': False, 'error': 'Không tìm thấy hashtag'}), 404
-
-            # Kiểm tra slug trùng với tag khác
-            existing = self.db_session.query(Tag).filter(Tag.slug == slug, Tag.id != tag_id).first()
-            if existing:
-                return jsonify({'success': False, 'error': 'Slug đã được dùng bởi hashtag khác'}), 400
-
-            tag.name = name
-            tag.slug = slug
-            self.db_session.commit()
-
-            return jsonify({
-                'success': True,
-                'data': {
-                    'id': tag.id,
-                    'name': tag.name,
-                    'slug': tag.slug
-                }
-            })
-        except SQLAlchemyError as e:
-            self.db_session.rollback()
-            current_app.logger.exception('Lỗi cập nhật hashtag: %s', e)
-            return jsonify({'success': False, 'error': 'Không thể cập nhật hashtag'}), 500
-
-    def api_delete_tag(self, tag_id: int):
-        """API xóa hashtag"""
-        try:
-            tag = self.db_session.query(Tag).filter(Tag.id == tag_id).first()
-            if not tag:
-                return jsonify({'success': False, 'error': 'Không tìm thấy hashtag'}), 404
-
-            # Xóa liên kết ArticleTag trước khi xóa tag
-            self.db_session.query(ArticleTag).where(ArticleTag.tag_id == tag_id).delete()
-            self.db_session.delete(tag)
-            self.db_session.commit()
-
-            return jsonify({'success': True})
-        except SQLAlchemyError as e:
-            self.db_session.rollback()
-            current_app.logger.exception('Lỗi xóa hashtag: %s', e)
-            return jsonify({'success': False, 'error': 'Không thể xóa hashtag'}), 500
-
-    def _parse_tags(self, tags_string: str) -> list:
-        """Parse tags từ string có thể chứa hashtag format (#tag_name), comma-separated hoặc cách nhau bằng khoảng trắng"""
-        import re
-        tag_names = []
-
-        if not tags_string:
-            return []
-        
-        # Tách theo dấu phẩy, dấu chấm phẩy HOẶC khoảng trắng
-        parts = re.split(r'[,\s;]+', tags_string)
-        
-        for part in parts:
-            part = part.strip()
-            if not part:
-                continue
-            
-            # Nếu có dấu # ở đầu, loại bỏ nó
-            if part.startswith('#'):
-                part = part[1:]
-            
-            # Loại bỏ các ký tự đặc biệt không hợp lệ
-            part = re.sub(r'[^\w\s-]', '', part)
-            part = part.strip()
-            
-            if part:
-                tag_names.append(part)
-        
-        # Loại bỏ trùng lặp và trả về
-        return list(dict.fromkeys(tag_names))
-    
     def _generate_slug(self, title: str, status: str = None) -> str:
         """Tạo slug từ tiêu đề và trạng thái"""
         import re
@@ -1176,9 +955,9 @@ class AdminController:
             slug = f"{slug}-{status}"
         
         return slug
-    
-    def api_create_article(self):
-        """API tạo bài viết mới từ editor form"""
+
+    def api_create_tour(self):
+        """API tạo tour mới từ editor form"""
         user_id = session.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
@@ -1188,11 +967,9 @@ class AdminController:
         # Lấy dữ liệu từ form
         title = data.get('title', '').strip()
         content = data.get('content', '').strip()
-        category_id = data.get('category_id') or data.get('category')
         summary = data.get('summary') or data.get('description', '').strip()
         thumbnail = data.get('thumbnail', '').strip()
-        tags = data.get('tags', '').strip()
-        status = data.get('status', ArticleStatus.DRAFT.value)
+        status = data.get('status', TourStatus.DRAFT.value)
         is_hot = data.get('is_hot', False)
         is_featured = data.get('is_featured', False)
         
@@ -1208,34 +985,17 @@ class AdminController:
         
         if not content:
             return jsonify({'success': False, 'error': 'Vui lòng nhập nội dung bài viết'}), 400
-        
-        if not category_id:
-            return jsonify({'success': False, 'error': 'Vui lòng chọn danh mục'}), 400
-        
+
         try:
-            category_id = int(category_id)
-        except (ValueError, TypeError):
-            return jsonify({'success': False, 'error': 'Danh mục không hợp lệ'}), 400
-        
-        # Kiểm tra ArticleCategory tồn tại
-        category = self.db_session.query(ArticleCategory).filter(ArticleCategory.category_id == category_id).first()
-        if not category:
-            return jsonify({'success': False, 'error': 'Danh mục không tồn tại'}), 400
-        
-        try:
-            article_status = ArticleStatus(status)
+            tour_status = TourStatus(status)
         except ValueError:
-            article_status = ArticleStatus.DRAFT
+            tour_status = TourStatus.DRAFT
         
-        # Tạo slug từ tiêu đề và trạng thái
-        print(title)
-        print(status)
         base_slug = self._generate_slug(title, status)
         slug = base_slug
         
-        # Kiểm tra slug trùng và thêm số nếu cần
         counter = 1
-        while self.db_session.query(Article).filter(Article.slug == slug).first():
+        while self.db_session.query(Tour).filter(Tour.slug == slug).first():
             slug = f"{base_slug}-{counter}"
             counter += 1
         
@@ -1256,29 +1016,28 @@ class AdminController:
         
         try:
             # Tạo bài viết mới
-            article = Article(
+            tour = Tour(
                 title=title,
                 slug=slug,
                 content=content,
                 summary=summary,
                 thumbnail=thumbnail,
                 images=images_json,
-                category_id=category_id,
                 created_by=user_id,
-                status=article_status,
+                status=tour_status,
                 is_hot=bool(is_hot),
                 is_featured=bool(is_featured),
-                published_at=datetime.utcnow() if article_status == ArticleStatus.PUBLISHED else None
+                published_at=datetime.utcnow() if tour_status == TourStatus.PUBLISHED else None
             )
             
-            self.db_session.add(article)
+            self.db_session.add(tour)
             self.db_session.commit()
-            self.db_session.refresh(article)
+            self.db_session.refresh(tour)
             
             # Di chuyển ảnh từ temp folder sang folder của bài viết nếu có
-            if article.id:
+            if tour.id:
                 temp_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', 'temp')
-                news_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', f'news_{article.id}')
+                news_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', f'news_{tour.id}')
                 
                 if os.path.exists(temp_folder):
                     os.makedirs(news_folder, exist_ok=True)
@@ -1291,46 +1050,19 @@ class AdminController:
                             shutil.move(src_path, dst_path)
                             # Cập nhật URL trong thumbnail và content nếu cần
                             if thumbnail and 'temp' in thumbnail:
-                                thumbnail = thumbnail.replace('temp', f'news_{article.id}')
-                                article.thumbnail = thumbnail
+                                thumbnail = thumbnail.replace('temp', f'news_{tour.id}')
+                                tour.thumbnail = thumbnail
                             if images_json:
                                 import json
                                 images = json.loads(images_json)
-                                updated_images = [img.replace('temp', f'news_{article.id}') if 'temp' in img else img for img in images]
-                                article.images = json.dumps(updated_images)
+                                updated_images = [img.replace('temp', f'news_{tour.id}') if 'temp' in img else img for img in images]
+                                tour.images = json.dumps(updated_images)
                                 # Cập nhật content với URL mới
                                 for old_url, new_url in zip(images, updated_images):
                                     if old_url != new_url:
                                         content = content.replace(old_url, new_url)
-                                        article.content = content
+                                        tour.content = content
                     self.db_session.commit()
-            
-            # Xử lý tags nếu có - CHỈ chấp nhận tags có sẵn trong bảng tags
-            if tags:
-                # Xóa các tags cũ của bài viết (nếu có)
-                self.db_session.query(ArticleTag).filter(ArticleTag.news_id == article.id).delete()
-                
-                tag_names = self._parse_tags(tags)
-                invalid_tags = []
-                
-                for tag_name in tag_names:
-                    # CHỈ tìm tag có sẵn, KHÔNG tự tạo mới
-                    tag = self.db_session.query(Tag).filter(Tag.name == tag_name).first()
-                    if not tag:
-                        invalid_tags.append(tag_name)
-                        continue
-                    
-                    # Tạo ArticleTag mới
-                    news_tag = ArticleTag(news_id=article.id, tag_id=tag.id)
-                    self.db_session.add(news_tag)
-                
-                # Nếu có tags không hợp lệ, trả về lỗi
-                if invalid_tags:
-                    self.db_session.rollback()
-                    return jsonify({
-                        'success': False, 
-                        'error': f'Các tags sau không tồn tại trong hệ thống: {", ".join(invalid_tags)}. Vui lòng chỉ sử dụng tags có sẵn.'
-                    }), 400
             
             self.db_session.commit()
         except IntegrityError as e:
@@ -1347,21 +1079,21 @@ class AdminController:
             'success': True,
             'message': 'Tạo bài viết thành công',
             'data': {
-                'id': article.id,
-                'slug': article.slug,
-                'title': article.title
+                'id': tour.id,
+                'slug': tour.slug,
+                'title': tour.title
             }
         })
 
-    def api_edit_article(self, article_id: int):
+    def api_edit_tour(self, tour_id: int):
         """API chỉnh sửa bài viết theo ID"""
         user_id = session.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
         data = request.json if request.is_json else request.form
-        article = self.db_session.query(Article).filter(Article.id == article_id).first()
-        if not article:
+        tour = self.db_session.query(Tour).filter(Tour.id == tour_id).first()
+        if not tour:
             return jsonify({'success': False, 'error': 'Bài viết không tồn tại'}), 400
         
         # Lấy dữ liệu từ form
@@ -1370,10 +1102,9 @@ class AdminController:
         category_id = data.get('category_id') or data.get('category')
         summary = data.get('summary') or data.get('description', '').strip()
         thumbnail = data.get('thumbnail', '').strip()
-        tags = data.get('tags', '').strip()
-        status = data.get('status', article.status.value)
-        is_hot = data.get('is_hot', article.is_hot if hasattr(article, 'is_hot') else False)
-        is_featured = data.get('is_featured', article.is_featured if hasattr(article, 'is_featured') else False)
+        status = data.get('status', tour.status.value)
+        is_hot = data.get('is_hot', tour.is_hot if hasattr(tour, 'is_hot') else False)
+        is_featured = data.get('is_featured', tour.is_featured if hasattr(tour, 'is_featured') else False)
         
         # Convert to boolean nếu là string
         if isinstance(is_hot, str):
@@ -1396,15 +1127,10 @@ class AdminController:
         except (ValueError, TypeError):
             return jsonify({'success': False, 'error': 'Danh mục không hợp lệ'}), 400
         
-        # Kiểm tra category tồn tại
-        category = self.db_session.query(ArticleCategory).filter(ArticleCategory.category_id == category_id).first()
-        if not category:
-            return jsonify({'success': False, 'error': 'Danh mục không tồn tại'}), 400
-        
         try:
-            article_status = ArticleStatus(status)
+            tour_status = TourStatus(status)
         except ValueError:
-            article_status = article.status
+            tour_status = tour.status
         
         # Tạo slug từ tiêu đề và trạng thái
         base_slug = self._generate_slug(title, status)
@@ -1412,7 +1138,7 @@ class AdminController:
         
         # Kiểm tra slug trùng và thêm số nếu cần (nhưng không trùng với chính nó)
         counter = 1
-        while self.db_session.query(Article).filter(Article.slug == slug, Article.id != article_id).first():
+        while self.db_session.query(Tour).filter(Tour.slug == slug, Tour.id != tour_id).first():
             slug = f"{base_slug}-{counter}"
             counter += 1
         
@@ -1433,25 +1159,25 @@ class AdminController:
         
         try:
             # Cập nhật bài viết
-            article.title = title
-            article.slug = slug
-            article.content = content
-            article.summary = summary
-            article.thumbnail = thumbnail
-            article.images = images_json
-            article.category_id = category_id
-            article.status = article_status
-            article.is_hot = bool(is_hot)
-            article.is_featured = bool(is_featured)
-            article.published_at = datetime.utcnow() if article_status == ArticleStatus.PUBLISHED else article.published_at
+            tour.title = title
+            tour.slug = slug
+            tour.content = content
+            tour.summary = summary
+            tour.thumbnail = thumbnail
+            tour.images = images_json
+            tour.category_id = category_id
+            tour.status = tour_status
+            tour.is_hot = bool(is_hot)
+            tour.is_featured = bool(is_featured)
+            tour.published_at = datetime.utcnow() if tour_status == TourStatus.PUBLISHED else tour.published_at
             
             self.db_session.commit()
-            self.db_session.refresh(article)
+            self.db_session.refresh(tour)
             
             # Di chuyển ảnh từ temp folder sang folder của bài viết nếu có
-            if article.id:
+            if tour.id:
                 temp_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', 'temp')
-                news_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', f'news_{article.id}')
+                news_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', f'news_{tour.id}')
                 
                 if os.path.exists(temp_folder):
                     os.makedirs(news_folder, exist_ok=True)
@@ -1464,47 +1190,20 @@ class AdminController:
                             shutil.move(src_path, dst_path)
                             # Cập nhật URL trong thumbnail và content nếu cần
                             if thumbnail and 'temp' in thumbnail:
-                                thumbnail = thumbnail.replace('temp', f'news_{article.id}')
-                                article.thumbnail = thumbnail
+                                thumbnail = thumbnail.replace('temp', f'news_{tour.id}')
+                                tour.thumbnail = thumbnail
                             if images_json:
                                 import json
                                 images = json.loads(images_json)
-                                updated_images = [img.replace('temp', f'news_{article.id}') if 'temp' in img else img for img in images]
-                                article.images = json.dumps(updated_images)
+                                updated_images = [img.replace('temp', f'news_{tour.id}') if 'temp' in img else img for img in images]
+                                tour.images = json.dumps(updated_images)
                                 # Cập nhật content với URL mới
                                 for old_url, new_url in zip(images, updated_images):
                                     if old_url != new_url:
                                         content = content.replace(old_url, new_url)
-                                        article.content = content
+                                        tour.content = content
                     self.db_session.commit()
-            
-            # Xử lý tags nếu có - CHỈ chấp nhận tags có sẵn trong bảng tags
-            if tags:
-                # Xóa các tags cũ của bài viết
-                self.db_session.query(ArticleTag).filter(ArticleTag.news_id == article.id).delete()
-                
-                tag_names = self._parse_tags(tags)
-                invalid_tags = []
-                
-                for tag_name in tag_names:
-                    # CHỈ tìm tag có sẵn, KHÔNG tự tạo mới
-                    tag = self.db_session.query(Tag).filter(Tag.name == tag_name).first()
-                    if not tag:
-                        invalid_tags.append(tag_name)
-                        continue
-                    
-                    # Tạo ArticleTag mới
-                    article_tag = ArticleTag(news_id=article.id, tag_id=tag.id)
-                    self.db_session.add(article_tag)
-                
-                # Nếu có tags không hợp lệ, trả về lỗi
-                if invalid_tags:
-                    self.db_session.rollback()
-                    return jsonify({
-                        'success': False, 
-                        'error': f'Các tags sau không tồn tại trong hệ thống: {", ".join(invalid_tags)}. Vui lòng chỉ sử dụng tags có sẵn.'
-                    }), 400
-            
+
             self.db_session.commit()
         except IntegrityError as e:
             self.db_session.rollback()
@@ -1519,12 +1218,12 @@ class AdminController:
             'success': True,
             'message': 'Cập nhật bài viết thành công',
             'data': {
-                'id': article.id,
-                'slug': article.slug,
-                'title': article.title
+                'id': tour.id,
+                'slug': tour.slug,
+                'title': tour.title
             }
         })
-    
+
     def api_upload_image(self):
         """API upload ảnh cho bài viết"""
         user_id = session.get('user_id')
@@ -1573,298 +1272,6 @@ class AdminController:
             'image_url': image_url
         })
 
-    def api_menu_items(self):
-        """API lấy danh sách categories (menu items)"""
-        categories = self.db_session.query(ArticleCategory).order_by(
-            ArticleCategory.order_display, ArticleCategory.parent_id
-        ).all()
-        
-        return jsonify({
-            'success': True,
-            'data': [{
-                'id': item.id,
-                'name': item.name,
-                'slug': item.slug,
-                'icon': item.icon,
-                'order': item.order_display,
-                'parent_id': item.parent_id,
-                'level': item.level if hasattr(item, 'level') else 1,
-                'visible': item.visible
-            } for item in categories]
-        })
-    
-    def _calculate_level(self, parent_id):
-        """Tính toán level dựa trên parent_id"""
-        if not parent_id:
-            return 1
-        
-        parent = self.db_session.query(ArticleCategory).filter(ArticleCategory.id == parent_id).first()
-        if not parent:
-            return 1
-        
-        return parent.level + 1
-    
-    def api_create_menu_item(self):
-        """API tạo category mới (menu item)"""
-        data = request.json if request.is_json else request.form
-        
-        name = data.get('name')
-        slug = data.get('slug')
-        icon = data.get('icon')
-        order = data.get('order', 0)
-        parent_id = data.get('parent_id')
-        visible = data.get('visible', True)
-        description = data.get('description')
-        
-        if not name:
-            return jsonify({'success': False, 'error': 'Tên danh mục không được để trống'}), 400
-        
-        if not slug:
-            # Tự động tạo slug
-            slug = self._generate_slug(name)
-        
-        # Kiểm tra slug trùng
-        existing = self.db_session.query(ArticleCategory).filter(ArticleCategory.slug == slug).first()
-        if existing:
-            return jsonify({'success': False, 'error': 'Slug đã tồn tại'}), 400
-        
-        # Tính toán level
-        level = self._calculate_level(parent_id)
-        
-        # Kiểm tra level không được vượt quá 4
-        if level > 4:
-            return jsonify({'success': False, 'error': 'Không thể tạo menu quá 4 cấp. Menu hiện tại đã đạt cấp tối đa.'}), 400
-        
-        category = ArticleCategory(
-            name=name,
-            slug=slug,
-            icon=icon if icon else None,
-            order_display=order,
-            parent_id=int(parent_id) if parent_id else None,
-            level=level,
-            visible=visible,
-            description=description if description else None
-        )
-        
-        self.db_session.add(category)
-        self.db_session.commit()
-        self.db_session.refresh(category)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Đã tạo danh mục mới',
-            'data': {
-                'id': category.id,
-                'name': category.name,
-                'slug': category.slug,
-                'level': category.level
-            }
-        })
-    
-    def api_update_menu_item(self, menu_id: int):
-        """API cập nhật category (menu item)"""
-        category = self.db_session.query(ArticleCategory).filter(ArticleCategory.id == menu_id).first()
-        if not category:
-            return jsonify({'success': False, 'error': 'Không tìm thấy danh mục'}), 404
-        
-        data = request.json if request.is_json else request.form
-        
-        if 'name' in data:
-            category.name = data['name']
-        if 'slug' in data:
-            # Kiểm tra slug trùng (trừ chính nó)
-            existing = self.db_session.query(ArticleCategory).filter(
-                ArticleCategory.slug == data['slug'],
-                ArticleCategory.id != menu_id
-            ).first()
-            if existing:
-                return jsonify({'success': False, 'error': 'Slug đã tồn tại'}), 400
-            category.slug = data['slug']
-        if 'icon' in data:
-            category.icon = data['icon'] if data['icon'] else None
-        if 'order' in data:
-            category.order_display = int(data['order'])
-        if 'parent_id' in data:
-            parent_id = data['parent_id']
-            # Kiểm tra không được set parent là chính nó
-            if parent_id == menu_id:
-                return jsonify({'success': False, 'error': 'Không thể set parent là chính nó'}), 400
-            
-            # Kiểm tra không được set parent là con cháu của chính nó (tránh vòng lặp)
-            if parent_id:
-                # Kiểm tra xem parent_id có phải là con cháu của menu_id không
-                def is_descendant(parent_candidate_id, ancestor_id):
-                    if parent_candidate_id == ancestor_id:
-                        return True
-                    parent_candidate = self.db_session.query(ArticleCategory).filter(ArticleCategory.id == parent_candidate_id).first()
-                    if not parent_candidate or not parent_candidate.parent_id:
-                        return False
-                    return is_descendant(parent_candidate.parent_id, ancestor_id)
-                
-                if is_descendant(int(parent_id), menu_id):
-                    return jsonify({'success': False, 'error': 'Không thể set parent là con cháu của chính nó'}), 400
-            
-            category.parent_id = int(parent_id) if parent_id else None
-            
-            # Tính toán lại level khi parent_id thay đổi
-            new_level = self._calculate_level(category.parent_id)
-            if new_level > 4:
-                return jsonify({'success': False, 'error': 'Không thể tạo menu quá 4 cấp. Menu hiện tại đã đạt cấp tối đa.'}), 400
-            category.level = new_level
-        if 'visible' in data:
-            category.visible = bool(data['visible'])
-        if 'description' in data:
-            category.description = data['description'] if data['description'] else None
-        
-        category.updated_at = datetime.utcnow()
-        self.db_session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Đã cập nhật danh mục',
-            'data': {
-                'id': category.id,
-                'name': category.name,
-                'level': category.level
-            }
-        })
-    
-    def api_delete_menu_item(self, menu_id: int):
-        """API xóa category (menu item)"""
-        category = self.db_session.query(ArticleCategory).filter(ArticleCategory.id == menu_id).first()
-        if not category:
-            return jsonify({'success': False, 'error': 'Không tìm thấy danh mục'}), 404
-        
-        # Kiểm tra xem có tin tức nào đang sử dụng category này không
-        news_count = self.db_session.query(Article).filter(Article.category_id == menu_id).count()
-        if news_count > 0:
-            return jsonify({
-                'success': False,
-                'error': f'Không thể xóa danh mục vì có {news_count} tin tức đang sử dụng'
-            }), 400
-        
-        # Xóa các category con trước (cascade)
-        children = self.db_session.query(ArticleCategory).filter(ArticleCategory.parent_id == menu_id).all()
-        for child in children:
-            # Kiểm tra tin tức của child category
-            child_news_count = self.db_session.query(Article).filter(Article.category_id == child.id).count()
-            if child_news_count == 0:
-                self.db_session.delete(child)
-        
-        self.db_session.delete(category)
-        self.db_session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Đã xóa danh mục'
-        })
-    
-    def api_init_default_menu_items(self):
-        """API khởi tạo categories mặc định (menu items)"""
-        # Kiểm tra xem đã có categories chưa
-        count = self.db_session.query(ArticleCategory).count()
-        if count > 0:
-            return jsonify({
-                'success': False,
-                'error': 'Đã có categories trong database'
-            }), 400
-        
-        # Sử dụng DEFAULT_CATEGORIES từ database.py
-        from database import DEFAULT_CATEGORIES
-        
-        # Tạo categories (tạo parent trước)
-        created_items = {}  # Map slug -> real_id
-        
-        # Tạo parent categories trước
-        parent_categories = [c for c in DEFAULT_CATEGORIES if c['parent_id'] is None]
-        parent_categories.sort(key=lambda x: x['order_display'])
-        
-        for cat_data in parent_categories:
-            category = ArticleCategory(
-                name=cat_data['name'],
-                slug=cat_data['slug'],
-                icon=cat_data['icon'],
-                order_display=cat_data['order_display'],
-                parent_id=None,
-                visible=True
-            )
-            self.db_session.add(category)
-            self.db_session.flush()  # Để lấy ID
-            created_items[cat_data['slug']] = category.id
-        
-        # Tạo child categories (nếu có trong DEFAULT_CATEGORIES)
-        child_categories = [c for c in DEFAULT_CATEGORIES if c['parent_id'] is not None]
-        child_categories.sort(key=lambda x: (x['parent_id'], x['order_display']))
-        
-        for cat_data in child_categories:
-            # Tìm parent_id từ slug của parent
-            parent_slug = None
-            for parent_cat in DEFAULT_CATEGORIES:
-                if parent_cat.get('id') == cat_data['parent_id']:
-                    parent_slug = parent_cat['slug']
-                    break
-            
-            if parent_slug and parent_slug in created_items:
-                parent_id = created_items[parent_slug]
-                category = ArticleCategory(
-                    name=cat_data['name'],
-                    slug=cat_data['slug'],
-                    icon=cat_data['icon'],
-                    order_display=cat_data['order_display'],
-                    parent_id=parent_id,
-                    visible=True
-                )
-                self.db_session.add(category)
-                self.db_session.flush()
-                created_items[cat_data['slug']] = category.id
-        
-        self.db_session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Đã khởi tạo {len(DEFAULT_CATEGORIES)} categories mặc định',
-            'count': len(DEFAULT_CATEGORIES)
-        })
-    
-    def api_update_menu_order(self):
-        """API cập nhật thứ tự categories (drag & drop)"""
-        data = request.json if request.is_json else {}
-        items = data.get('items', [])
-        
-        if not items:
-            return jsonify({'success': False, 'error': 'Thiếu dữ liệu'}), 400
-        
-        try:
-            for item_data in items:
-                category_id = item_data.get('id')
-                new_order = item_data.get('order', 0)
-                parent_id = item_data.get('parent_id')
-                
-                category = self.db_session.query(ArticleCategory).filter(ArticleCategory.id == category_id).first()
-                if category:
-                    category.order_display = new_order
-                    if parent_id is not None:
-                        # Kiểm tra không được set parent là chính nó
-                        if parent_id == category_id:
-                            continue
-                        category.parent_id = int(parent_id) if parent_id else None
-                    else:
-                        category.parent_id = None
-                    category.updated_at = datetime.utcnow()
-            
-            self.db_session.commit()
-            
-            return jsonify({
-                'success': True,
-                'message': 'Đã cập nhật thứ tự danh mục'
-            })
-        except Exception as e:
-            self.db_session.rollback()
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
-
     def _allowed_file(self, filename):
         """Kiểm tra file có được phép upload không"""
         return '.' in filename and \
@@ -1887,50 +1294,13 @@ class AdminController:
             session.clear()
             return redirect(url_for('admin.login'))
         
-        # Lấy tin đã lưu (cả site VN và EN)
-        saved_news = self.db_session.query(SavedArticles).filter(
-            SavedArticles.user_id == user.id
-        ).order_by(SavedArticles.created_at.desc()).limit(20).all()
-        
-        # Lấy tin đã xem (cả site VN và EN)
-        viewed_news = self.db_session.query(ViewedArticles).filter(
-            ViewedArticles.user_id == user.id
-        ).order_by(ViewedArticles.viewed_at.desc()).limit(20).all()
+        booking = self.db_session.query(BookingModel).filter(
+            BookingModel.user_id == user.id
+        ).order_by(BookingModel.created_at.desc()).limit(20).all()
 
-        comments = []
-
-        # Tính số bình luận cho mỗi bài viết (cả news_id và news_international_id)
-        comment_counts = {}
-        if comments:
-            news_ids = list(set([comment.news_id for comment in comments if comment.news_id]))
-            
-            from sqlalchemy import func
-            
-            # Đếm comments cho news_id
-            if news_ids:
-                counts_vn = self.db_session.query(ArticleComment).filter(
-                    ArticleComment.news_id.in_(news_ids),
-                    ArticleComment.is_active == True
-                ).group_by(ArticleComment.news_id).count() or 0
-                
-                for news_id, count in counts_vn:
-                    comment_counts[news_id] = count
-
-        # Tính tổng số bình luận của cá nhân
-        total_comments = self.db_session.query(ArticleComment).filter(
-            ArticleComment.user_id == user.id,
-            ArticleComment.is_active == True
-        ).count()
-
-        categories = self.article_category_model.get_all()
         return render_template('admin/profile.html', 
                              user=user, 
-                             categories=categories,
-                             saved_news=saved_news,
-                             viewed_news=viewed_news,
-                             comments=comments,
-                             comment_counts=comment_counts,
-                             total_comments=total_comments,
+                             booking=booking
                              )
     
     # User Management Methods

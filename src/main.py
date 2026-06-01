@@ -13,7 +13,7 @@ from database import init_db, get_session
 
 from client_routes import client_bp
 from admin_routes import admin_bp
-from article_routes import article_bp
+from src.tour_routes import tour_bp
 
 load_dotenv()  # Load varibale enviroment from file .env
 
@@ -43,7 +43,7 @@ def create_app():
 
     app.register_blueprint(client_bp)
     app.register_blueprint(admin_bp)
-    app.register_blueprint(article_bp)
+    app.register_blueprint(tour_bp)
 
     # Debug: Log mọi request
     @app.before_request

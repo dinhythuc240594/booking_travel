@@ -7,13 +7,13 @@ from database import (
     get_session,
     TourStatus,
     UserRole,
-    ViewedArticles,
-    SavedArticles, 
+    Viewedtour,
+    Savedtour, 
     PasswordResetToken,
 )
 
 from models import (
-    ArticlesModel,
+    tourModel,
     UserModel,
 )
 
@@ -23,13 +23,13 @@ class Controller():
     """Mangaer controller - manage related user, tour, ..."""
     
     # db_session = get_session()
-    # articles_model = ArticlesModel(db_session)
+    # tour_model = tourModel(db_session)
     # user_model = UserModel(db_session)
 
     def __init__(self):
         """initialize controller"""
         self.db_session = get_session()
-        self.articles_model = ArticlesModel(self.db_session)
+        self.tour_model = tourModel(self.db_session)
         self.user_model = UserModel(self.db_session)
 
     def list_tour(self, limit=None, offset=None):
@@ -39,7 +39,7 @@ class Controller():
         """
         db_session = self.db_session
         try:
-            latest_tour = self.articles_model.get_published(limit=limit, offset=offset)
+            latest_tour = self.tour_model.get_published(limit=limit, offset=offset)
 
             return latest_tour
         finally:
@@ -246,18 +246,18 @@ class Controller():
 
             print(f"Slug received: {tours_slug}")
             
-            articles_model = self.articles_model(db_session)
+            tour_model = self.tour_model(db_session)
             
-            article = articles_model.get_by_slug(tours_slug)
-            print(f"Article found: {article}")
+            tour = tour_model.get_by_slug(tours_slug)
+            print(f"Tour found: {tour}")
             
-            if not article:
-                print(f"Article not found for slug: {tours_slug}")
+            if not tour:
+                print(f"Tour not found for slug: {tours_slug}")
                 abort(404)
             
-            print(f"Article status: {article.status}")
-            if article.status != ArticleStatusEnum.PUBLISHED:
-                print(f"Article not published, status: {article.status}")
+            print(f"Tour status: {tour.status}")
+            if tour.status != TourStatus.PUBLISHED:
+                print(f"Tour not published, status: {tour.status}")
                 abort(404)
 
             is_saved = False
@@ -266,29 +266,29 @@ class Controller():
             if 'user_id' in session:
                 user_id = session['user_id']
 
-                existing_viewed = db_session.query(ViewedArticles).filter(
-                    ViewedArticles.user_id == user_id,
-                    ViewedArticles.article_id == tour.id,
-                    ViewedArticles.site == 'vn'
+                existing_viewed = db_session.query(Viewedtour).filter(
+                    Viewedtour.user_id == user_id,
+                    Viewedtour.tour_id == tour.id,
+                    Viewedtour.site == 'vn'
                 ).first()
                 
                 if not existing_viewed:
-                    viewed_articles = ViewedArticles(
+                    viewed_tour = Viewedtour(
                         user_id=user_id,
-                        article_id=tour.id,
+                        tour_id=tour.id,
                         site='vn'
                     )
-                    db_session.add(viewed_articles)
+                    db_session.add(viewed_tour)
                     db_session.commit()
                 else:
 
                     existing_viewed.viewed_at = datetime.utcnow()
                     db_session.commit()
 
-                saved_tour = db_session.query(SavedArticles).filter(
-                    SavedArticles.user_id == user_id,
-                    SavedArticles.article_id == tour.id,
-                    SavedArticles.site == 'vn'
+                saved_tour = db_session.query(Savedtour).filter(
+                    Savedtour.user_id == user_id,
+                    Savedtour.tour_id == tour.id,
+                    Savedtour.site == 'vn'
                 ).first()
                 is_saved = saved_tour is not None
 

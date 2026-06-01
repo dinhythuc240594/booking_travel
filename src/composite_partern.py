@@ -4,8 +4,8 @@ from typing import List
 from database import (
     Hotels, 
     Tour, 
-    ArticleCategory, 
-    Article)
+    Location, 
+    Tour)
 
 #######
 # Composite Pattern sẽ đóng vai trò tính toán giá (total_price) cho giỏ hàng/gói dịch vụ trước khi lưu xuống bảng Bookings. 
@@ -69,58 +69,6 @@ class BookingPackage(AbstractBookingItem):
         return details.rstrip()
 
 
-class AbstractContentNode(ABC):
-    """Component: Interface chung cho Danh mục và Bài viết"""
-    
-    @abstractmethod
-    def get_article_count(self) -> int:
-        """Đếm số lượng bài viết"""
-        pass
-
-    @abstractmethod
-    def show_structure(self, indent: str = "") -> str:
-        """Hiển thị cấu trúc dạng cây"""
-        pass
-
-
-class ArticleLeaf(AbstractContentNode):
-    """Leaf: Đại diện cho 1 Bài viết độc lập. Không chứa con."""
-    def __init__(self, article: Article):
-        self.article = article
-
-    def get_article_count(self) -> int:
-        return 1 # Một bài viết đếm là 1
-
-    def show_structure(self, indent: str = "") -> str:
-        status_icon = "🟢" if self.article.status.value == "approved" else "🟡"
-        return f"{indent}- {status_icon} Bài viết: {self.article.title} (Lượt xem: {self.article.view_count})"
-
-
-class CategoryComposite(AbstractContentNode):
-    """Composite: Đại diện cho 1 Danh mục. Có thể chứa bài viết hoặc danh mục con."""
-    def __init__(self, category: ArticleCategory):
-        self.category = category
-        self.children: List[AbstractContentNode] = []
-
-    def add_child(self, component: AbstractContentNode):
-        """Thêm một bài viết hoặc danh mục con vào danh mục này"""
-        self.children.append(component)
-        
-    def remove_child(self, component: AbstractContentNode):
-        self.children.remove(component)
-
-    def get_article_count(self) -> int:
-        """Đệ quy đếm tổng số bài viết trong danh mục này và TẤT CẢ danh mục con"""
-        return sum(child.get_article_count() for child in self.children)
-
-    def show_structure(self, indent: str = "") -> str:
-        """Đệ quy in ra cấu trúc cây của danh mục"""
-        details = f"{indent}📂 DANH MỤC: {self.category.name} | Tổng bài viết: {self.get_article_count()}\n"
-        for child in self.children:
-            details += child.show_structure(indent + "   ") + "\n"
-        return details.rstrip()
-    
-
 class AbstractLocationNode(ABC):
     """Component: Interface chung cho việc nhóm Tour theo Địa điểm"""
     
@@ -137,7 +85,7 @@ class AbstractLocationNode(ABC):
 
 class TourLeafNode(AbstractLocationNode):
     """Leaf: Đại diện cho 1 Tour đơn lẻ."""
-    def __init__(self, tour: Tours):
+    def __init__(self, tour: Tour):
         self.tour = tour
 
     def get_tour_count(self) -> int:
