@@ -260,19 +260,14 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
-    
-    # Từ Customer
+
     bookings = relationship("Bookings", back_populates="user", cascade="all, delete-orphan")
     newsletter_subscriptions = relationship("NewsletterSubscription", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
-
-    # Từ Writer
     tour_authored = relationship("Tour", foreign_keys="[Tour.author_id]", back_populates="author")
     tour_reviewed = relationship("Tour", foreign_keys="[Tour.reviewer_id]", back_populates="reviewer")
-    tour_approved = relationship("Tour", foreign_keys="[Tour.approved_by]", back_populates="approver")
     saved_tour = relationship("Savedtour", back_populates="user", cascade="all, delete-orphan")
     viewed_tour = relationship("Viewedtour", back_populates="user", cascade="all, delete-orphan")
-
 
 class Location(Base):
     __tablename__ = 'locations'
@@ -396,35 +391,35 @@ class Setting(Base):
 ###### Bảng thẻ tag chung cho cả bài viết và tour, nếu cần có thể tách riêng ra 2 bảng Tour ######
 
 class Tour(Base):
+    """Bảng Tour (Đã đồng bộ hoàn toàn với SQL và Service)"""
     __tablename__ = 'tour'
 
     tour_id = Column(Integer, primary_key=True, autoincrement=True)
+    location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"), nullable=True)
+    title = Column(String(255), nullable=False)
     author_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
     reviewer_id = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"), nullable=True)
-    title = Column(String(255), nullable=False)
+    summary = Column(Text, nullable=True)
     content = Column(Text, nullable=False)
+    duration_days = Column(Integer, nullable=False, default=1)
+    price_per_person = Column(Numeric(10, 2), nullable=False, default=0.0)
+    thumbnail = Column(String(255), nullable=True)
+    images = Column(Text, nullable=True)  # JSON Array lưu ảnh
+    is_published = Column(Boolean, default=False)
+    is_hot = Column(Boolean, default=False)
+    is_featured = Column(Boolean, default=False)
+    slug = Column(String(255), nullable=False, unique=True)
+    view_count = Column(Integer, default=0)
     status = Column(Enum(TourStatus), default=TourStatus.DRAFT)
+    is_deleted = Column(Boolean, default=False)
+    published_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
-    summary = Column(String(500), nullable=True)
-    slug = Column(String(255), nullable=False, unique=True)
-    is_deleted = Column(Boolean, default=False)
-    is_published = Column(Boolean, default=True)
-    created_by = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
-    updated_by = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"), nullable=True)
-    published_at = Column(DateTime, nullable=True)
-    approved_by = Column(Integer, ForeignKey('users.user_id'), nullable=True)
-    location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"))
-    duration_days = Column(Integer, nullable=False)
-    price_per_person = Column(Numeric(10, 2), nullable=False)
-    thumbnail = Column(String(255), nullable=True)
-    view_count = Column(Integer, default=0)
 
-
+    # Relationships
     author = relationship("User", foreign_keys=[author_id], back_populates="tour_authored")
     reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="tour_reviewed")
     comments = relationship("TourComment", back_populates="tour", cascade="all, delete-orphan")
-    approver = relationship("User", foreign_keys=[approved_by], back_populates="tour_approved")
     location = relationship("Location", back_populates="tour")
 
 

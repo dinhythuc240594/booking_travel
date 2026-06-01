@@ -3,9 +3,9 @@ from flask import jsonify, session
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
 import database as db
+import datetime
 import utils
 from booking_service import BookingService
-from tour_service import TourService
 from user_service import UserService
 from setting_service import SettingService
 from related_service import RelatedService
@@ -179,77 +179,110 @@ class BookingModel:
 
 
 class TourModel:
-    """Model class quản lý Tour du lịch, sử dụng Command & Composite Pattern"""
+    """Model class managers Tours follow OOP"""
     
     def __init__(self, db_session: Session):
         self.db = db_session
-
-    def create(self, location_id: int, name: str, description: str, duration_days: int, price_per_person: float) -> bool:
-        """
-        Tạo Tour mới thông qua Command Pattern để đảm bảo an toàn giao dịch.
-        """
-        success = TourService.create_tour(
-            location_id=location_id, 
-            name=name, 
-            description=description, 
-            duration_days=duration_days, 
-            price_per_person=price_per_person
-        )
-
-        return success
-
-
-    def update_price(self, tour_id: int, new_price: float) -> bool:
-        """
-        Cập nhật giá Tour sử dụng Command Pattern (hỗ trợ Undo nếu có lỗi chuỗi).
-        """
-        success = TourService.update_tour_price(tour_id=tour_id, new_price=new_price)
-        return success
-
-    def get_tours_by_location_tree(self, location_id: int) -> dict:
-        """
-        Lấy danh sách Tour theo Địa điểm dưới dạng Cây (Composite Pattern),
-        kèm theo tổng số lượng Tour.
-        """
-
-        return TourService.get_tours_by_location_tree(location_id=location_id)
-
-    def get_by_id(self, tour_id: int) -> db.Tour:
-        """Đọc thông tin một Tour cụ thể qua ID"""
-        return self.db.query(db.Tour).filter(db.Tour.tour_id == tour_id).first()
     
-    def get_all(self, limit: int = 20, offset: int = 0) -> list:
-        """Lấy danh sách tất cả các Tour (có phân trang)"""
-        return self.db.query(db.Tour).order_by(db.Tour.tour_id.desc()).limit(limit).offset(offset).all()
+    def create(self, title: str, content: str, location_id: int, 
+               author_id: int, duration_days: int, price_per_person: float, 
+               summary: str = None, thumbnail: str = None, images: str = None,
+               is_hot: bool = False, is_featured: bool = False,
+               slug: str = None, status: db.TourStatus = db.TourStatus.DRAFT) -> db.Tour:
+        if slug is None:
+            slug = utils.generate_slug(title)
+        
+        tour = db.Tour(
+            title=title,
+            slug=slug,
+            content=content,
+            summary=summary,
+            thumbnail=thumbnail,
+            images=images,
+            location_id=location_id,
+            author_id=author_id,
+            duration_days=duration_days,
+            price_per_person=price_per_person,
+            is_hot=is_hot,
+            is_featured=is_featured,
+            status=status
+        )
+        self.db.add(tour)
+        self.db.commit()
+        self.db.refresh(tour)
+        return tour
+    
+    def get_by_id(self, tour_id: int, include_deleted: bool = False) -> db.Tour:
+        query = self.db.query(db.Tour).filter(db.Tour.tour_id == tour_id)
+        if not include_deleted:
+            query = query.filter(db.Tour.is_deleted == False)
+        return query.first()
+    
+    def get_by_slug(self, slug: str) -> db.Tour:
+        return self.db.query(db.Tour).filter(db.Tour.slug == slug, db.Tour.is_deleted == False).first()
+    
+    def get_all(self, limit: int = None, offset: int = 0, 
+                status: db.TourStatus = None, include_deleted: bool = False) -> list:
+        query = self.db.query(db.Tour)
+        if not include_deleted:
+            query = query.filter(db.Tour.is_deleted == False)
+        if status:
+            query = query.filter(db.Tour.status == status)
+        query = query.order_by(desc(db.Tour.created_at))
+        if limit:
+            query = query.limit(limit).offset(offset)
+        return query.all()
+
+    def get_by_creator(self, author_id: int, limit: int = None, offset: int = 0,
+                       status: db.TourStatus = None, search: str = None, 
+                       include_deleted: bool = False) -> tuple[list[db.Tour], int]:
+        query = self.db.query(db.Tour).filter(db.Tour.author_id == author_id)
+        if not include_deleted:
+            query = query.filter(db.Tour.is_deleted == False)
+        if status:
+            query = query.filter(db.Tour.status == status)
+        if search:
+            like_pattern = f"%{search}%"
+            query = query.filter(or_(db.Tour.title.ilike(like_pattern), db.Tour.summary.ilike(like_pattern)))
+
+        total = query.count()
+        query = query.order_by(desc(db.Tour.created_at))
+        if limit:
+            query = query.limit(limit).offset(offset)
+        return query.all(), total
+
+    def update(self, tour_id: int, **kwargs) -> db.Tour:
+        tour = self.get_by_id(tour_id)
+        if not tour:
+            return None
+        for key, value in kwargs.items():
+            if hasattr(tour, key):
+                setattr(tour, key, value)
+        tour.updated_at = datetime.datetime.utcnow()
+        self.db.commit()
+        self.db.refresh(tour)
+        return tour
+
+    def approve(self, tour_id: int, reviewer_id: int) -> db.Tour:
+        return self.update(tour_id, status=db.TourStatus.PUBLISHED, 
+                           reviewer_id=reviewer_id, published_at=datetime.datetime.utcnow())
+    
+    def reject(self, tour_id: int, reviewer_id: int, reason: str = None) -> db.Tour:
+        result = self.update(tour_id, status=db.TourStatus.REJECTED, reviewer_id=reviewer_id)
+        if result and reason:
+            rejection = db.TourRejection(tour_id=tour_id, rejected_by=reviewer_id, reason=reason)
+            self.db.add(rejection)
+            self.db.commit()
+        return result
     
     def delete(self, tour_id: int) -> bool:
-        """Xóa cứng một Tour"""
         tour = self.get_by_id(tour_id)
         if not tour:
             return False
-        try:
-            self.db.delete(tour)
-            self.db.commit()
-            return True
-        except Exception as e:
-            self.db.rollback()
-            print(f"Lỗi khi xóa Tour: {e}")
-            return False
-
-    def get_public_tours(self, limit: int = 20, offset: int = 0) -> list:
-        """Lấy danh sách Tour công khai (is_published=True) có phân trang"""
-        return self.db.query(db.Tour).filter(db.Tour.is_published == True).order_by(db.Tour.tour_id.desc()).limit(limit).offset(offset).all()
-
-    def search_tour(self, keyword: str, page: int = 1, per_page: int = 10) -> list:
-        """Tìm kiếm Tour theo từ khóa trên tên và mô tả, có phân trang"""
-        offset = (page - 1) * per_page
-        return self.db.query(db.Tour).filter(
-            db.Tour.is_published == True,
-            or_(
-                db.Tour.name.ilike(f'%{keyword}%'),
-                db.Tour.description.ilike(f'%{keyword}%')
-            )
-        ).order_by(db.Tour.tour_id.desc()).limit(per_page).offset(offset).all()
+        tour.is_deleted = True
+        tour.updated_at = datetime.datetime.utcnow()
+        self.db.commit()
+        return True
 
 
 class RelatedActivityModel:

@@ -154,20 +154,6 @@ def create_app():
             return ' '.join(words[:50]) + '...'
         else:
             return text
-    
-    # # Context processor để categories có sẵn trong tất cả templates
-    # @app.context_processor
-    # def inject_categories():
-    #     """Inject categories vào tất cả templates để dùng cho navigation menu"""
-    #     try:
-    #         db_session = get_session()
-    #         category_model = CategoryModel(db_session)
-    #         categories = category_model.get_all()  # Đã lọc visible=True và sắp xếp theo order_display
-    #         db_session.close()
-    #         return dict(categories=categories)
-    #     except Exception:
-    #         # Nếu có lỗi (ví dụ: database chưa khởi tạo), trả về list rỗng
-    #         return dict(categories=[])
 
     return app
 

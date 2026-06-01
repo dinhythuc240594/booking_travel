@@ -7,7 +7,7 @@ import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from src.tour_admin_service import TourAdminService
-from utils import validate_email, validate_password
+from utils import validate_email, validate_password, generate_slug
 from email_utils import send_email
 from database import (
     Tour,
@@ -615,7 +615,6 @@ class AdminController:
             'title': tour.title,
             'slug': tour.slug,
             'status': tour.status.value if getattr(tour, "status", None) else None,
-            'category_name': tour.category.name if getattr(tour, "category", None) else None,
             'summary': getattr(tour, "summary", None),
             'thumbnail': getattr(tour, "thumbnail", None),
             'visible': getattr(tour, "visible", True),
@@ -719,7 +718,6 @@ class AdminController:
                 'id': tour.id,
                 'title': tour.title,
                 'author': tour.creator.username if tour.creator else 'N/A',
-                'category': tour.category.name if tour.category else 'N/A',
                 'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
                 'status': tour.status.value
             } for tour in tour]
@@ -735,7 +733,6 @@ class AdminController:
                 'id': tour.id,
                 'title': tour.title,
                 'author': tour.creator.username if tour.creator else 'N/A',
-                'category': tour.category.name if tour.category else 'N/A',
                 'date': tour.published_at.strftime('%d/%m/%Y %H:%M') if tour.published_at else '',
                 'views': tour.view_count
             } for tour in tour]
@@ -774,9 +771,8 @@ class AdminController:
                 'id': tour.id,
                 'title': tour.title,
                 'author': tour.creator.username if tour.creator else 'N/A',
-                'category': tour.category.name if tour.category else 'N/A',
                 'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
-                'type': 'news',
+                'type': 'tour',
                 'rejection_reason': rejection_info.get('reason', ''),
                 'rejected_by': rejection_info.get('rejected_by', ''),
                 'rejected_at': rejection_info.get('rejected_at', '')
@@ -872,8 +868,6 @@ class AdminController:
                 'summary': tour.summary or '',
                 'content': tour.content or '',
                 'thumbnail': tour.thumbnail or '',
-                'category': tour.category.name if tour.category else 'N/A',
-                'category_id': tour.category_id,
                 'author': author_name,
                 'author_full_name': author_full_name,
                 'approver': tour.approver.username if tour.approver else None,
@@ -889,50 +883,6 @@ class AdminController:
                 'is_deleted': tour.is_deleted if hasattr(tour, 'is_deleted') else False,
             }
         })
-
-    def _generate_slug(self, title: str, status: str = None) -> str:
-        """Tạo slug từ tiêu đề và trạng thái"""
-        
-        # Mapping tiếng Việt sang không dấu
-        vietnamese_map = {
-            'à': 'a', 'á': 'a', 'ạ': 'a', 'ả': 'a', 'ã': 'a', 'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ậ': 'a', 'ẩ': 'a', 'ẫ': 'a',
-            'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ặ': 'a', 'ẳ': 'a', 'ẵ': 'a',
-            'è': 'e', 'é': 'e', 'ẹ': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ê': 'e', 'ề': 'e', 'ế': 'e', 'ệ': 'e', 'ể': 'e', 'ễ': 'e',
-            'ì': 'i', 'í': 'i', 'ị': 'i', 'ỉ': 'i', 'ĩ': 'i',
-            'ò': 'o', 'ó': 'o', 'ọ': 'o', 'ỏ': 'o', 'õ': 'o', 'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ộ': 'o', 'ổ': 'o', 'ỗ': 'o',
-            'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ợ': 'o', 'ở': 'o', 'ỡ': 'o',
-            'ù': 'u', 'ú': 'u', 'ụ': 'u', 'ủ': 'u', 'ũ': 'u', 'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ự': 'u', 'ử': 'u', 'ữ': 'u',
-            'ỳ': 'y', 'ý': 'y', 'ỵ': 'y', 'ỷ': 'y', 'ỹ': 'y',
-            'đ': 'd',
-            'À': 'a', 'Á': 'a', 'Ạ': 'a', 'Ả': 'a', 'Ã': 'a', 'Â': 'a', 'Ầ': 'a', 'Ấ': 'a', 'Ậ': 'a', 'Ẩ': 'a', 'Ẫ': 'a',
-            'Ă': 'a', 'Ằ': 'a', 'Ắ': 'a', 'Ặ': 'a', 'Ẳ': 'a', 'Ẵ': 'a',
-            'È': 'e', 'É': 'e', 'Ẹ': 'e', 'Ẻ': 'e', 'Ẽ': 'e', 'Ê': 'e', 'Ề': 'e', 'Ế': 'e', 'Ệ': 'e', 'Ể': 'e', 'Ễ': 'e',
-            'Ì': 'i', 'Í': 'i', 'Ị': 'i', 'Ỉ': 'i', 'Ĩ': 'i',
-            'Ò': 'o', 'Ó': 'o', 'Ọ': 'o', 'Ỏ': 'o', 'Õ': 'o', 'Ô': 'o', 'Ồ': 'o', 'Ố': 'o', 'Ộ': 'o', 'Ổ': 'o', 'Ỗ': 'o',
-            'Ơ': 'o', 'Ờ': 'o', 'Ớ': 'o', 'Ợ': 'o', 'Ở': 'o', 'Ỡ': 'o',
-            'Ù': 'u', 'Ú': 'u', 'Ụ': 'u', 'Ủ': 'u', 'Ũ': 'u', 'Ư': 'u', 'Ừ': 'u', 'Ứ': 'u', 'Ự': 'u', 'Ử': 'u', 'Ữ': 'u',
-            'Ỳ': 'y', 'Ý': 'y', 'Ỵ': 'y', 'Ỷ': 'y', 'Ỹ': 'y',
-            'Đ': 'd'
-        }
-        
-        slug = title.lower()
-        
-        # Chuyển đổi tiếng Việt có dấu sang không dấu
-        for viet_char, eng_char in vietnamese_map.items():
-            slug = slug.replace(viet_char, eng_char)
-        
-        # Loại bỏ ký tự đặc biệt, chỉ giữ chữ, số, khoảng trắng và dấu gạch ngang
-        slug = re.sub(r'[^\w\s-]', '', slug)
-        # Thay nhiều khoảng trắng hoặc dấu gạch ngang bằng một dấu gạch ngang
-        slug = re.sub(r'[-\s]+', '-', slug)
-        # Loại bỏ dấu gạch ngang ở đầu và cuối
-        slug = slug.strip('-')
-        
-        # Thêm prefix trạng thái nếu cần (tùy chọn)
-        if status and status != 'published':
-            slug = f"{slug}-{status}"
-        
-        return slug
 
     def api_create_tour(self):
         user_id = session.get('user_id')
@@ -957,7 +907,7 @@ class AdminController:
             status = TourStatus.DRAFT
             
         data_dict['status'] = status
-        data_dict['slug'] = self._generate_slug(data.get('title'), status.value)
+        data_dict['slug'] = generate_slug(data.get('title'), status.value)
 
         success, message = self.user_model.create_tour(data_dict)
         return jsonify({'success': success, 'message': message})
@@ -1244,39 +1194,6 @@ class AdminController:
             return jsonify({
                 'success': True,
                 'message': 'Cập nhật thông tin thành công'
-            })
-        except Exception as e:
-            self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
-    
-    def api_toggle_user_status(self, user_id: int):
-        """API khóa/mở khóa user"""
-        if 'user_id' not in session:
-            return jsonify({'success': False, 'error': 'Unauthorized'}), 401
-        
-        current_user = self.user_model.get_by_id(session['user_id'])
-        if not current_user or current_user.role != UserRole.ADMIN:
-            return jsonify({'success': False, 'error': 'Permission denied'}), 403
-        
-        try:
-            user = self.user_model.get_by_id(user_id)
-            if not user:
-                return jsonify({'success': False, 'error': 'Không tìm thấy người dùng'}), 404
-            
-            # Không cho phép khóa chính mình
-            if user.id == current_user.id:
-                return jsonify({'success': False, 'error': 'Không thể khóa tài khoản của chính bạn'}), 400
-            
-            # Toggle status
-            user.is_active = not user.is_active
-            user.updated_at = datetime.utcnow()
-            self.db_session.commit()
-            
-            status_text = 'mở khóa' if user.is_active else 'khóa'
-            return jsonify({
-                'success': True,
-                'message': f'Đã {status_text} tài khoản thành công',
-                'is_active': user.is_active
             })
         except Exception as e:
             self.db_session.rollback()

@@ -14,42 +14,45 @@ class TourAdminService:
         img_pattern = r'<img[^>]+src=["\']([^"\']+)["\']'
         image_urls = list(set(re.findall(img_pattern, content)))
         
-        temp_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', 'temp')
-        news_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', f'news_{tour_id}')
+        # Đã đổi thư mục từ news sang tour
+        temp_folder = os.path.join('src', 'static', 'uploads', 'tour', 'temp')
+        tour_folder = os.path.join('src', 'static', 'uploads', 'tour', f'tour_{tour_id}')
         
         if os.path.exists(temp_folder):
-            os.makedirs(news_folder, exist_ok=True)
+            os.makedirs(tour_folder, exist_ok=True)
             for filename in os.listdir(temp_folder):
                 src_path = os.path.join(temp_folder, filename)
-                dst_path = os.path.join(news_folder, filename)
+                dst_path = os.path.join(tour_folder, filename)
                 if os.path.isfile(src_path):
                     shutil.move(src_path, dst_path)
 
         updated_images = []
         if image_urls:
-            updated_images = [img.replace('temp', f'news_{tour_id}') if 'temp' in img else img for img in image_urls]
+            updated_images = [img.replace('temp', f'tour_{tour_id}') if 'temp' in img else img for img in image_urls]
             for old_url, new_url in zip(image_urls, updated_images):
                 content = content.replace(old_url, new_url)
                 
         if thumbnail and 'temp' in thumbnail:
-            thumbnail = thumbnail.replace('temp', f'news_{tour_id}')
+            thumbnail = thumbnail.replace('temp', f'tour_{tour_id}')
             
         return content, thumbnail, json.dumps(updated_images) if updated_images else None
 
     @staticmethod
     def create_tour(data: dict) -> tuple[bool, str, dict]:
-
         session = get_session()
         invoker = DBTransactionInvoker()
         
-        # Mapping data
+        # Đã map đúng các trường của Tour
         tour_data = {
             'title': data.get('title'),
-            'slug': data.get('slug'), # Đã được gen từ Model
+            'slug': data.get('slug'), 
             'content': data.get('content'),
             'summary': data.get('summary'),
             'thumbnail': data.get('thumbnail'),
-            'created_by': data.get('user_id'),
+            'author_id': data.get('user_id'), # Map sang author_id
+            'location_id': data.get('location_id'),
+            'duration_days': data.get('duration_days', 1),
+            'price_per_person': data.get('price_per_person', 0.0),
             'status': data.get('status', TourStatus.DRAFT),
             'is_hot': data.get('is_hot', False),
             'is_featured': data.get('is_featured', False)
@@ -58,7 +61,7 @@ class TourAdminService:
         command = CreateTourCommand(tour_data)
         try:
             invoker.execute_transaction(session, [command])
-            tour_id = command.tour_record.id
+            tour_id = command.tour_record.tour_id # Sửa lại tour_id thay vì id
 
             new_content, new_thumb, images_json = TourAdminService.process_images_and_content(
                 tour_data['content'], tour_data['thumbnail'], tour_id
@@ -77,7 +80,6 @@ class TourAdminService:
 
     @staticmethod
     def update_tour(tour_id: int, data: dict) -> tuple[bool, str]:
-
         session = get_session()
         invoker = DBTransactionInvoker()
         
@@ -92,7 +94,9 @@ class TourAdminService:
             'summary': data.get('summary'),
             'thumbnail': new_thumb,
             'images': images_json,
-            'category_id': data.get('category_id'),
+            'location_id': data.get('location_id'),
+            'duration_days': data.get('duration_days'),
+            'price_per_person': data.get('price_per_person'),
             'status': data.get('status'),
             'is_hot': data.get('is_hot'),
             'is_featured': data.get('is_featured')
