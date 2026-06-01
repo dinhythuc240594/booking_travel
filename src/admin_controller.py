@@ -4,25 +4,29 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from sqlalchemy import or_
 from typing import Optional
 from functools import wraps
+from utils import validate_email, validate_password
+from email_utils import send_email
 import pytz
 import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from database import (
     ArticleStatus,
+    ArticleTag,
     get_session,
     Articles,
     ArticleStatusEnum,
     UserRole,
-    SavedTours,
-    ViewedTours,
+    SavedArticles,
+    ViewedArticles,
     NewsletterSubscription,
     PasswordResetToken,
     Setting,
     User,
     ArticleRejection,
     ArticleCategory,
-    ArticleComment, ArticleStatusEnum
+    ArticleComment,
+    Tag,
 )
 from models import (
     ArticleModel,
@@ -335,9 +339,6 @@ class AdminController:
             try:
                 # Tạo link article
                 article_url = url_for('client.articles_detail', slug=article.slug, _external=True)
-                
-                # Tạo nội dung email
-                from email_utils import send_email
                 
                 email_subject = f"Article của bạn đã bị từ chối: {article.title}"
                 
@@ -928,9 +929,9 @@ class AdminController:
                 'message': 'Bài viết không tồn tại'
             }), 404
         
-        # Lấy tags từ NewsTag relationship
-        news_tags = self.db_session.query(NewsTag).filter(NewsTag.news_id == article.id).all()
-        tag_ids = [nt.tag_id for nt in news_tags]
+        # Lấy tags từ ArticleTag relationship
+        article_tags = self.db_session.query(ArticleTag).filter(ArticleTag.article_id == article.id).all()
+        tag_ids = [at.tag_id for at in article_tags]
         tags = self.db_session.query(Tag).filter(Tag.id.in_(tag_ids)).all() if tag_ids else []
         tags_list = [f"#{tag.name}" for tag in tags]
         tags_string = ' '.join(tags_list) if tags_list else ''
@@ -967,50 +968,9 @@ class AdminController:
             }
         })
     
-    def api_international_article_detail(self, article_id: int):
-        """API lấy chi tiết bài viết quốc tế theo ID"""
-        from database import NewsInternational
-        article = self.db_session.query(NewsInternational).filter(NewsInternational.id == article_id).first()
-        
-        if not article:
-            return jsonify({
-                'success': False,
-                'message': 'Bài viết không tồn tại'
-            }), 404
-        
-        # Xác định author: nếu là bài từ API thì dùng author field, không thì dùng creator
-        author_name = article.author if (article.is_api and article.author) else (article.creator.username if article.creator else 'N/A')
-        author_full_name = article.author if (article.is_api and article.author) else (article.creator.full_name if article.creator and article.creator.full_name else article.creator.username if article.creator else 'N/A')
-        
-        return jsonify({
-            'success': True,
-            'data': {
-                'id': article.id,
-                'title': article.title,
-                'slug': article.slug,
-                'summary': article.summary or '',
-                'content': article.content or '',
-                'thumbnail': article.thumbnail or '',
-                'category': article.category.name if article.category else 'N/A',
-                'category_id': article.category_id,
-                'author': author_name,
-                'author_full_name': author_full_name,
-                'approver': article.approver.username if article.approver else None,
-                'approver_full_name': article.approver.full_name if article.approver and article.approver.full_name else (article.approver.username if article.approver else None),
-                'is_api': article.is_api,
-                'status': article.status.value,
-                'created_at': article.created_at.strftime('%d/%m/%Y %H:%M') if article.created_at else '',
-                'published_at': article.published_at.strftime('%d/%m/%Y %H:%M') if article.published_at else '',
-                'updated_at': article.updated_at.strftime('%d/%m/%Y %H:%M') if article.updated_at else '',
-                'view_count': article.view_count,
-                'is_featured': article.is_featured,
-                'is_hot': article.is_hot
-            }
-        })
-    
     def api_categories(self):
         """API lấy danh sách danh mục"""
-        categories = self.category_model.get_all()
+        categories = self.article_category_model.get_all()
         
         return jsonify({
             'success': True,
@@ -1131,8 +1091,8 @@ class AdminController:
             if not tag:
                 return jsonify({'success': False, 'error': 'Không tìm thấy hashtag'}), 404
 
-            # Xóa liên kết NewsTag trước khi xóa tag
-            self.db_session.query(NewsTag).where(NewsTag.tag_id == tag_id).delete()
+            # Xóa liên kết ArticleTag trước khi xóa tag
+            self.db_session.query(ArticleTag).where(ArticleTag.tag_id == tag_id).delete()
             self.db_session.delete(tag)
             self.db_session.commit()
 
@@ -1142,19 +1102,6 @@ class AdminController:
             current_app.logger.exception('Lỗi xóa hashtag: %s', e)
             return jsonify({'success': False, 'error': 'Không thể xóa hashtag'}), 500
 
-    def api_international_categories(self):
-        """API lấy danh sách danh mục tin quốc tế (categories_international)"""
-        categories = self.int_category_model.get_all()
-
-        return jsonify({
-            'success': True,
-            'data': [{
-                'id': cat.id,
-                'name': cat.name,
-                'slug': cat.slug,
-            } for cat in categories]
-        })
-    
     def _parse_tags(self, tags_string: str) -> list:
         """Parse tags từ string có thể chứa hashtag format (#tag_name), comma-separated hoặc cách nhau bằng khoảng trắng"""
         import re
@@ -1230,113 +1177,6 @@ class AdminController:
         
         return slug
     
-    def api_create_international_article(self):
-        """API tạo bài viết quốc tế mới từ editor form"""
-        user_id = session.get('user_id')
-        if not user_id:
-            return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
-        
-        from database import NewsInternational, CategoryInternational
-        
-        data = request.json if request.is_json else request.form
-        
-        # Lấy dữ liệu từ form
-        title = data.get('title', '').strip()
-        content = data.get('content', '').strip()
-        category_id = data.get('category_id') or data.get('category')
-        summary = data.get('summary') or data.get('description', '').strip()
-        thumbnail = data.get('thumbnail', '').strip()
-        author = data.get('author', '').strip()
-        status = data.get('status', NewsStatus.DRAFT.value)
-        
-        # Validation
-        if not title:
-            return jsonify({'success': False, 'error': 'Vui lòng nhập tiêu đề bài viết'}), 400
-        
-        if not content:
-            return jsonify({'success': False, 'error': 'Vui lòng nhập nội dung bài viết'}), 400
-        
-        if not category_id:
-            return jsonify({'success': False, 'error': 'Vui lòng chọn danh mục'}), 400
-        
-        try:
-            category_id = int(category_id)
-        except (ValueError, TypeError):
-            return jsonify({'success': False, 'error': 'Danh mục không hợp lệ'}), 400
-        
-        # Kiểm tra category tồn tại
-        category = self.db_session.query(CategoryInternational).filter(CategoryInternational.id == category_id).first()
-        if not category:
-            return jsonify({'success': False, 'error': 'Danh mục không tồn tại'}), 400
-        
-        try:
-            news_status = NewsStatus(status)
-        except ValueError:
-            news_status = NewsStatus.DRAFT
-        
-        # Tạo slug từ tiêu đề
-        base_slug = self._generate_slug(title)
-        slug = base_slug
-        
-        # Kiểm tra slug trùng và thêm số nếu cần
-        counter = 1
-        while self.db_session.query(NewsInternational).filter(NewsInternational.slug == slug).first():
-            slug = f"{base_slug}-{counter}"
-            counter += 1
-        
-        # Extract images từ HTML content
-        import re
-        image_urls = []
-        img_pattern = r'<img[^>]+src=["\']([^"\']+)["\']'
-        matches = re.findall(img_pattern, content)
-        for img_url in matches:
-            if img_url and img_url not in image_urls:
-                image_urls.append(img_url)
-        
-        # Lưu images dưới dạng JSON
-        images_json = None
-        if image_urls:
-            import json
-            images_json = json.dumps(image_urls)
-        
-        try:
-            # Tạo bài viết quốc tế mới
-            news = NewsInternational(
-                title=title,
-                slug=slug,
-                summary=summary,
-                content=content,
-                thumbnail=thumbnail,
-                images=images_json,
-                category_id=category_id,
-                created_by=user_id,
-                approved_by=user_id if news_status == NewsStatus.PUBLISHED else None,
-                status=news_status,
-                author=author if author else None,
-                published_at=datetime.utcnow() if news_status == NewsStatus.PUBLISHED else None
-            )
-            
-            self.db_session.add(news)
-            self.db_session.commit()
-            self.db_session.refresh(news)
-            
-            return jsonify({
-                'success': True,
-                'message': 'Đã tạo bài viết quốc tế',
-                'data': {
-                    'id': news.id,
-                    'title': news.title,
-                    'status': news.status.value
-                }
-            })
-        except IntegrityError as e:
-            self.db_session.rollback()
-            return jsonify({'success': False, 'error': 'Bài viết đã tồn tại'}), 400
-        except Exception as e:
-            self.db_session.rollback()
-            current_app.logger.exception('Lỗi tạo bài viết quốc tế: %s', e)
-            return jsonify({'success': False, 'error': f'Không thể tạo bài viết: {str(e)}'}), 500
-    
     def api_create_article(self):
         """API tạo bài viết mới từ editor form"""
         user_id = session.get('user_id')
@@ -1352,7 +1192,7 @@ class AdminController:
         summary = data.get('summary') or data.get('description', '').strip()
         thumbnail = data.get('thumbnail', '').strip()
         tags = data.get('tags', '').strip()
-        status = data.get('status', NewsStatus.DRAFT.value)
+        status = data.get('status', ArticleStatus.DRAFT.value)
         is_hot = data.get('is_hot', False)
         is_featured = data.get('is_featured', False)
         
@@ -1377,15 +1217,15 @@ class AdminController:
         except (ValueError, TypeError):
             return jsonify({'success': False, 'error': 'Danh mục không hợp lệ'}), 400
         
-        # Kiểm tra category tồn tại
-        category = self.db_session.query(Category).filter(Category.id == category_id).first()
+        # Kiểm tra ArticleCategory tồn tại
+        category = self.db_session.query(ArticleCategory).filter(ArticleCategory.category_id == category_id).first()
         if not category:
             return jsonify({'success': False, 'error': 'Danh mục không tồn tại'}), 400
         
         try:
-            news_status = NewsStatus(status)
+            article_status = ArticleStatus(status)
         except ValueError:
-            news_status = NewsStatus.DRAFT
+            article_status = ArticleStatus.DRAFT
         
         # Tạo slug từ tiêu đề và trạng thái
         print(title)
@@ -1395,7 +1235,7 @@ class AdminController:
         
         # Kiểm tra slug trùng và thêm số nếu cần
         counter = 1
-        while self.db_session.query(News).filter(News.slug == slug).first():
+        while self.db_session.query(Articles).filter(Articles.slug == slug).first():
             slug = f"{base_slug}-{counter}"
             counter += 1
         
@@ -1416,7 +1256,7 @@ class AdminController:
         
         try:
             # Tạo bài viết mới
-            article = News(
+            article = Articles(
                 title=title,
                 slug=slug,
                 content=content,
@@ -1425,10 +1265,10 @@ class AdminController:
                 images=images_json,
                 category_id=category_id,
                 created_by=user_id,
-                status=news_status,
+                status=article_status,
                 is_hot=bool(is_hot),
                 is_featured=bool(is_featured),
-                published_at=datetime.utcnow() if news_status == NewsStatus.PUBLISHED else None
+                published_at=datetime.utcnow() if article_status == ArticleStatus.PUBLISHED else None
             )
             
             self.db_session.add(article)
@@ -1468,7 +1308,7 @@ class AdminController:
             # Xử lý tags nếu có - CHỈ chấp nhận tags có sẵn trong bảng tags
             if tags:
                 # Xóa các tags cũ của bài viết (nếu có)
-                self.db_session.query(NewsTag).filter(NewsTag.news_id == article.id).delete()
+                self.db_session.query(ArticleTag).filter(ArticleTag.news_id == article.id).delete()
                 
                 tag_names = self._parse_tags(tags)
                 invalid_tags = []
@@ -1480,8 +1320,8 @@ class AdminController:
                         invalid_tags.append(tag_name)
                         continue
                     
-                    # Tạo NewsTag mới
-                    news_tag = NewsTag(news_id=article.id, tag_id=tag.id)
+                    # Tạo ArticleTag mới
+                    news_tag = ArticleTag(news_id=article.id, tag_id=tag.id)
                     self.db_session.add(news_tag)
                 
                 # Nếu có tags không hợp lệ, trả về lỗi
@@ -1520,7 +1360,7 @@ class AdminController:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
         data = request.json if request.is_json else request.form
-        article = self.db_session.query(News).filter(News.id == article_id).first()
+        article = self.db_session.query(Articles).filter(Articles.id == article_id).first()
         if not article:
             return jsonify({'success': False, 'error': 'Bài viết không tồn tại'}), 400
         
@@ -1557,14 +1397,14 @@ class AdminController:
             return jsonify({'success': False, 'error': 'Danh mục không hợp lệ'}), 400
         
         # Kiểm tra category tồn tại
-        category = self.db_session.query(Category).filter(Category.id == category_id).first()
+        category = self.db_session.query(ArticleCategory).filter(ArticleCategory.category_id == category_id).first()
         if not category:
             return jsonify({'success': False, 'error': 'Danh mục không tồn tại'}), 400
         
         try:
-            news_status = NewsStatus(status)
+            article_status = ArticleStatus(status)
         except ValueError:
-            news_status = article.status
+            article_status = article.status
         
         # Tạo slug từ tiêu đề và trạng thái
         base_slug = self._generate_slug(title, status)
@@ -1572,7 +1412,7 @@ class AdminController:
         
         # Kiểm tra slug trùng và thêm số nếu cần (nhưng không trùng với chính nó)
         counter = 1
-        while self.db_session.query(News).filter(News.slug == slug, News.id != article_id).first():
+        while self.db_session.query(Articles).filter(Articles.slug == slug, Articles.id != article_id).first():
             slug = f"{base_slug}-{counter}"
             counter += 1
         
@@ -1600,10 +1440,10 @@ class AdminController:
             article.thumbnail = thumbnail
             article.images = images_json
             article.category_id = category_id
-            article.status = news_status
+            article.status = article_status
             article.is_hot = bool(is_hot)
             article.is_featured = bool(is_featured)
-            article.published_at = datetime.utcnow() if news_status == NewsStatus.PUBLISHED else article.published_at
+            article.published_at = datetime.utcnow() if article_status == ArticleStatus.PUBLISHED else article.published_at
             
             self.db_session.commit()
             self.db_session.refresh(article)
@@ -1641,7 +1481,7 @@ class AdminController:
             # Xử lý tags nếu có - CHỈ chấp nhận tags có sẵn trong bảng tags
             if tags:
                 # Xóa các tags cũ của bài viết
-                self.db_session.query(NewsTag).filter(NewsTag.news_id == article.id).delete()
+                self.db_session.query(ArticleTag).filter(ArticleTag.news_id == article.id).delete()
                 
                 tag_names = self._parse_tags(tags)
                 invalid_tags = []
@@ -1653,9 +1493,9 @@ class AdminController:
                         invalid_tags.append(tag_name)
                         continue
                     
-                    # Tạo NewsTag mới
-                    news_tag = NewsTag(news_id=article.id, tag_id=tag.id)
-                    self.db_session.add(news_tag)
+                    # Tạo ArticleTag mới
+                    article_tag = ArticleTag(news_id=article.id, tag_id=tag.id)
+                    self.db_session.add(article_tag)
                 
                 # Nếu có tags không hợp lệ, trả về lỗi
                 if invalid_tags:
@@ -1733,47 +1573,10 @@ class AdminController:
             'image_url': image_url
         })
 
-    # def _generate_slug(self, title: str) -> str:
-    #     """Tạo slug từ tiêu đề - chuyển tiếng Việt có dấu thành không dấu"""
-    #     import re
-    #     import unicodedata
-        
-    #     # Chuyển thành chữ thường
-    #     slug = title.lower()
-        
-    #     # Bảng chuyển đổi tiếng Việt có dấu sang không dấu
-    #     vietnamese_map = {
-    #         'à': 'a', 'á': 'a', 'ả': 'a', 'ã': 'a', 'ạ': 'a',
-    #         'ă': 'a', 'ằ': 'a', 'ắ': 'a', 'ẳ': 'a', 'ẵ': 'a', 'ặ': 'a',
-    #         'â': 'a', 'ầ': 'a', 'ấ': 'a', 'ẩ': 'a', 'ẫ': 'a', 'ậ': 'a',
-    #         'è': 'e', 'é': 'e', 'ẻ': 'e', 'ẽ': 'e', 'ẹ': 'e',
-    #         'ê': 'e', 'ề': 'e', 'ế': 'e', 'ể': 'e', 'ễ': 'e', 'ệ': 'e',
-    #         'ì': 'i', 'í': 'i', 'ỉ': 'i', 'ĩ': 'i', 'ị': 'i',
-    #         'ò': 'o', 'ó': 'o', 'ỏ': 'o', 'õ': 'o', 'ọ': 'o',
-    #         'ô': 'o', 'ồ': 'o', 'ố': 'o', 'ổ': 'o', 'ỗ': 'o', 'ộ': 'o',
-    #         'ơ': 'o', 'ờ': 'o', 'ớ': 'o', 'ở': 'o', 'ỡ': 'o', 'ợ': 'o',
-    #         'ù': 'u', 'ú': 'u', 'ủ': 'u', 'ũ': 'u', 'ụ': 'u',
-    #         'ư': 'u', 'ừ': 'u', 'ứ': 'u', 'ử': 'u', 'ữ': 'u', 'ự': 'u',
-    #         'ỳ': 'y', 'ý': 'y', 'ỷ': 'y', 'ỹ': 'y', 'ỵ': 'y',
-    #         'đ': 'd',
-    #     }
-        
-    #     # Thay thế các ký tự tiếng Việt
-    #     for viet, latin in vietnamese_map.items():
-    #         slug = slug.replace(viet, latin)
-        
-    #     # Xóa các ký tự không phải chữ cái, số, khoảng trắng, dấu gạch ngang
-    #     slug = re.sub(r'[^\w\s-]', '', slug)
-        
-    #     # Thay thế nhiều khoảng trắng hoặc dấu gạch ngang liên tiếp bằng một dấu gạch ngang
-    #     slug = re.sub(r'[-\s]+', '-', slug)
-        
-    #     return slug.strip('-')
-    
     def api_menu_items(self):
         """API lấy danh sách categories (menu items)"""
-        categories = self.db_session.query(Category).order_by(
-            Category.order_display, Category.parent_id
+        categories = self.db_session.query(ArticleCategory).order_by(
+            ArticleCategory.order_display, ArticleCategory.parent_id
         ).all()
         
         return jsonify({
@@ -1795,7 +1598,7 @@ class AdminController:
         if not parent_id:
             return 1
         
-        parent = self.db_session.query(Category).filter(Category.id == parent_id).first()
+        parent = self.db_session.query(ArticleCategory).filter(ArticleCategory.id == parent_id).first()
         if not parent:
             return 1
         
@@ -1821,7 +1624,7 @@ class AdminController:
             slug = self._generate_slug(name)
         
         # Kiểm tra slug trùng
-        existing = self.db_session.query(Category).filter(Category.slug == slug).first()
+        existing = self.db_session.query(ArticleCategory).filter(ArticleCategory.slug == slug).first()
         if existing:
             return jsonify({'success': False, 'error': 'Slug đã tồn tại'}), 400
         
@@ -1832,7 +1635,7 @@ class AdminController:
         if level > 4:
             return jsonify({'success': False, 'error': 'Không thể tạo menu quá 4 cấp. Menu hiện tại đã đạt cấp tối đa.'}), 400
         
-        category = Category(
+        category = ArticleCategory(
             name=name,
             slug=slug,
             icon=icon if icon else None,
@@ -1860,7 +1663,7 @@ class AdminController:
     
     def api_update_menu_item(self, menu_id: int):
         """API cập nhật category (menu item)"""
-        category = self.db_session.query(Category).filter(Category.id == menu_id).first()
+        category = self.db_session.query(ArticleCategory).filter(ArticleCategory.id == menu_id).first()
         if not category:
             return jsonify({'success': False, 'error': 'Không tìm thấy danh mục'}), 404
         
@@ -1870,9 +1673,9 @@ class AdminController:
             category.name = data['name']
         if 'slug' in data:
             # Kiểm tra slug trùng (trừ chính nó)
-            existing = self.db_session.query(Category).filter(
-                Category.slug == data['slug'],
-                Category.id != menu_id
+            existing = self.db_session.query(ArticleCategory).filter(
+                ArticleCategory.slug == data['slug'],
+                ArticleCategory.id != menu_id
             ).first()
             if existing:
                 return jsonify({'success': False, 'error': 'Slug đã tồn tại'}), 400
@@ -1893,7 +1696,7 @@ class AdminController:
                 def is_descendant(parent_candidate_id, ancestor_id):
                     if parent_candidate_id == ancestor_id:
                         return True
-                    parent_candidate = self.db_session.query(Category).filter(Category.id == parent_candidate_id).first()
+                    parent_candidate = self.db_session.query(ArticleCategory).filter(ArticleCategory.id == parent_candidate_id).first()
                     if not parent_candidate or not parent_candidate.parent_id:
                         return False
                     return is_descendant(parent_candidate.parent_id, ancestor_id)
@@ -1928,12 +1731,12 @@ class AdminController:
     
     def api_delete_menu_item(self, menu_id: int):
         """API xóa category (menu item)"""
-        category = self.db_session.query(Category).filter(Category.id == menu_id).first()
+        category = self.db_session.query(ArticleCategory).filter(ArticleCategory.id == menu_id).first()
         if not category:
             return jsonify({'success': False, 'error': 'Không tìm thấy danh mục'}), 404
         
         # Kiểm tra xem có tin tức nào đang sử dụng category này không
-        news_count = self.db_session.query(News).filter(News.category_id == menu_id).count()
+        news_count = self.db_session.query(Articles).filter(Articles.category_id == menu_id).count()
         if news_count > 0:
             return jsonify({
                 'success': False,
@@ -1941,10 +1744,10 @@ class AdminController:
             }), 400
         
         # Xóa các category con trước (cascade)
-        children = self.db_session.query(Category).filter(Category.parent_id == menu_id).all()
+        children = self.db_session.query(ArticleCategory).filter(ArticleCategory.parent_id == menu_id).all()
         for child in children:
             # Kiểm tra tin tức của child category
-            child_news_count = self.db_session.query(News).filter(News.category_id == child.id).count()
+            child_news_count = self.db_session.query(Articles).filter(Articles.category_id == child.id).count()
             if child_news_count == 0:
                 self.db_session.delete(child)
         
@@ -1959,7 +1762,7 @@ class AdminController:
     def api_init_default_menu_items(self):
         """API khởi tạo categories mặc định (menu items)"""
         # Kiểm tra xem đã có categories chưa
-        count = self.db_session.query(Category).count()
+        count = self.db_session.query(ArticleCategory).count()
         if count > 0:
             return jsonify({
                 'success': False,
@@ -1977,7 +1780,7 @@ class AdminController:
         parent_categories.sort(key=lambda x: x['order_display'])
         
         for cat_data in parent_categories:
-            category = Category(
+            category = ArticleCategory(
                 name=cat_data['name'],
                 slug=cat_data['slug'],
                 icon=cat_data['icon'],
@@ -2003,7 +1806,7 @@ class AdminController:
             
             if parent_slug and parent_slug in created_items:
                 parent_id = created_items[parent_slug]
-                category = Category(
+                category = ArticleCategory(
                     name=cat_data['name'],
                     slug=cat_data['slug'],
                     icon=cat_data['icon'],
@@ -2037,7 +1840,7 @@ class AdminController:
                 new_order = item_data.get('order', 0)
                 parent_id = item_data.get('parent_id')
                 
-                category = self.db_session.query(Category).filter(Category.id == category_id).first()
+                category = self.db_session.query(ArticleCategory).filter(ArticleCategory.id == category_id).first()
                 if category:
                     category.order_display = new_order
                     if parent_id is not None:
@@ -2047,306 +1850,6 @@ class AdminController:
                         category.parent_id = int(parent_id) if parent_id else None
                     else:
                         category.parent_id = None
-                    category.updated_at = datetime.utcnow()
-            
-            self.db_session.commit()
-            
-            return jsonify({
-                'success': True,
-                'message': 'Đã cập nhật thứ tự danh mục'
-            })
-        except Exception as e:
-            self.db_session.rollback()
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
-    
-    def api_international_menu_items(self):
-        """API lấy danh sách international categories (menu items)"""
-        categories = self.db_session.query(CategoryInternational).order_by(
-            CategoryInternational.order_display, CategoryInternational.parent_id
-        ).all()
-        
-        return jsonify({
-            'success': True,
-            'data': [{
-                'id': item.id,
-                'name': item.name,
-                'slug': item.slug,
-                'icon': item.icon,
-                'order': item.order_display,
-                'parent_id': item.parent_id,
-                'level': item.level if hasattr(item, 'level') else 1,
-                'visible': item.visible
-            } for item in categories]
-        })
-    
-    def api_create_international_menu_item(self):
-        """API tạo international category mới (menu item)"""
-        data = request.json if request.is_json else request.form
-        
-        name = data.get('name')
-        slug = data.get('slug')
-        icon = data.get('icon')
-        order = data.get('order', 0)
-        parent_id = data.get('parent_id')
-        visible = data.get('visible', True)
-        description = data.get('description')
-        
-        if not name:
-            return jsonify({'success': False, 'error': 'Tên danh mục không được để trống'}), 400
-        
-        if not slug:
-            # Tự động tạo slug
-            slug = self._generate_slug(name)
-        
-        # Kiểm tra slug trùng
-        existing = self.db_session.query(CategoryInternational).filter(CategoryInternational.slug == slug).first()
-        if existing:
-            return jsonify({'success': False, 'error': 'Slug đã tồn tại'}), 400
-        
-        # Tính toán level
-        level = self._calculate_international_level(parent_id)
-        
-        # Kiểm tra level không được vượt quá 4
-        if level > 4:
-            return jsonify({'success': False, 'error': 'Không thể tạo menu quá 4 cấp. Menu hiện tại đã đạt cấp tối đa.'}), 400
-        
-        category = CategoryInternational(
-            name=name,
-            slug=slug,
-            icon=icon if icon else None,
-            order_display=order,
-            parent_id=int(parent_id) if parent_id else None,
-            level=level,
-            visible=visible,
-            description=description if description else None
-        )
-        
-        self.db_session.add(category)
-        self.db_session.commit()
-        self.db_session.refresh(category)
-        
-        return jsonify({
-            'success': True,
-            'message': 'Đã tạo danh mục mới',
-            'data': {
-                'id': category.id,
-                'name': category.name,
-                'slug': category.slug,
-                'level': category.level
-            }
-        })
-    
-    def api_update_international_menu_item(self, menu_id: int):
-        """API cập nhật international category (menu item)"""
-        category = self.db_session.query(CategoryInternational).filter(CategoryInternational.id == menu_id).first()
-        if not category:
-            return jsonify({'success': False, 'error': 'Không tìm thấy danh mục'}), 404
-        
-        data = request.json if request.is_json else request.form
-        
-        if 'name' in data:
-            category.name = data['name']
-        if 'slug' in data:
-            # Kiểm tra slug trùng (trừ chính nó)
-            existing = self.db_session.query(CategoryInternational).filter(
-                CategoryInternational.slug == data['slug'],
-                CategoryInternational.id != menu_id
-            ).first()
-            if existing:
-                return jsonify({'success': False, 'error': 'Slug đã tồn tại'}), 400
-            category.slug = data['slug']
-        if 'icon' in data:
-            category.icon = data['icon'] if data['icon'] else None
-        if 'order' in data:
-            category.order_display = int(data['order'])
-        if 'parent_id' in data:
-            parent_id = data['parent_id']
-            # Kiểm tra không được set parent là chính nó
-            if parent_id == menu_id:
-                return jsonify({'success': False, 'error': 'Không thể set parent là chính nó'}), 400
-            
-            # Kiểm tra không được set parent là con cháu của chính nó (tránh vòng lặp)
-            if parent_id:
-                # Kiểm tra xem parent_id có phải là con cháu của menu_id không
-                def is_descendant(parent_candidate_id, ancestor_id):
-                    if parent_candidate_id == ancestor_id:
-                        return True
-                    parent_candidate = self.db_session.query(CategoryInternational).filter(CategoryInternational.id == parent_candidate_id).first()
-                    if not parent_candidate or not parent_candidate.parent_id:
-                        return False
-                    return is_descendant(parent_candidate.parent_id, ancestor_id)
-                
-                if is_descendant(int(parent_id), menu_id):
-                    return jsonify({'success': False, 'error': 'Không thể set parent là con cháu của chính nó'}), 400
-            
-            category.parent_id = int(parent_id) if parent_id else None
-            
-            # Tính toán lại level khi parent_id thay đổi
-            new_level = self._calculate_international_level(category.parent_id)
-            if new_level > 4:
-                return jsonify({'success': False, 'error': 'Không thể tạo menu quá 4 cấp. Menu hiện tại đã đạt cấp tối đa.'}), 400
-            category.level = new_level
-        if 'visible' in data:
-            category.visible = bool(data['visible'])
-        if 'description' in data:
-            category.description = data['description'] if data['description'] else None
-        
-        category.updated_at = datetime.utcnow()
-        self.db_session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Đã cập nhật danh mục',
-            'data': {
-                'id': category.id,
-                'name': category.name,
-                'level': category.level
-            }
-        })
-    
-    def api_delete_international_menu_item(self, menu_id: int):
-        """API xóa international category (menu item)"""
-        category = self.db_session.query(CategoryInternational).filter(CategoryInternational.id == menu_id).first()
-        if not category:
-            return jsonify({'success': False, 'error': 'Không tìm thấy danh mục'}), 404
-        
-        # Kiểm tra xem có tin tức nào đang sử dụng category này không
-        news_count = self.db_session.query(NewsInternational).filter(NewsInternational.category_id == menu_id).count()
-        if news_count > 0:
-            return jsonify({
-                'success': False,
-                'error': f'Không thể xóa danh mục vì có {news_count} tin tức đang sử dụng'
-            }), 400
-        
-        # Xóa các category con trước (cascade)
-        children = self.db_session.query(CategoryInternational).filter(CategoryInternational.parent_id == menu_id).all()
-        for child in children:
-            # Kiểm tra tin tức của child category
-            child_news_count = self.db_session.query(NewsInternational).filter(NewsInternational.category_id == child.id).count()
-            if child_news_count == 0:
-                self.db_session.delete(child)
-        
-        self.db_session.delete(category)
-        self.db_session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': 'Đã xóa danh mục'
-        })
-    
-    def _calculate_international_level(self, parent_id):
-        """Tính toán level dựa trên parent_id cho international categories"""
-        if not parent_id:
-            return 1
-        
-        parent = self.db_session.query(CategoryInternational).filter(CategoryInternational.id == parent_id).first()
-        if not parent:
-            return 1
-        
-        return parent.level + 1
-    
-    def api_init_default_international_menu_items(self):
-        """API khởi tạo international categories mặc định (menu items)"""
-        # Kiểm tra xem đã có categories chưa
-        count = self.db_session.query(CategoryInternational).count()
-        if count > 0:
-            return jsonify({
-                'success': False,
-                'error': 'Đã có categories trong database'
-            }), 400
-        
-        # Sử dụng DEFAULT_CATEGORIES_EN từ database.py
-        from database import DEFAULT_CATEGORIES_EN
-        
-        # Tạo categories (tạo parent trước)
-        created_items = {}  # Map slug -> real_id
-        
-        # Tạo parent categories trước
-        parent_categories = [c for c in DEFAULT_CATEGORIES_EN if c['parent_id'] is None]
-        parent_categories.sort(key=lambda x: x['order_display'])
-        
-        for cat_data in parent_categories:
-            category = CategoryInternational(
-                name=cat_data['name'],
-                slug=cat_data['slug'],
-                icon=cat_data['icon'],
-                order_display=cat_data['order_display'],
-                parent_id=None,
-                level=1,
-                visible=True
-            )
-            self.db_session.add(category)
-            self.db_session.flush()  # Để lấy ID
-            created_items[cat_data['slug']] = category.id
-        
-        # Tạo child categories (nếu có trong DEFAULT_CATEGORIES_EN)
-        child_categories = [c for c in DEFAULT_CATEGORIES_EN if c['parent_id'] is not None]
-        child_categories.sort(key=lambda x: (x['parent_id'], x['order_display']))
-        
-        for cat_data in child_categories:
-            # Tìm parent_id từ slug của parent
-            parent_slug = None
-            for parent_cat in DEFAULT_CATEGORIES_EN:
-                if parent_cat.get('id') == cat_data['parent_id']:
-                    parent_slug = parent_cat['slug']
-                    break
-            
-            if parent_slug and parent_slug in created_items:
-                parent_id = created_items[parent_slug]
-                parent_category = self.db_session.query(CategoryInternational).filter(CategoryInternational.id == parent_id).first()
-                level = parent_category.level + 1 if parent_category else 2
-                
-                category = CategoryInternational(
-                    name=cat_data['name'],
-                    slug=cat_data['slug'],
-                    icon=cat_data['icon'],
-                    order_display=cat_data['order_display'],
-                    parent_id=parent_id,
-                    level=level,
-                    visible=True
-                )
-                self.db_session.add(category)
-                self.db_session.flush()
-                created_items[cat_data['slug']] = category.id
-        
-        self.db_session.commit()
-        
-        return jsonify({
-            'success': True,
-            'message': f'Đã khởi tạo {len(DEFAULT_CATEGORIES_EN)} categories mặc định',
-            'count': len(DEFAULT_CATEGORIES_EN)
-        })
-    
-    def api_update_international_menu_order(self):
-        """API cập nhật thứ tự international categories (drag & drop)"""
-        data = request.json if request.is_json else {}
-        items = data.get('items', [])
-        
-        if not items:
-            return jsonify({'success': False, 'error': 'Thiếu dữ liệu'}), 400
-        
-        try:
-            for item_data in items:
-                category_id = item_data.get('id')
-                new_order = item_data.get('order', 0)
-                parent_id = item_data.get('parent_id')
-                
-                category = self.db_session.query(CategoryInternational).filter(CategoryInternational.id == category_id).first()
-                if category:
-                    category.order_display = new_order
-                    if parent_id is not None:
-                        # Kiểm tra không được set parent là chính nó
-                        if parent_id == category_id:
-                            continue
-                        category.parent_id = int(parent_id) if parent_id else None
-                        # Tính toán lại level
-                        category.level = self._calculate_international_level(category.parent_id)
-                    else:
-                        category.parent_id = None
-                        category.level = 1
                     category.updated_at = datetime.utcnow()
             
             self.db_session.commit()
@@ -2385,75 +1888,41 @@ class AdminController:
             return redirect(url_for('admin.login'))
         
         # Lấy tin đã lưu (cả site VN và EN)
-        saved_news = self.db_session.query(SavedNews).filter(
-            SavedNews.user_id == user.id
-        ).order_by(SavedNews.created_at.desc()).limit(20).all()
+        saved_news = self.db_session.query(SavedArticles).filter(
+            SavedArticles.user_id == user.id
+        ).order_by(SavedArticles.created_at.desc()).limit(20).all()
         
         # Lấy tin đã xem (cả site VN và EN)
-        viewed_news = self.db_session.query(ViewedNews).filter(
-            ViewedNews.user_id == user.id
-        ).order_by(ViewedNews.viewed_at.desc()).limit(20).all()
-        
-        # Lấy tất cả bình luận của user (cả site VN và EN), sau đó lọc không trùng news_id/news_international_id
-        all_comments = self.db_session.query(Comment).filter(
-            Comment.user_id == user.id
-        ).order_by(Comment.created_at.desc()).all()
+        viewed_news = self.db_session.query(ViewedArticles).filter(
+            ViewedArticles.user_id == user.id
+        ).order_by(ViewedArticles.viewed_at.desc()).limit(20).all()
 
         comments = []
-        seen_news_ids = set()
-        seen_news_international_ids = set()
-        for comment in all_comments:
-            # Mỗi bài viết chỉ lấy 1 bình luận – ưu tiên bình luận mới nhất
-            if comment.news_id and comment.news_id not in seen_news_ids:
-                comments.append(comment)
-                seen_news_ids.add(comment.news_id)
-            elif comment.news_international_id and comment.news_international_id not in seen_news_international_ids:
-                comments.append(comment)
-                seen_news_international_ids.add(comment.news_international_id)
-            if len(comments) >= 20:
-                break
-        
+
         # Tính số bình luận cho mỗi bài viết (cả news_id và news_international_id)
         comment_counts = {}
         if comments:
             news_ids = list(set([comment.news_id for comment in comments if comment.news_id]))
-            news_international_ids = list(set([comment.news_international_id for comment in comments if comment.news_international_id]))
             
             from sqlalchemy import func
             
             # Đếm comments cho news_id
             if news_ids:
-                counts_vn = self.db_session.query(
-                    Comment.news_id,
-                    func.count(Comment.id).label('count')
-                ).filter(
-                    Comment.news_id.in_(news_ids),
-                    Comment.is_active == True
-                ).group_by(Comment.news_id).all()
+                counts_vn = self.db_session.query(ArticleComment).filter(
+                    ArticleComment.news_id.in_(news_ids),
+                    ArticleComment.is_active == True
+                ).group_by(ArticleComment.news_id).count() or 0
                 
                 for news_id, count in counts_vn:
                     comment_counts[news_id] = count
-            
-            # Đếm comments cho news_international_id
-            if news_international_ids:
-                counts_en = self.db_session.query(
-                    Comment.news_international_id,
-                    func.count(Comment.id).label('count')
-                ).filter(
-                    Comment.news_international_id.in_(news_international_ids),
-                    Comment.is_active == True
-                ).group_by(Comment.news_international_id).all()
-                
-                for news_international_id, count in counts_en:
-                    comment_counts[news_international_id] = count
-        
+
         # Tính tổng số bình luận của cá nhân
-        total_comments = self.db_session.query(Comment).filter(
-            Comment.user_id == user.id,
-            Comment.is_active == True
+        total_comments = self.db_session.query(ArticleComment).filter(
+            ArticleComment.user_id == user.id,
+            ArticleComment.is_active == True
         ).count()
 
-        categories = self.category_model.get_all()
+        categories = self.article_category_model.get_all()
         return render_template('admin/profile.html', 
                              user=user, 
                              categories=categories,
@@ -2545,9 +2014,7 @@ class AdminController:
             full_name = data.get('full_name', '').strip()
             phone = data.get('phone', '').strip()
             role_str = data.get('role', 'user')
-            
-            from auth_utils import validate_email, validate_password
-            
+
             # Validation
             if not username:
                 return jsonify({'success': False, 'error': 'Tên đăng nhập không được để trống'}), 400
@@ -2633,7 +2100,6 @@ class AdminController:
             if full_name is not None:
                 user.full_name = full_name if full_name else None
             if email and email != user.email:
-                from auth_utils import validate_email
                 if not validate_email(email):
                     return jsonify({'success': False, 'error': 'Email không đúng định dạng'}), 400
                 if self.user_model.get_by_email(email):
@@ -2767,8 +2233,7 @@ class AdminController:
             
             if not test_email:
                 return jsonify({'success': False, 'error': 'Email không được để trống'}), 400
-            
-            from auth_utils import validate_email
+
             if not validate_email(test_email):
                 return jsonify({'success': False, 'error': 'Email không đúng định dạng'}), 400
             
@@ -2790,10 +2255,7 @@ class AdminController:
                     'success': False,
                     'error': f'Thiếu cài đặt: {", ".join(missing_fields)}'
                 }), 400
-            
-            # Gửi email test
-            from email_utils import send_email
-            
+
             subject = "Test Email - VnNews"
             body_html = """
             <html>

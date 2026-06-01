@@ -473,23 +473,23 @@ class Payment(Base):
     booking = relationship("Bookings", back_populates="payments")
 
 
-class SavedTours(Base):
-    """table saved tours of user"""
-    __tablename__ = 'saved_tours'
-    
+class SavedArticles(Base):
+    """table saved articles of user"""
+    __tablename__ = 'saved_articles'
+
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
     tour_id = Column(Integer, ForeignKey('tours.tour_id'), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now())
     
     # Relationships
-    user = relationship("User", back_populates="saved_tours")
+    user = relationship("User", back_populates="saved_articles")
     tour = relationship("Tours", foreign_keys=[tour_id])
 
 
-class ViewedTours(Base):
-    """table viewed tours of user"""
-    __tablename__ = 'viewed_tours'
+class ViewedArticles(Base):
+    """table viewed articles of user"""
+    __tablename__ = 'viewed_articles'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
@@ -497,7 +497,7 @@ class ViewedTours(Base):
     viewed_at = Column(DateTime, default=datetime.datetime.now())
 
     # Relationships
-    user = relationship("User", back_populates="viewed_tours")
+    user = relationship("User", back_populates="viewed_articles")
     tour = relationship("Tours", foreign_keys=[tour_id])
 
 
@@ -615,6 +615,17 @@ class Setting(Base):
     category = Column(String(50), nullable=True)  # 'api', 'smtp', 'general', etc.
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
+
+
+class Tag(Base):
+    """Bảng thẻ tag"""
+    __tablename__ = 'tags'
+    
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(50), nullable=False, unique=True)
+    slug = Column(String(50), nullable=False, unique=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
 
 # Database connection
