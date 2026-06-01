@@ -11,7 +11,7 @@ from related_service import RelatedService
 
 
 class ArticleModel:
-    """Model class managers Articles follow OOP"""
+    """Model class managers Article follow OOP"""
     
     def __init__(self, db_session: Session):
         """
@@ -24,9 +24,9 @@ class ArticleModel:
     
     def create(self, title: str, content: str, category_id: int, 
                created_by: int, summary: str = None, thumbnail: str = None,
-               slug: str = None, status: db.ArticleStatus = db.ArticleStatus.DRAFT) -> db.Articles:
+               slug: str = None, status: db.ArticleStatus = db.ArticleStatus.DRAFT) -> db.Article:
         """
-        Create articles
+        Create article
 
         Args:
             title: Title article
@@ -44,7 +44,7 @@ class ArticleModel:
         if slug is None:
             slug = self._generate_slug(title)
         
-        article = db.Articles(
+        article = db.Article(
             title=title,
             slug=slug,
             content=content,
@@ -60,30 +60,30 @@ class ArticleModel:
         self.db.refresh(article)
         return article
     
-    def get_by_id(self, article_id: int, include_deleted: bool = False) -> Optional[db.Articles]:
+    def get_by_id(self, article_id: int, include_deleted: bool = False) -> Optional[db.Article]:
         """
-        Get articles follow ID
+        Get article follow ID
 
         Args:
-            article_id: ID articles
-            include_deleted: if True, include articles deleted (for admin)
+            article_id: ID article
+            include_deleted: if True, include article deleted (for admin)
         """
-        query = self.db.query(db.Articles).filter(db.Articles.id == article_id)
+        query = self.db.query(db.Article).filter(db.Article.id == article_id)
         if not include_deleted:
-            query = query.filter(db.Articles.is_deleted == False)
+            query = query.filter(db.Article.is_deleted == False)
         return query.first()
     
-    def get_by_slug(self, slug: str) -> Optional[db.Articles]:
-        """Get articles follow slug (instead get articles deleted)"""
-        return self.db.query(db.Articles).filter(
-            db.Articles.slug == slug,
-            db.Articles.is_deleted == False
+    def get_by_slug(self, slug: str) -> Optional[db.Article]:
+        """Get article follow slug (instead get article deleted)"""
+        return self.db.query(db.Article).filter(
+            db.Article.slug == slug,
+            db.Article.is_deleted == False
         ).first()
     
     def get_all(self, limit: int = None, offset: int = 0, 
-                status: db.ArticleStatus = None, include_deleted: bool = False) -> List[db.Articles]:
+                status: db.ArticleStatus = None, include_deleted: bool = False) -> List[db.Article]:
         """
-        List articles follow filter, support pagging
+        List article follow filter, support pagging
         
         Args:
             limit: amount article
@@ -92,17 +92,17 @@ class ArticleModel:
             include_deleted: If True, get article deleted (for admin)
             
         Returns:
-            List of Articles objects
+            List of Article objects
         """
-        query = self.db.query(db.Articles)
+        query = self.db.query(db.Article)
         
         if not include_deleted:
-            query = query.filter(db.Articles.is_deleted == False)
+            query = query.filter(db.Article.is_deleted == False)
         
         if status:
-            query = query.filter(db.Articles.status == status)
+            query = query.filter(db.Article.status == status)
         
-        query = query.order_by(desc(db.Articles.created_at))
+        query = query.order_by(desc(db.Article.created_at))
         
         if limit:
             query = query.limit(limit).offset(offset)
@@ -117,9 +117,9 @@ class ArticleModel:
         status: db.ArticleStatus | None = None,
         search: str | None = None,
         include_deleted: bool = False,
-    ) -> tuple[list[db.Articles], int]:
+    ) -> tuple[list[db.Article], int]:
         """
-        List articles follow creator (editor), support pagging and search.
+        List article follow creator (editor), support pagging and search.
 
         Args:
             creator_id: ID creator (editor)
@@ -130,28 +130,28 @@ class ArticleModel:
             include_deleted: If True, include article deleted (for admin)
 
         Returns:
-            (items, total) - list articles and total
+            (items, total) - list article and total
         """
-        query = self.db.query(db.Articles).filter(db.Articles.created_by == creator_id)
+        query = self.db.query(db.Article).filter(db.Article.created_by == creator_id)
 
         if not include_deleted:
-            query = query.filter(db.Articles.is_deleted == False)
+            query = query.filter(db.Article.is_deleted == False)
 
         if status:
-            query = query.filter(db.Articles.status == status)
+            query = query.filter(db.Article.status == status)
 
         if search:
             like_pattern = f"%{search}%"
             query = query.filter(
                 or_(
-                    db.Articles.title.ilike(like_pattern),
-                    db.Articles.summary.ilike(like_pattern),
+                    db.Article.title.ilike(like_pattern),
+                    db.Article.summary.ilike(like_pattern),
                 )
             )
 
         total = query.count()
 
-        query = query.order_by(desc(db.Articles.created_at))
+        query = query.order_by(desc(db.Article.created_at))
 
         if limit:
             query = query.limit(limit).offset(offset)
@@ -159,27 +159,27 @@ class ArticleModel:
         items = query.all()
         return items, total
 
-    def get_published(self, limit: int = None, offset: int = 0) -> List[db.Articles]:
-        """List articles published (just only articles don't deleted)"""
+    def get_published(self, limit: int = None, offset: int = 0) -> List[db.Article]:
+        """List article published (just only article don't deleted)"""
         return self.get_all(
             limit=limit, 
             offset=offset, 
             status=db.ArticleStatus.PUBLISHED
         )
     
-    def search(self, keyword: str, limit: int = 20) -> List[db.Articles]:
-        """List articles by keyword (just only articles don't deleted)"""
-        return self.db.query(db.Articles).filter(
+    def search(self, keyword: str, limit: int = 20) -> List[db.Article]:
+        """List article by keyword (just only article don't deleted)"""
+        return self.db.query(db.Article).filter(
             or_(
-                db.Articles.title.ilike(f'%{keyword}%'),
-                db.Articles.content.ilike(f'%{keyword}%'),
-                db.Articles.summary.ilike(f'%{keyword}%')
+                db.Article.title.ilike(f'%{keyword}%'),
+                db.Article.content.ilike(f'%{keyword}%'),
+                db.Article.summary.ilike(f'%{keyword}%')
             ),
-            db.Articles.status == db.ArticleStatus.PUBLISHED,
-            db.Articles.is_deleted == False
-        ).order_by(desc(db.Articles.created_at)).limit(limit).all()
+            db.Article.status == db.ArticleStatus.PUBLISHED,
+            db.Article.is_deleted == False
+        ).order_by(desc(db.Article.created_at)).limit(limit).all()
 
-    def update(self, article_id: int, **kwargs) -> Optional[db.Articles]:
+    def update(self, article_id: int, **kwargs) -> Optional[db.Article]:
         """
         Update article
 
@@ -188,7 +188,7 @@ class ArticleModel:
             **kwargs: Fields need update
             
         Returns:
-            Updated Articles object or None
+            Updated Article object or None
         """
         article = self.get_by_id(article_id)
         if not article:
@@ -203,7 +203,7 @@ class ArticleModel:
         self.db.refresh(article)
         return article
 
-    def approve(self, article_id: int, approved_by: int) -> Optional[db.Articles]:
+    def approve(self, article_id: int, approved_by: int) -> Optional[db.Article]:
         """Article approved"""
         return self.update(
             article_id,
@@ -212,7 +212,7 @@ class ArticleModel:
             published_at=datetime.utcnow()
         )
     
-    def reject(self, article_id: int, approved_by: int, reason: str = None) -> Optional[db.Articles]:
+    def reject(self, article_id: int, approved_by: int, reason: str = None) -> Optional[db.Article]:
         """
         Article reject
         
@@ -266,6 +266,59 @@ class ArticleModel:
         slug = re.sub(r'[^\w\s-]', '', slug)
         slug = re.sub(r'[-\s]+', '-', slug)
         return slug.strip('-')
+
+
+class ArticleCategoryModel:
+    """Model class quản lý Category"""
+    
+    def __init__(self, db_session: Session):
+        self.db = db_session
+    
+    def create(self, name: str, slug: str, parent_id: int = None, 
+               description: str = None, icon: str = None) -> db.ArticleCategory:
+        """Tạo danh mục mới"""
+        category = db.ArticleCategory(
+            name=name,
+            slug=slug,
+            parent_id=parent_id,
+            description=description,
+            icon=icon
+        )
+        self.db.add(category)
+        self.db.commit()
+        self.db.refresh(category)
+        return category
+    
+    def get_all(self) -> List[db.ArticleCategory]:
+        """Lấy tất cả danh mục"""
+        return self.db.query(db.ArticleCategory).filter(
+            db.ArticleCategory.visible == True
+        ).order_by(db.ArticleCategory.order_display).all()
+    
+    def get_by_id(self, category_id: int) -> Optional[db.ArticleCategory]:
+        """Lấy danh mục theo ID"""
+        return self.db.query(db.ArticleCategory).filter(db.ArticleCategory.id == category_id).first()
+    
+    def get_by_slug(self, slug: str) -> Optional[db.ArticleCategory]:
+        """Lấy danh mục theo slug"""
+        return self.db.query(db.ArticleCategory).filter(db.ArticleCategory.slug == slug).first()
+
+    def get_descendant_ids(self, parent_id: int) -> list[int]:
+        """Lấy danh sách id danh mục con (mọi cấp) của parent_id."""
+        categories = self.db.query(db.ArticleCategory.id, db.ArticleCategory.parent_id).filter(
+            db.ArticleCategory.visible == True
+        ).all()
+
+        children = []
+        stack = [parent_id]
+        while stack:
+            current = stack.pop()
+            for cat_id, cat_parent in categories:
+                if cat_parent == current:
+                    children.append(cat_id)
+                    stack.append(cat_id)
+
+        return children
 
 
 class UserModel:
@@ -405,6 +458,45 @@ class BookingModel:
         return BookingService.cancel_booking(booking_id)
 
 
+class TourModel:
+    """Model class management Tour"""
+    
+    def __init__(self, db_session: Session):
+        self.db = db_session
+
+    def create_tour(self, user_id: int, hotel_id: int, nights: int, tour_id: int, persons: int, payment_method_str: str) -> bool:
+        """
+        Create booking follow combo API. 
+        Note: BookingService trả về boolean (True/False) cho giao dịch này.
+        """
+        # Convert string to Enum payment method
+        payment_method = db.PaymentMethodEnum.from_string(payment_method_str)
+        if not payment_method:
+            payment_method = db.PaymentMethodEnum.credit_card # Default fallback
+
+        success = BookingService.create_combo_booking(
+            user_id=user_id, 
+            hotel_id=hotel_id, 
+            nights=nights,
+            tour_id=tour_id, 
+            persons=persons, 
+            payment_method=payment_method
+        )
+        return success
+
+    def get_by_id(self, booking_id: int) -> Optional[db.Bookings]:
+        """Đọc thông tin Bookings qua ID"""
+        return BookingService.get_booking_by_id(booking_id)
+
+    def update_status(self, booking_id: int, new_status: db.BookingStatusEnum) -> bool:
+        """Cập nhật trạng thái Bookings (VD: từ pending sang completed)"""
+        return BookingService.update_booking_status(booking_id, new_status)
+
+    def cancel_booking(self, booking_id: int) -> bool:
+        """Hủy Bookings (Soft logic)"""
+        return BookingService.cancel_booking(booking_id)
+
+
 class RelatedActivityModel:
     """Model class management Related user activities (History, Saved, Viewed)"""
     
@@ -431,54 +523,3 @@ class RelatedActivityModel:
         RelatedService.record_viewed_tour(user_id, tour_id)
 
 
-class ArticleCategoryModel:
-    """Model class quản lý Category"""
-    
-    def __init__(self, db_session: Session):
-        self.db = db_session
-    
-    def create(self, name: str, slug: str, parent_id: int = None, 
-               description: str = None, icon: str = None) -> db.ArticleCategory:
-        """Tạo danh mục mới"""
-        category = db.ArticleCategory(
-            name=name,
-            slug=slug,
-            parent_id=parent_id,
-            description=description,
-            icon=icon
-        )
-        self.db.add(category)
-        self.db.commit()
-        self.db.refresh(category)
-        return category
-    
-    def get_all(self) -> List[db.ArticleCategory]:
-        """Lấy tất cả danh mục"""
-        return self.db.query(db.ArticleCategory).filter(
-            db.ArticleCategory.visible == True
-        ).order_by(db.ArticleCategory.order_display).all()
-    
-    def get_by_id(self, category_id: int) -> Optional[db.ArticleCategory]:
-        """Lấy danh mục theo ID"""
-        return self.db.query(db.ArticleCategory).filter(db.ArticleCategory.id == category_id).first()
-    
-    def get_by_slug(self, slug: str) -> Optional[db.ArticleCategory]:
-        """Lấy danh mục theo slug"""
-        return self.db.query(db.ArticleCategory).filter(db.ArticleCategory.slug == slug).first()
-
-    def get_descendant_ids(self, parent_id: int) -> list[int]:
-        """Lấy danh sách id danh mục con (mọi cấp) của parent_id."""
-        categories = self.db.query(db.ArticleCategory.id, db.ArticleCategory.parent_id).filter(
-            db.ArticleCategory.visible == True
-        ).all()
-
-        children = []
-        stack = [parent_id]
-        while stack:
-            current = stack.pop()
-            for cat_id, cat_parent in categories:
-                if cat_parent == current:
-                    children.append(cat_id)
-                    stack.append(cat_id)
-
-        return children

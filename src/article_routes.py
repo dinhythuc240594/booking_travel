@@ -26,7 +26,7 @@ import utils
 # Create Blueprint for client with url_prefix is empty to redirect route
 # and template_folder for html files in folder client
 article_bp = Blueprint('article', __name__, 
-                     url_prefix='/api/articles',
+                     url_prefix='/api/article',
                      template_folder='templates')
 
 

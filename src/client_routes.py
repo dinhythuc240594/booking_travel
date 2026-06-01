@@ -31,7 +31,7 @@ class Home(BaseClientView):
         data = self.list_tours(limit=10, offset=0)
 
         return render_template('client/home.html', 
-                               tours=data)
+                               tour=data)
 
 
 class Search(BaseClientView):
@@ -41,7 +41,7 @@ class Search(BaseClientView):
         page = request.args.get('page', 1, type=int)
 
         data = self.search_tours(keyword, page)
-        return render_template('client/search.html', tours=data)
+        return render_template('client/search.html', tour=data)
 
 
 class ToursDetail(BaseClientView):
@@ -121,7 +121,7 @@ class Guide(BaseClientView):
 client_bp.add_url_rule('/', 'home', Home.as_view('home'))
 client_bp.add_url_rule('/home', 'home1', Home.as_view('home1'))
 client_bp.add_url_rule('/search', 'search', Search.as_view('search'))
-client_bp.add_url_rule('/tours/<tours_slug>', 'tours_detail', ToursDetail.as_view('tours_detail'))
+client_bp.add_url_rule('/tour/<tours_slug>', 'tours_detail', ToursDetail.as_view('tours_detail'))
 client_bp.add_url_rule('/signin', 'login', Login.as_view('login'))
 client_bp.add_url_rule('/signup', 'register', Register.as_view('register'))
 client_bp.add_url_rule('/forgot_password', 'forgot_password', ForgotPassword.as_view('forgot_password'))

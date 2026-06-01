@@ -3,13 +3,13 @@ from typing import List
 
 from database import (
     Hotels, 
-    Tours, 
+    Tour, 
     ArticleCategory, 
-    Articles)
+    Article)
 
 #######
 # Composite Pattern sẽ đóng vai trò tính toán giá (total_price) cho giỏ hàng/gói dịch vụ trước khi lưu xuống bảng Bookings. 
-# Nó xử lý sự khác biệt giữa Hotels (tính theo đêm) và Tours (tính theo người)
+# Nó xử lý sự khác biệt giữa Hotels (tính theo đêm) và Tour (tính theo người)
 #######
 
 
@@ -38,20 +38,20 @@ class HotelsBookingItem(AbstractBookingItem):
 
 
 class TourBookingItem(AbstractBookingItem):
-    """Leaf 2: Xử lý giá của Tours (Giá * Số người)"""
-    def __init__(self, tours, persons: int):
-        self.tours = tours    # instance của class Tours
+    """Leaf 2: Xử lý giá của Tour (Giá * Số người)"""
+    def __init__(self, tour, persons: int):
+        self.tour = tour    # instance của class Tour
         self.persons = persons
 
     def get_total_price(self) -> float:
-        return float(self.tours.price_per_person) * self.persons
+        return float(self.tour.price_per_person) * self.persons
 
     def show_details(self, indent: str = "") -> str:
-        return f"{indent}- 🚌 Tour: {self.tours.name} ({self.persons} người) - ${self.get_total_price()}"
+        return f"{indent}- 🚌 Tour: {self.tour.name} ({self.persons} người) - ${self.get_total_price()}"
 
 
 class BookingPackage(AbstractBookingItem):
-    """Composite: Gói combo chứa nhiều Hotels và Tours. Tính tổng giá trị và hiển thị chi tiết."""
+    """Composite: Gói combo chứa nhiều Hotels và Tour. Tính tổng giá trị và hiển thị chi tiết."""
     def __init__(self, package_name: str):
         self.package_name = package_name
         self.items: List[AbstractBookingItem] = []
@@ -85,7 +85,7 @@ class AbstractContentNode(ABC):
 
 class ArticleLeaf(AbstractContentNode):
     """Leaf: Đại diện cho 1 Bài viết độc lập. Không chứa con."""
-    def __init__(self, article: Articles):
+    def __init__(self, article: Article):
         self.article = article
 
     def get_article_count(self) -> int:
@@ -118,4 +118,54 @@ class CategoryComposite(AbstractContentNode):
         details = f"{indent}📂 DANH MỤC: {self.category.name} | Tổng bài viết: {self.get_article_count()}\n"
         for child in self.children:
             details += child.show_structure(indent + "   ") + "\n"
+        return details.rstrip()
+    
+
+class AbstractLocationNode(ABC):
+    """Component: Interface chung cho việc nhóm Tour theo Địa điểm"""
+    
+    @abstractmethod
+    def get_tour_count(self) -> int:
+        """Đếm số lượng Tour"""
+        pass
+
+    @abstractmethod
+    def show_tours(self, indent: str = "") -> str:
+        """Hiển thị cấu trúc cây"""
+        pass
+
+
+class TourLeafNode(AbstractLocationNode):
+    """Leaf: Đại diện cho 1 Tour đơn lẻ."""
+    def __init__(self, tour: Tours):
+        self.tour = tour
+
+    def get_tour_count(self) -> int:
+        return 1
+
+    def show_tours(self, indent: str = "") -> str:
+        return f"{indent}- 🚌 Tour: {self.tour.name} ({self.tour.duration_days} ngày) - Giá: ${self.tour.price_per_person}"
+
+
+class LocationCompositeNode(AbstractLocationNode):
+    """Composite: Đại diện cho 1 Khu vực/Địa điểm. Chứa các Tour thuộc khu vực này."""
+    def __init__(self, location: Location):
+        self.location = location
+        self.children: List[AbstractLocationNode] = []
+
+    def add_child(self, component: AbstractLocationNode):
+        self.children.append(component)
+        
+    def remove_child(self, component: AbstractLocationNode):
+        self.children.remove(component)
+
+    def get_tour_count(self) -> int:
+        """Tính tổng số Tour trong địa điểm này"""
+        return sum(child.get_tour_count() for child in self.children)
+
+    def show_tours(self, indent: str = "") -> str:
+        """In ra danh sách Địa điểm và các Tour trực thuộc"""
+        details = f"{indent}📍 ĐỊA ĐIỂM: {self.location.city}, {self.location.country} | Tổng số Tour: {self.get_tour_count()}\n"
+        for child in self.children:
+            details += child.show_tours(indent + "   ") + "\n"
         return details.rstrip()

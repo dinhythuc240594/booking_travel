@@ -8,7 +8,7 @@ from database import (
     BookingTypeEnum, 
     PaymentMethodEnum, 
     PaymentStatusEnum,
-    Articles,
+    Article,
     ArticleStatusEnum,
     NewsletterSubscription)
 
@@ -31,7 +31,7 @@ class DatabaseCommand(ABC):
 
 
 class CreateBookingCommand(DatabaseCommand):
-    """Lệnh tạo Bookings (Hotels hoặc Tours)"""
+    """Lệnh tạo Bookings (Hotels hoặc Tour)"""
     def __init__(self, user_id: int, booking_type, reference_id: int, total_price: float):
         self.user_id = user_id
         self.booking_type = booking_type # BookingTypeEnum.hotel hoặc tour
@@ -129,7 +129,7 @@ class CreateArticleCommand(DatabaseCommand):
         self.article_record = None
 
     def execute(self, session) -> None:
-        self.article_record = Articles(
+        self.article_record = Article(
             author_id=self.author_id,
             category_id=self.category_id,
             title=self.title,
@@ -158,7 +158,7 @@ class ChangeArticleStatusCommand(DatabaseCommand):
         self.article_record = None
 
     def execute(self, session) -> None:
-        self.article_record = session.query(Articles).get(self.article_id)
+        self.article_record = session.query(Article).get(self.article_id)
         if self.article_record:
             self.old_status = self.article_record.status # Lưu lại trạng thái cũ để undo
             self.article_record.status = self.new_status
@@ -203,3 +203,54 @@ class SubscribeNewsletterCommand(DatabaseCommand):
             self.subscription_record.is_active = False
             self.subscription_record.unsubscribed_at = datetime.datetime.now()
             print(f"🔄 Đã HỦY đăng ký Newsletter cho email: {self.email}.")
+
+
+class CreateTourCommand(DatabaseCommand):
+    """Lệnh tạo Tour du lịch mới"""
+    def __init__(self, location_id: int, name: str, description: str, duration_days: int, price_per_person: float):
+        self.location_id = location_id
+        self.name = name
+        self.description = description
+        self.duration_days = duration_days
+        self.price_per_person = price_per_person
+        self.tour_record = None
+
+    def execute(self, session) -> None:
+        self.tour_record = Tours(
+            location_id=self.location_id,
+            name=self.name,
+            description=self.description,
+            duration_days=self.duration_days,
+            price_per_person=self.price_per_person
+        )
+        session.add(self.tour_record)
+        session.flush() # Lấy ID tạm thời
+        print(f"🚌 Đã tạo Tour: '{self.name}' (ID tạm: {self.tour_record.tour_id}).")
+
+    def undo(self, session) -> None:
+        if self.tour_record:
+            # Hủy quá trình tạo (Hard delete nếu đang trong transaction bị lỗi)
+            session.delete(self.tour_record)
+            print(f"🔄 Đã HỦY quá trình tạo Tour '{self.name}'.")
+
+
+class UpdateTourPriceCommand(DatabaseCommand):
+    """Lệnh cập nhật giá Tour với khả năng hoàn tác"""
+    def __init__(self, tour_id: int, new_price: float):
+        self.tour_id = tour_id
+        self.new_price = new_price
+        self.old_price = None
+        self.tour_record = None
+
+    def execute(self, session) -> None:
+        self.tour_record = session.query(Tours).get(self.tour_id)
+        if self.tour_record:
+            self.old_price = self.tour_record.price_per_person
+            self.tour_record.price_per_person = self.new_price
+            session.flush()
+            print(f"💰 Đã cập nhật giá Tour ID {self.tour_id} thành ${self.new_price}.")
+
+    def undo(self, session) -> None:
+        if self.tour_record and self.old_price is not None:
+            self.tour_record.price_per_person = self.old_price
+            print(f"🔄 Đã ROLLBACK giá Tour ID {self.tour_id} về ${self.old_price}.")

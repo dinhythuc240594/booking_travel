@@ -1,4 +1,4 @@
-from database import get_session, Bookings, BookingTypeEnum, BookingStatusEnum, PaymentMethodEnum, Hotels, Tours
+from database import get_session, Bookings, BookingTypeEnum, BookingStatusEnum, PaymentMethodEnum, Hotels, Tour
 from command_partern import CreateBookingCommand, ProcessPaymentCommand, DBTransactionInvoker
 from composite_partern import HotelsBookingItem, TourBookingItem, BookingPackage
 
@@ -6,12 +6,12 @@ class BookingService:
     
     @staticmethod
     def create_combo_booking(user_id: int, hotel_id: int, nights: int, tour_id: int, persons: int, payment_method: PaymentMethodEnum):
-        """Tạo booking kết hợp (Hotels + Tours) sử dụng Composite và Command Pattern"""
+        """Tạo booking kết hợp (Hotels + Tour) sử dụng Composite và Command Pattern"""
         session = get_session()
         try:
             # 1. Fetch dữ liệu để tính toán
             hotel = session.query(Hotels).get(hotel_id)
-            tour = session.query(Tours).get(tour_id)
+            tour = session.query(Tour).get(tour_id)
             
             if not hotel and not tour:
                 print("❌ Không tìm thấy dịch vụ nào để book.")

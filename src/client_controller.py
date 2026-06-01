@@ -20,7 +20,7 @@ from models import (
 
 class Controller():
 
-    """Mangaer controller - manage related user, tours, ..."""
+    """Mangaer controller - manage related user, tour, ..."""
     
     # db_session = get_session()
     # articles_model = ArticlesModel(db_session)
@@ -32,16 +32,16 @@ class Controller():
         self.articles_model = ArticlesModel(self.db_session)
         self.user_model = UserModel(self.db_session)
 
-    def list_tours(self, limit=None, offset=None):
+    def list_tour(self, limit=None, offset=None):
         """
-        List latest tours
+        List latest tour
         Route: GET /
         """
         db_session = self.db_session
         try:
-            latest_tours = self.articles_model.get_published(limit=limit, offset=offset)
+            latest_tour = self.articles_model.get_published(limit=limit, offset=offset)
 
-            return latest_tours
+            return latest_tour
         finally:
             db_session.close()
 
@@ -239,7 +239,7 @@ class Controller():
     def tours_detail(self, tours_slug: str):
         """
         Page tour detail
-        Route: GET /tours/<tours_slug>
+        Route: GET /tour/<tours_slug>
         """
         db_session = self.db_session
         try:
@@ -248,16 +248,16 @@ class Controller():
             
             articles_model = self.articles_model(db_session)
             
-            articles = articles_model.get_by_slug(tours_slug)
-            print(f"Articles found: {articles}")
+            article = articles_model.get_by_slug(tours_slug)
+            print(f"Article found: {article}")
             
-            if not articles:
-                print(f"Articles not found for slug: {tours_slug}")
+            if not article:
+                print(f"Article not found for slug: {tours_slug}")
                 abort(404)
             
-            print(f"Articles status: {articles.status}")
-            if articles.status != ArticleStatusEnum.PUBLISHED:
-                print(f"Articles not published, status: {articles.status}")
+            print(f"Article status: {article.status}")
+            if article.status != ArticleStatusEnum.PUBLISHED:
+                print(f"Article not published, status: {article.status}")
                 abort(404)
 
             is_saved = False
@@ -268,14 +268,14 @@ class Controller():
 
                 existing_viewed = db_session.query(ViewedArticles).filter(
                     ViewedArticles.user_id == user_id,
-                    ViewedArticles.article_id == tours.id,
+                    ViewedArticles.article_id == tour.id,
                     ViewedArticles.site == 'vn'
                 ).first()
                 
                 if not existing_viewed:
                     viewed_articles = ViewedArticles(
                         user_id=user_id,
-                        article_id=tours.id,
+                        article_id=tour.id,
                         site='vn'
                     )
                     db_session.add(viewed_articles)
@@ -285,12 +285,12 @@ class Controller():
                     existing_viewed.viewed_at = datetime.utcnow()
                     db_session.commit()
 
-                saved_tours = db_session.query(SavedArticles).filter(
+                saved_tour = db_session.query(SavedArticles).filter(
                     SavedArticles.user_id == user_id,
-                    SavedArticles.article_id == tours.id,
+                    SavedArticles.article_id == tour.id,
                     SavedArticles.site == 'vn'
                 ).first()
-                is_saved = saved_tours is not None
+                is_saved = saved_tour is not None
 
             time_format = '%d-%m-%Y %H:%M'
             time_zone = 'Asia/Ho_Chi_Minh'
@@ -298,7 +298,7 @@ class Controller():
             format_time = lambda x: x.astimezone(pytz.timezone(time_zone)).strftime(time_format)
 
             return render_template('client/tours_detail.html',
-                                 tours=tours,
+                                 tour=tour,
                                  is_saved=is_saved,
                                  user_id=user_id,
                                  format_time=format_time)
@@ -315,7 +315,7 @@ class Controller():
     
     def search_tours(self, keyword, page):
         """
-        Search tours by keyword
+        Search tour by keyword
         Route: GET /search?q=<keyword>
         """
         db_session = self.db_session

@@ -14,7 +14,7 @@ from database import (
     ArticleStatus,
     ArticleTag,
     get_session,
-    Articles,
+    Article,
     ArticleStatusEnum,
     UserRole,
     SavedArticles,
@@ -112,10 +112,10 @@ class AdminController:
         pending_articles = len(self.articles_model.get_all(status=ArticleStatusEnum.PENDING))
         draft_articles = len(self.articles_model.get_all(status=ArticleStatusEnum.DRAFT))
         
-        # Articles chờ duyệt
+        # Article chờ duyệt
         pending_list = self.articles_model.get_all(status=ArticleStatusEnum.PENDING, limit=10)
         
-        # Articles mới nhất
+        # Article mới nhất
         latest_articles = self.articles_model.get_all(limit=10)
         
         user = self.user_model.get_by_id(session['user_id'])
@@ -161,7 +161,7 @@ class AdminController:
     def article_list(self):
         """
         Danh sách article
-        Route: GET /admin/articles
+        Route: GET /admin/article
         """
         status_filter = request.args.get('status', None)
         page = request.args.get('page', 1, type=int)
@@ -192,8 +192,8 @@ class AdminController:
     def articles_create(self):
         """
         Tạo article mới
-        Route: GET /admin/articles/create
-        Route: POST /admin/articles/create
+        Route: GET /admin/article/create
+        Route: POST /admin/article/create
         """
         if request.method == 'POST':
             title = request.form.get('title')
@@ -229,8 +229,8 @@ class AdminController:
     def articles_edit(self, article_id: int):
         """
         Chỉnh sửa article
-        Route: GET /admin/articles/<article_id>/edit
-        Route: POST /admin/articles/<article_id>/edit
+        Route: GET /admin/article/<article_id>/edit
+        Route: POST /admin/article/<article_id>/edit
         """
         article = self.articles_model.get_by_id(article_id)
         if not article:
@@ -279,7 +279,7 @@ class AdminController:
     def articles_approve(self, article_id: int):
         """
         Duyệt article
-        Route: POST /admin/articles/<article_id>/approve
+        Route: POST /admin/article/<article_id>/approve
         """
         user_id = session.get('user_id')
         article = self.articles_model.approve(article_id, user_id)
@@ -300,7 +300,7 @@ class AdminController:
     def articles_reject(self, article_id: int):
         """
         Từ chối article và gửi email cho tác giả
-        Route: POST /admin/articles/<article_id>/reject
+        Route: POST /admin/article/<article_id>/reject
         """
         user_id = session.get('user_id')
         
@@ -340,7 +340,7 @@ class AdminController:
                 # Tạo link article
                 article_url = url_for('client.articles_detail', slug=article.slug, _external=True)
                 
-                email_subject = f"Articles của bạn đã bị từ chối: {article.title}"
+                email_subject = f"Article của bạn đã bị từ chối: {article.title}"
                 
                 email_body_html = f"""
                 <!DOCTYPE html>
@@ -454,7 +454,7 @@ class AdminController:
     def articles_delete(self, article_id: int):
         """
         Xóa mềm article (soft delete) - set is_deleted = True
-        Route: POST /admin/articles/<article_id>/delete
+        Route: POST /admin/article/<article_id>/delete
         """
         success = self.articles_model.delete(article_id)
         
@@ -474,7 +474,7 @@ class AdminController:
     def api_articles_list(self):
         """
         API lấy danh sách article (JSON)
-        Route: GET /admin/api/articles
+        Route: GET /admin/api/article
         """
         status_filter = request.args.get('status', None)
         limit = request.args.get('limit', 20, type=int)
@@ -497,7 +497,7 @@ class AdminController:
     def api_my_articles(self):
         """
         API lấy danh sách bài viết của editor hiện tại (JSON)
-        Route: GET /admin/api/my-articles
+        Route: GET /admin/api/my-article
         Query params:
             status: draft|pending|published|rejected|all (mặc định: all)
             page: trang hiện tại (mặc định: 1)
@@ -601,16 +601,16 @@ class AdminController:
         # Sắp xếp theo published_at (nếu có) hoặc updated_at (khi bị từ chối)
         from sqlalchemy import or_, desc
         
-        items = self.db_session.query(Articles).filter(
-            Articles.created_by == user_id,
-            Articles.is_deleted == False,  # Chỉ lấy bài chưa bị xóa
+        items = self.db_session.query(Article).filter(
+            Article.created_by == user_id,
+            Article.is_deleted == False,  # Chỉ lấy bài chưa bị xóa
             or_(
-                Articles.status == ArticleStatusEnum.PUBLISHED,
-                Articles.status == ArticleStatusEnum.REJECTED
+                Article.status == ArticleStatusEnum.PUBLISHED,
+                Article.status == ArticleStatusEnum.REJECTED
             )
         ).order_by(
-            desc(Articles.published_at),
-            desc(Articles.updated_at)
+            desc(Article.published_at),
+            desc(Article.updated_at)
         ).limit(limit).all()
 
         notifications = []
@@ -633,7 +633,7 @@ class AdminController:
         })
     
     def _article_to_dict(self, article) -> dict:
-        """Chuyển đổi Articles object thành dictionary dùng chung cho admin & client"""
+        """Chuyển đổi Article object thành dictionary dùng chung cho admin & client"""
         return {
             'id': article.id,
             'title': article.title,
@@ -661,16 +661,16 @@ class AdminController:
         """API lấy thống kê dashboard"""
         
         # Đếm số lượng bài viết theo trạng thái
-        pending_count = self.db_session.query(Articles).filter(
-            Articles.status == ArticleStatus.PENDING
+        pending_count = self.db_session.query(Article).filter(
+            Article.status == ArticleStatus.PENDING
         ).count() or 0
         
-        approved_count = self.db_session.query(Articles).filter(
-            Articles.status == ArticleStatus.PUBLISHED
+        approved_count = self.db_session.query(Article).filter(
+            Article.status == ArticleStatus.PUBLISHED
         ).count() or 0
         
-        rejected_count = self.db_session.query(Articles).filter(
-            Articles.status == ArticleStatus.REJECTED
+        rejected_count = self.db_session.query(Article).filter(
+            Article.status == ArticleStatus.REJECTED
         ).count() or 0
         
         return jsonify({
@@ -689,41 +689,41 @@ class AdminController:
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
-        total = self.db_session.query(Articles).filter(
-            Articles.created_by == user_id
+        total = self.db_session.query(Article).filter(
+            Article.created_by == user_id
         ).count() or 0
         
-        pending_count = self.db_session.query(Articles).filter(
-            Articles.created_by == user_id, Articles.status == ArticleStatus.PENDING
+        pending_count = self.db_session.query(Article).filter(
+            Article.created_by == user_id, Article.status == ArticleStatus.PENDING
         ).count() or 0
         
-        approved_count = self.db_session.query(Articles).filter(
-            Articles.created_by == user_id, Articles.status == ArticleStatus.PUBLISHED
+        approved_count = self.db_session.query(Article).filter(
+            Article.created_by == user_id, Article.status == ArticleStatus.PUBLISHED
         ).count() or 0
         
-        published_count = self.db_session.query(Articles).filter(
-            Articles.created_by == user_id, Articles.status == ArticleStatus.PUBLISHED
+        published_count = self.db_session.query(Article).filter(
+            Article.created_by == user_id, Article.status == ArticleStatus.PUBLISHED
         ).count() or 0
         
-        rejected_count = self.db_session.query(Articles).filter(
-            Articles.created_by == user_id, Articles.status == ArticleStatus.REJECTED
+        rejected_count = self.db_session.query(Article).filter(
+            Article.created_by == user_id, Article.status == ArticleStatus.REJECTED
         ).count() or 0
         
-        draft_count = self.db_session.query(Articles).filter(
-            Articles.created_by == user_id, Articles.status == ArticleStatus.DRAFT
+        draft_count = self.db_session.query(Article).filter(
+            Article.created_by == user_id, Article.status == ArticleStatus.DRAFT
         ).count() or 0
 
-        article_approved = self.db_session.query(Articles).filter(
-            Articles.created_by == user_id, Articles.status == ArticleStatus.PUBLISHED
-        ).order_by(Articles.published_at.desc()).first()
+        article_approved = self.db_session.query(Article).filter(
+            Article.created_by == user_id, Article.status == ArticleStatus.PUBLISHED
+        ).order_by(Article.published_at.desc()).first()
 
-        article_update = self.db_session.query(Articles).filter(
-            Articles.created_by == user_id, Articles.status == ArticleStatus.DRAFT, Articles.updated_at > Articles.created_at
-        ).order_by(Articles.created_at.desc()).first()
+        article_update = self.db_session.query(Article).filter(
+            Article.created_by == user_id, Article.status == ArticleStatus.DRAFT, Article.updated_at > Article.created_at
+        ).order_by(Article.created_at.desc()).first()
 
-        article_newest = self.db_session.query(Articles).filter(
-            Articles.created_by == user_id
-        ).order_by(Articles.created_at.desc()).first()
+        article_newest = self.db_session.query(Article).filter(
+            Article.created_by == user_id
+        ).order_by(Article.created_at.desc()).first()
 
         return jsonify({
             'success': True,
@@ -742,7 +742,7 @@ class AdminController:
 
     def api_pending_articles(self):
         """API lấy danh sách bài viết chờ duyệt"""
-        articles = self.articles_model.get_all(status=ArticleStatus.PENDING, limit=100)
+        article = self.articles_model.get_all(status=ArticleStatus.PENDING, limit=100)
         
         return jsonify({
             'success': True,
@@ -753,12 +753,12 @@ class AdminController:
                 'category': article.category.name if article.category else 'N/A',
                 'date': article.created_at.strftime('%d/%m/%Y %H:%M') if article.created_at else '',
                 'status': article.status.value
-            } for article in articles]
+            } for article in article]
         })
     
     def api_approved_articles(self):
         """API lấy danh sách bài viết đã duyệt"""
-        articles = self.articles_model.get_all(status=ArticleStatus.PUBLISHED, limit=100)
+        article = self.articles_model.get_all(status=ArticleStatus.PUBLISHED, limit=100)
         
         return jsonify({
             'success': True,
@@ -769,7 +769,7 @@ class AdminController:
                 'category': article.category.name if article.category else 'N/A',
                 'date': article.published_at.strftime('%d/%m/%Y %H:%M') if article.published_at else '',
                 'views': article.view_count
-            } for article in articles]
+            } for article in article]
         })
     
     def api_rejected_articles(self):
@@ -866,15 +866,15 @@ class AdminController:
         start_date = end_date - timedelta(days=7)
 
         # Đếm bài viết mới theo ngày
-        new_articles = self.db_session.query(Articles).filter(
-            Articles.created_at >= start_date
-        ).group_by(Articles.created_at).count()
+        new_articles = self.db_session.query(Article).filter(
+            Article.created_at >= start_date
+        ).group_by(Article.created_at).count()
         
         # Đếm bài được duyệt theo ngày
-        approved_articles = self.db_session.query(Articles).filter(
-            Articles.published_at >= start_date,
-            Articles.status == ArticleStatus.PUBLISHED
-        ).group_by(Articles.published_at).count()
+        approved_articles = self.db_session.query(Article).filter(
+            Article.published_at >= start_date,
+            Article.status == ArticleStatus.PUBLISHED
+        ).group_by(Article.published_at).count()
         
         new_dict = {str(item.date): item.count for item in new_articles}
         approved_dict = {str(item.date): item.count for item in approved_articles}
@@ -909,14 +909,14 @@ class AdminController:
     
     def api_hot_articles(self):
         """API lấy danh sách bài viết hot nhất"""
-        articles = self.articles_model.get_hot(limit=10)
+        article = self.articles_model.get_hot(limit=10)
         
         return jsonify({
             'success': True,
             'data': [{
                 'title': article.title,
                 'views': article.view_count
-            } for article in articles]
+            } for article in article]
         })
     
     def api_article_detail(self, article_id: int):
@@ -1235,7 +1235,7 @@ class AdminController:
         
         # Kiểm tra slug trùng và thêm số nếu cần
         counter = 1
-        while self.db_session.query(Articles).filter(Articles.slug == slug).first():
+        while self.db_session.query(Article).filter(Article.slug == slug).first():
             slug = f"{base_slug}-{counter}"
             counter += 1
         
@@ -1256,7 +1256,7 @@ class AdminController:
         
         try:
             # Tạo bài viết mới
-            article = Articles(
+            article = Article(
                 title=title,
                 slug=slug,
                 content=content,
@@ -1360,7 +1360,7 @@ class AdminController:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
         data = request.json if request.is_json else request.form
-        article = self.db_session.query(Articles).filter(Articles.id == article_id).first()
+        article = self.db_session.query(Article).filter(Article.id == article_id).first()
         if not article:
             return jsonify({'success': False, 'error': 'Bài viết không tồn tại'}), 400
         
@@ -1412,7 +1412,7 @@ class AdminController:
         
         # Kiểm tra slug trùng và thêm số nếu cần (nhưng không trùng với chính nó)
         counter = 1
-        while self.db_session.query(Articles).filter(Articles.slug == slug, Articles.id != article_id).first():
+        while self.db_session.query(Article).filter(Article.slug == slug, Article.id != article_id).first():
             slug = f"{base_slug}-{counter}"
             counter += 1
         
@@ -1736,7 +1736,7 @@ class AdminController:
             return jsonify({'success': False, 'error': 'Không tìm thấy danh mục'}), 404
         
         # Kiểm tra xem có tin tức nào đang sử dụng category này không
-        news_count = self.db_session.query(Articles).filter(Articles.category_id == menu_id).count()
+        news_count = self.db_session.query(Article).filter(Article.category_id == menu_id).count()
         if news_count > 0:
             return jsonify({
                 'success': False,
@@ -1747,7 +1747,7 @@ class AdminController:
         children = self.db_session.query(ArticleCategory).filter(ArticleCategory.parent_id == menu_id).all()
         for child in children:
             # Kiểm tra tin tức của child category
-            child_news_count = self.db_session.query(Articles).filter(Articles.category_id == child.id).count()
+            child_news_count = self.db_session.query(Article).filter(Article.category_id == child.id).count()
             if child_news_count == 0:
                 self.db_session.delete(child)
         

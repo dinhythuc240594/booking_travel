@@ -57,8 +57,8 @@ def validate_phone(site, phone: str) -> tuple:
 def build_category_tree(session, category_record) -> CategoryComposite:
     node = CategoryComposite(category_record)
     
-    articles = session.query(db.Articles).filter_by(category_id=category_record.category_id).all()
-    for article in articles:
+    article = session.query(db.Article).filter_by(category_id=category_record.category_id).all()
+    for article in article:
         node.add_child(ArticleLeaf(article))
     
     sub_categories = session.query(db.ArticleCategory).filter_by(parent_id=category_record.category_id).all()
