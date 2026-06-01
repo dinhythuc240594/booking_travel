@@ -4,10 +4,9 @@ client router - define routes for client
 """
 
 from flask import Blueprint, render_template, request, jsonify, abort, make_response, session
-
+import json
 import base
 import client_controller
-import json
 
 
 # Create Blueprint for client with url_prefix is empty to redirect route
@@ -29,19 +28,36 @@ class Home(BaseClientView):
     
     def get(self):
         data = self.list_tour(limit=10, offset=0)
-        
-        return render_template('client/home.html', 
-                               tour=data)
+        return jsonify({
+            'tours': data,
+            'self': 'home'
+        })
 
 
 class Search(BaseClientView):
     
     def get(self):
         keyword = request.args.get('q', '').strip()
-        page = request.args.get('page', 1, type=int)
+        page = request.args.get('page', 1)
         data = self.search_tours(keyword, page)
         
-        return render_template('client/search.html', tour=data)
+        return jsonify({
+            'tours': data,
+            'self': 'search',
+            'keyword': keyword,
+            'page': page
+        })
+
+
+class Tours(BaseClientView):
+    
+    def get(self):
+        data = self.list_tour(limit=10, offset=0)
+        
+        return jsonify({
+            'tours': data,
+            'self': 'tours'
+        })
 
 
 class ToursDetail(BaseClientView):
@@ -51,15 +67,16 @@ class ToursDetail(BaseClientView):
         
         if not data:
             abort(404)
+
         tour = data.get("tour")
         is_saved = data.get("is_saved")
         user_id = data.get("user_id")
-        format_time = data.get("format_time")
-        return render_template('client/tours_detail.html',
-                                 tour=tour,
-                                 is_saved=is_saved,
-                                 user_id=user_id,
-                                 format_time=format_time)
+
+        return jsonify({
+            'tour': tour,
+            'is_saved': is_saved,
+            'user_id': user_id,
+        })
 
 
 class Login(BaseClientView):
@@ -122,6 +139,7 @@ class Guide(BaseClientView):
 client_bp.add_url_rule('/', 'home', Home.as_view('home'))
 client_bp.add_url_rule('/home', 'home1', Home.as_view('home1'))
 client_bp.add_url_rule('/search', 'search', Search.as_view('search'))
+client_bp.add_url_rule('/tours', 'tours', Tours.as_view('tours'))
 client_bp.add_url_rule('/tour/<tours_slug>', 'tours_detail', ToursDetail.as_view('tours_detail'))
 
 client_bp.add_url_rule('/signin', 'user_login', Login.as_view('user_login'))

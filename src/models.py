@@ -7,6 +7,7 @@ from sqlalchemy import desc, or_
 import database as db
 import datetime
 import utils
+import json
 from booking_service import BookingService
 from user_service import UserService
 from setting_service import SettingService
@@ -303,6 +304,42 @@ class TourModel:
         if limit:
             query = query.limit(limit).offset(offset)
         return query.all()
+
+    def _tour_to_dict(self, tour: db.Tour) -> dict:
+        
+        # Parse images JSON string nếu có
+        images_list = []
+        if tour.images:
+            try:
+                images_list = json.loads(tour.images)
+            except:
+                pass
+
+        return {
+            "tour_id": tour.tour_id,
+            "location_id": tour.location_id,
+            "title": tour.title,
+            "slug": tour.slug,
+            "summary": tour.summary,
+            "content": tour.content,
+            "duration_days": tour.duration_days,
+            "price_per_person": float(tour.price_per_person) if tour.price_per_person else 0.0, # Convert Decimal -> float
+            "thumbnail": tour.thumbnail,
+            "images": images_list, # Trả về list thay vì chuỗi JSON string
+            "is_hot": tour.is_hot,
+            "is_featured": tour.is_featured,
+            "view_count": tour.view_count,
+            "status": tour.status.value if tour.status else None, # Lấy giá trị của Enum
+            
+            # Convert DateTime -> String
+            "published_at": tour.published_at.strftime('%Y-%m-%d %H:%M:%S') if tour.published_at else None,
+            "created_at": tour.created_at.strftime('%Y-%m-%d %H:%M:%S') if tour.created_at else None,
+            
+            # Nếu muốn lấy thêm thông tin từ bảng liên kết (Relationship)
+            "author_name": tour.author.username if tour.author else None,
+            "location_name": tour.location.city if getattr(tour, 'location', None) else None
+        }
+
 
     def _generate_slug(self, title: str) -> str:
         import re

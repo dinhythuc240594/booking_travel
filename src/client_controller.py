@@ -1,6 +1,7 @@
 
 from flask import render_template, request, jsonify, abort, redirect, url_for, flash, session
 import pytz
+import json
 from datetime import datetime, timedelta
 from utils import validate_email, validate_password, validate_phone, hash_password
 from email_utils import generate_token, send_password_reset_email
@@ -41,8 +42,8 @@ class Controller():
         """
         try:
             latest_tour = self.tour_model.get_public_tours(limit=limit, offset=offset)
-
-            return latest_tour
+            tours_json = [self.tour_model._tour_to_dict(tour) for tour in latest_tour]
+            return tours_json
         finally:
             self.db_session.close()
 
@@ -264,16 +265,16 @@ class Controller():
                 ).first()
                 is_saved = saved_tour is not None
 
-            time_format = '%d-%m-%Y %H:%M'
-            time_zone = 'Asia/Ho_Chi_Minh'
+            # time_format = '%d-%m-%Y %H:%M'
+            # time_zone = 'Asia/Ho_Chi_Minh'
             
-            format_time = lambda x: x.astimezone(pytz.timezone(time_zone)).strftime(time_format)
+            # format_time = lambda x: x.astimezone(pytz.timezone(time_zone)).strftime(time_format)
 
             return {
-                "tour": tour,
+                "tour": tour_model._tour_to_dict(tour),
                 "is_saved": is_saved,
                 "user_id": user_id,
-                "format_time": format_time
+                # "format_time": format_time
             }
         except Exception as e:
             self.db_session.rollback()
@@ -298,8 +299,8 @@ class Controller():
             if not keyword:
                 return []
 
-            tours_list = tours_model.search(keyword, page=page, per_page=PER_PAGE)
-            
-            return tours_list
+            tours_list = tours_model.search(keyword, page, PER_PAGE)
+            json_tours = [tours_model._tour_to_dict(tour) for tour in tours_list]
+            return json_tours
         finally:
             self.db_session.close()
