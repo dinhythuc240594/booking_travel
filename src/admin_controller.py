@@ -783,32 +783,6 @@ class AdminController:
             'success': True,
             'data': data
         })
-    
-    def api_rejected_tour(self, tour_id: int):
-        # Query rejection reasons
-        if tour_id:
-            tour = self.tour_model.get_by_id(tour_id)
-            if tour:
-                rejection = self.db_session.query(TourRejection).filter(
-                    TourRejection.tour_id == tour_id
-                ).first()
-                if rejection:
-                    return jsonify({
-                        'success': True,
-                        'id': tour.id,
-                        'title': tour.title,
-                        'author': tour.creator.username if tour.creator else 'N/A',
-                        'category': tour.category.name if tour.category else 'N/A',
-                        'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
-                        'type': 'news',
-                        'rejection_reason': rejection.reason,
-                        'rejected_by': rejection.rejector.username if rejection.rejector else 'N/A',
-                        'rejected_at': rejection.created_at.strftime('%d/%m/%Y %H:%M') if rejection.created_at else ''
-                    })
-                else:
-                    return jsonify({'success': False, 'error': 'Không tìm thấy lý do từ chối'}), 404
-            else:
-                return jsonify({'success': False, 'error': 'Bài viết không tồn tại'}), 404
 
     def api_api_tour(self):
         """API lấy danh sách bài viết từ API bên ngoài (chỉ hiển thị, không lưu)"""
@@ -820,7 +794,7 @@ class AdminController:
             'success': True,
             'data': api_tour
         })
-    
+
     def api_chart_data(self):
         """API lấy dữ liệu cho biểu đồ"""
         
@@ -869,7 +843,7 @@ class AdminController:
                 ]
             }
         })
-    
+
     def api_tour_detail(self, tour_id: int):
         """API lấy chi tiết bài viết theo ID"""
         tour = self.tour_model.get_by_id(tour_id)
