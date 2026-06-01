@@ -47,9 +47,19 @@ class Search(BaseClientView):
 class ToursDetail(BaseClientView):
     
     def get(self, tours_slug):
-        tour = self.tours_detail(tours_slug)
+        data = self.tours_detail(tours_slug)
         
-        return render_template('client/tours_detail.html', tour=tour)
+        if not data:
+            abort(404)
+        tour = data.get("tour")
+        is_saved = data.get("is_saved")
+        user_id = data.get("user_id")
+        format_time = data.get("format_time")
+        return render_template('client/tours_detail.html',
+                                 tour=tour,
+                                 is_saved=is_saved,
+                                 user_id=user_id,
+                                 format_time=format_time)
 
 
 class Login(BaseClientView):

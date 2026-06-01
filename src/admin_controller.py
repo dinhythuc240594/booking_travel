@@ -6,7 +6,6 @@ import re
 import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from src.tour_admin_service import TourAdminService
 from utils import validate_email, validate_password, generate_slug
 from email_utils import send_email
 from database import (

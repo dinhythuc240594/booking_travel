@@ -281,7 +281,7 @@ class Location(Base):
     slug = Column(String(255), nullable=False, unique=True)
     is_deleted = Column(Boolean, default=False)
     is_published = Column(Boolean, default=True)
-    status = Column(Enum(TourStatus), default=TourStatus.DRAFT)
+    status = Column(TourStatusType(), default=TourStatus.DRAFT)
 
     # Relationships
     hotels = relationship("Hotels", back_populates="location", cascade="all, delete")
@@ -410,7 +410,7 @@ class Tour(Base):
     is_featured = Column(Boolean, default=False)
     slug = Column(String(255), nullable=False, unique=True)
     view_count = Column(Integer, default=0)
-    status = Column(Enum(TourStatus), default=TourStatus.DRAFT)
+    status = Column(TourStatusType(), default=TourStatus.DRAFT)
     is_deleted = Column(Boolean, default=False)
     published_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now())

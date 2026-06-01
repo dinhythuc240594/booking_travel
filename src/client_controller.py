@@ -229,12 +229,11 @@ class Controller():
             
             if not tour:
                 print(f"Tour not found for slug: {tours_slug}")
-                abort(404)
-            
+                return None
             print(f"Tour status: {tour.status}")
             if tour.status != TourStatus.PUBLISHED:
                 print(f"Tour not published, status: {tour.status}")
-                abort(404)
+                return None
 
             is_saved = False
             user_id = None
@@ -270,11 +269,12 @@ class Controller():
             
             format_time = lambda x: x.astimezone(pytz.timezone(time_zone)).strftime(time_format)
 
-            return render_template('client/tours_detail.html',
-                                 tour=tour,
-                                 is_saved=is_saved,
-                                 user_id=user_id,
-                                 format_time=format_time)
+            return {
+                "tour": tour,
+                "is_saved": is_saved,
+                "user_id": user_id,
+                "format_time": format_time
+            }
         except Exception as e:
             self.db_session.rollback()
             
@@ -282,7 +282,7 @@ class Controller():
             print(f"Error in tours_detail: {str(e)}")
             traceback.print_exc()
             
-            abort(404)
+            return None
         finally:
             self.db_session.close()
     
