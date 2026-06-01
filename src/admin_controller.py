@@ -112,10 +112,10 @@ class AdminController:
         pending_articles = len(self.articles_model.get_all(status=ArticleStatusEnum.PENDING))
         draft_articles = len(self.articles_model.get_all(status=ArticleStatusEnum.DRAFT))
         
-        # Article chờ duyệt
+        # Articles chờ duyệt
         pending_list = self.articles_model.get_all(status=ArticleStatusEnum.PENDING, limit=10)
         
-        # Article mới nhất
+        # Articles mới nhất
         latest_articles = self.articles_model.get_all(limit=10)
         
         user = self.user_model.get_by_id(session['user_id'])
@@ -340,7 +340,7 @@ class AdminController:
                 # Tạo link article
                 article_url = url_for('client.articles_detail', slug=article.slug, _external=True)
                 
-                email_subject = f"Article của bạn đã bị từ chối: {article.title}"
+                email_subject = f"Articles của bạn đã bị từ chối: {article.title}"
                 
                 email_body_html = f"""
                 <!DOCTYPE html>
@@ -633,7 +633,7 @@ class AdminController:
         })
     
     def _article_to_dict(self, article) -> dict:
-        """Chuyển đổi Article object thành dictionary dùng chung cho admin & client"""
+        """Chuyển đổi Articles object thành dictionary dùng chung cho admin & client"""
         return {
             'id': article.id,
             'title': article.title,

@@ -7,13 +7,13 @@ from database import (
     get_session,
     TourStatus,
     UserRole,
-    ViewedTours,
-    SavedTours, 
+    ViewedArticles,
+    SavedArticles, 
     PasswordResetToken,
 )
 
 from models import (
-    ToursModel,
+    ArticlesModel,
     UserModel,
 )
 
@@ -23,13 +23,13 @@ class Controller():
     """Mangaer controller - manage related user, tours, ..."""
     
     # db_session = get_session()
-    # tours_model = ToursModel(db_session)
+    # articles_model = ArticlesModel(db_session)
     # user_model = UserModel(db_session)
 
     def __init__(self):
         """initialize controller"""
         self.db_session = get_session()
-        self.tours_model = ToursModel(self.db_session)
+        self.articles_model = ArticlesModel(self.db_session)
         self.user_model = UserModel(self.db_session)
 
     def list_tours(self, limit=None, offset=None):
@@ -39,7 +39,7 @@ class Controller():
         """
         db_session = self.db_session
         try:
-            latest_tours = self.tours_model.get_published(limit=limit, offset=offset)
+            latest_tours = self.articles_model.get_published(limit=limit, offset=offset)
 
             return latest_tours
         finally:
@@ -246,18 +246,18 @@ class Controller():
 
             print(f"Slug received: {tours_slug}")
             
-            tours_model = self.tours_model(db_session)
+            articles_model = self.articles_model(db_session)
             
-            tours = tours_model.get_by_slug(tours_slug)
-            print(f"Tours found: {tours}")
+            articles = articles_model.get_by_slug(tours_slug)
+            print(f"Articles found: {articles}")
             
-            if not tours:
-                print(f"Tours not found for slug: {tours_slug}")
+            if not articles:
+                print(f"Articles not found for slug: {tours_slug}")
                 abort(404)
             
-            print(f"Tours status: {tours.status}")
-            if tours.status != TourStatus.PUBLISHED:
-                print(f"Tours not published, status: {tours.status}")
+            print(f"Articles status: {articles.status}")
+            if articles.status != ArticleStatusEnum.PUBLISHED:
+                print(f"Articles not published, status: {articles.status}")
                 abort(404)
 
             is_saved = False
@@ -266,29 +266,29 @@ class Controller():
             if 'user_id' in session:
                 user_id = session['user_id']
 
-                existing_viewed = db_session.query(ViewedTours).filter(
-                    ViewedTours.user_id == user_id,
-                    ViewedTours.tour_id == tours.id,
-                    ViewedTours.site == 'vn'
+                existing_viewed = db_session.query(ViewedArticles).filter(
+                    ViewedArticles.user_id == user_id,
+                    ViewedArticles.article_id == tours.id,
+                    ViewedArticles.site == 'vn'
                 ).first()
                 
                 if not existing_viewed:
-                    viewed_tours = ViewedTours(
+                    viewed_articles = ViewedArticles(
                         user_id=user_id,
-                        tour_id=tours.id,
+                        article_id=tours.id,
                         site='vn'
                     )
-                    db_session.add(viewed_tours)
+                    db_session.add(viewed_articles)
                     db_session.commit()
                 else:
 
                     existing_viewed.viewed_at = datetime.utcnow()
                     db_session.commit()
 
-                saved_tours = db_session.query(SavedTours).filter(
-                    SavedTours.user_id == user_id,
-                    SavedTours.tour_id == tours.id,
-                    SavedTours.site == 'vn'
+                saved_tours = db_session.query(SavedArticles).filter(
+                    SavedArticles.user_id == user_id,
+                    SavedArticles.article_id == tours.id,
+                    SavedArticles.site == 'vn'
                 ).first()
                 is_saved = saved_tours is not None
 

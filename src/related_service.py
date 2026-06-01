@@ -1,4 +1,4 @@
-from database import get_session, Bookings, SavedTours, ViewedTours
+from database import get_session, Bookings, SavedArticles, ViewedArticles
 from sqlalchemy.orm import joinedload
 
 class RelatedService:
@@ -23,10 +23,10 @@ class RelatedService:
         session = get_session()
         try:
             # Kiểm tra xem đã lưu chưa
-            existing = session.query(SavedTours).filter_by(user_id=user_id, tour_id=tour_id).first()
+            existing = session.query(SavedArticles).filter_by(user_id=user_id, article_id=tour_id).first()
             if not existing:
-                saved_tour = SavedTours(user_id=user_id, tour_id=tour_id)
-                session.add(saved_tour)
+                saved_article = SavedArticles(user_id=user_id, article_id=tour_id)
+                session.add(saved_article)
                 session.commit()
                 return True
             return False
@@ -41,7 +41,7 @@ class RelatedService:
         """Ghi nhận lịch sử xem Tour của người dùng (Để làm recommendation sau này)"""
         session = get_session()
         try:
-            view = ViewedTours(user_id=user_id, tour_id=tour_id)
+            view = ViewedArticles(user_id=user_id, article_id=tour_id)
             session.add(view)
             session.commit()
         except Exception as e:

@@ -5,7 +5,7 @@ from database import (
     Hotels, 
     Tours, 
     ArticleCategory, 
-    Article)
+    Articles)
 
 #######
 # Composite Pattern sẽ đóng vai trò tính toán giá (total_price) cho giỏ hàng/gói dịch vụ trước khi lưu xuống bảng Bookings. 
@@ -85,7 +85,7 @@ class AbstractContentNode(ABC):
 
 class ArticleLeaf(AbstractContentNode):
     """Leaf: Đại diện cho 1 Bài viết độc lập. Không chứa con."""
-    def __init__(self, article: Article):
+    def __init__(self, article: Articles):
         self.article = article
 
     def get_article_count(self) -> int:

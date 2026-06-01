@@ -8,7 +8,7 @@ from database import (
     BookingTypeEnum, 
     PaymentMethodEnum, 
     PaymentStatusEnum,
-    Article,
+    Articles,
     ArticleStatusEnum,
     NewsletterSubscription)
 
@@ -129,7 +129,7 @@ class CreateArticleCommand(DatabaseCommand):
         self.article_record = None
 
     def execute(self, session) -> None:
-        self.article_record = Article(
+        self.article_record = Articles(
             author_id=self.author_id,
             category_id=self.category_id,
             title=self.title,
@@ -158,7 +158,7 @@ class ChangeArticleStatusCommand(DatabaseCommand):
         self.article_record = None
 
     def execute(self, session) -> None:
-        self.article_record = session.query(Article).get(self.article_id)
+        self.article_record = session.query(Articles).get(self.article_id)
         if self.article_record:
             self.old_status = self.article_record.status # Lưu lại trạng thái cũ để undo
             self.article_record.status = self.new_status

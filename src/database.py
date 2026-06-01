@@ -353,8 +353,8 @@ class User(Base):
     articles_authored = relationship("Articles", foreign_keys="[Articles.author_id]", back_populates="author")
     articles_reviewed = relationship("Articles", foreign_keys="[Articles.reviewer_id]", back_populates="reviewer")
     articles_approved = relationship("Articles", foreign_keys="[Articles.approved_by]", back_populates="approver")
-    saved_tours = relationship("SavedTours", back_populates="user", cascade="all, delete-orphan")
-    viewed_tours = relationship("ViewedTours", back_populates="user", cascade="all, delete-orphan")
+    saved_articles = relationship("SavedArticles", back_populates="user", cascade="all, delete-orphan")
+    viewed_articles = relationship("ViewedArticles", back_populates="user", cascade="all, delete-orphan")
     newsletter_subscriptions = relationship("NewsletterSubscription", back_populates="user", cascade="all, delete-orphan")
     password_reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
 
@@ -388,8 +388,8 @@ class Articles(Base):
     approver = relationship("User", foreign_keys=[approved_by], back_populates="articles_approved")
 
 
-class Location(Base):
-    __tablename__ = 'locations'
+class TourLocation(Base):
+    __tablename__ = 'tour_locations'
     
     location_id = Column(Integer, primary_key=True, autoincrement=True)
     city = Column(String(100), nullable=False)
@@ -411,14 +411,14 @@ class Hotels(Base):
     __tablename__ = 'hotels'
     
     hotel_id = Column(Integer, primary_key=True, autoincrement=True)
-    location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"))
+    location_id = Column(Integer, ForeignKey('tour_locations.location_id', ondelete="SET NULL"))
     name = Column(String(150), nullable=False)
     star_rating = Column(Integer)
     price_per_night = Column(Numeric(10, 2), nullable=False)
     address = Column(String(255))
 
     # Relationships
-    location = relationship("Location", back_populates="hotels")
+    location = relationship("TourLocation", back_populates="hotels")
 
 
 class Tours(Base):
@@ -426,7 +426,7 @@ class Tours(Base):
     __tablename__ = 'tours'
     
     tour_id = Column(Integer, primary_key=True, autoincrement=True)
-    location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"))
+    location_id = Column(Integer, ForeignKey('tour_locations.location_id', ondelete="SET NULL"))
     slug = Column(String(255), nullable=False, unique=True)
     name = Column(String(255), nullable=False)
     description = Column(Text)
@@ -438,7 +438,7 @@ class Tours(Base):
     created_at = Column(DateTime, default=datetime.datetime.now())
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
 
-    location = relationship("Location", back_populates="tours")
+    location = relationship("TourLocation", back_populates="tours")
 
 
 class Bookings(Base):
@@ -543,7 +543,7 @@ class ArticleRejection(Base):
     created_at = Column(DateTime, default=datetime.datetime.now())
     
     # Relationships
-    article = relationship("Article", foreign_keys=[article_id])
+    article = relationship("Articles", foreign_keys=[article_id])
     rejector = relationship("User", foreign_keys=[rejected_by])
 
 
@@ -563,7 +563,7 @@ class ArticleCategory(Base):
     
     # Relationships
     parent = relationship("ArticleCategory", remote_side=[category_id], backref="children")
-    articles = relationship("Article", back_populates="category")
+    articles = relationship("Articles", back_populates="category")
 
 
 class ArticleTag(Base):
@@ -577,7 +577,7 @@ class ArticleTag(Base):
 
 
 class ArticleTagLink(Base):
-    """Bảng trung gian N-N giữa Article và Tag"""
+    """Bảng trung gian N-N giữa Articles và Tag"""
     __tablename__ = 'article_tag_links'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -600,7 +600,7 @@ class ArticleComment(Base):
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
     
-    article = relationship("Article", back_populates="comments")
+    article = relationship("Articles", back_populates="comments")
     parent = relationship("ArticleComment", remote_side=[comment_id], backref="replies")
 
 
