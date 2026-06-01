@@ -276,12 +276,6 @@ class Admin(User):
 
 class Writer(User):
 
-    writer_id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
-    bio = Column(Text, nullable=True)
-    website = Column(String(255), nullable=True)
-    social_links = Column(Text, nullable=True)  # JSON string containing social media links
-
     # Relationships Writer
     tour_authored = relationship("Tour", foreign_keys="[Tour.author_id]", back_populates="author")
     tour_reviewed = relationship("Tour", foreign_keys="[Tour.reviewer_id]", back_populates="reviewer")

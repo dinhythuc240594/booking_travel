@@ -28,7 +28,7 @@ class BaseClientView(base.BaseView, controller):
 class Home(BaseClientView):
     
     def get(self):
-        data = self.list_tours(limit=10, offset=0)
+        data = self.list_tour(limit=10, offset=0)
 
         return render_template('client/home.html', 
                                tour=data)

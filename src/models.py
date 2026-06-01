@@ -210,6 +210,10 @@ class TourModel:
             print(f"Lỗi khi xóa Tour: {e}")
             return False
 
+    def get_public_tours(self, limit: int = 20, offset: int = 0) -> List[db.Tour]:
+        """Lấy danh sách Tour công khai (visible=True) có phân trang"""
+        return self.db.query(db.Tour).filter(db.Tour.visible == True).order_by(db.Tour.tour_id.desc()).limit(limit).offset(offset).all()
+
 
 class RelatedActivityModel:
     """Model class management Related user activities (History, Saved, Viewed)"""

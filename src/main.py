@@ -4,16 +4,15 @@ Main application file - initialization for Flask app và register routes
 from dotenv import load_dotenv
 from flask import Flask, request, session
 from datetime import datetime, timezone
-from flask_babel import Babel
 import pytz
 import re
 
 from config import envConfig
-from database import init_db, get_session
+from database import init_db
 
 from client_routes import client_bp
 from admin_routes import admin_bp
-from src.tour_routes import tour_bp
+from tour_routes import tour_bp
 
 load_dotenv()  # Load varibale enviroment from file .env
 

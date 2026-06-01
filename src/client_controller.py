@@ -13,7 +13,7 @@ from database import (
 )
 
 from models import (
-    tourModel,
+    TourModel,
     UserModel,
 )
 
@@ -23,13 +23,13 @@ class Controller():
     """Mangaer controller - manage related user, tour, ..."""
     
     # db_session = get_session()
-    # tour_model = tourModel(db_session)
+    # tour_model = TourModel(db_session)
     # user_model = UserModel(db_session)
 
     def __init__(self):
         """initialize controller"""
         self.db_session = get_session()
-        self.tour_model = tourModel(self.db_session)
+        self.tour_model = TourModel(self.db_session)
         self.user_model = UserModel(self.db_session)
 
     def list_tour(self, limit=None, offset=None):
@@ -39,7 +39,7 @@ class Controller():
         """
         db_session = self.db_session
         try:
-            latest_tour = self.tour_model.get_published(limit=limit, offset=offset)
+            latest_tour = self.tour_model.get_public_tours(limit=limit, offset=offset)
 
             return latest_tour
         finally:
