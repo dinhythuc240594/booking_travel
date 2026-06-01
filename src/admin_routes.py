@@ -24,20 +24,27 @@ class BaseAdminView(base.BaseView, controller):
 # =========================================================
 
 class Login(BaseAdminView):
-    def get(self): return self.login()
-    def post(self): return self.login()
+    def get(self):
+        return self.login()
+
+    def post(self):
+        return self.login()
 
 class Logout(BaseAdminView):
-    def get(self): return self.logout()
+    def get(self):
+        return self.logout()
 
 class Dashboard(BaseAdminView):
-    def get(self): return self.dashboard()
+    def get(self):
+        return self.dashboard()
 
 class EditorDashboard(BaseAdminView):
-    def get(self): return self.editor_dashboard()
+    def get(self):
+        return self.editor_dashboard()
 
 class Profile(BaseAdminView):
-    def get(self): return self.profile()
+    def get(self):
+        return self.profile()
 
 
 # =========================================================
@@ -172,11 +179,13 @@ class ApiUploadImage(BaseAdminView):
 # =========================================================
 
 class ApiUsersList(BaseAdminView):
-    def get(self): return self.api_users_list()
+    def get(self):
+        return self.api_users_list()
 
 
 class ApiCreateUser(BaseAdminView):
-    def post(self): return self.api_create_user()
+    def post(self):
+        return self.api_create_user()
 
 
 class ApiUpdateUser(BaseAdminView):
