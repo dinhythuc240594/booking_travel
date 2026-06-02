@@ -1,5 +1,6 @@
 from database import get_session, Setting
-from src.command.command_partern import DBTransactionInvoker, BulkUpdateSettingsCommand
+from command.component import DBTransactionInvoker
+from command.setting import BulkUpdateSettingsCommand
 from composite.setting import SettingLeaf, SettingCategoryComposite
 
 class SettingService:

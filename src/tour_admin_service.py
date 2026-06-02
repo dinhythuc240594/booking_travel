@@ -1,11 +1,19 @@
+
 import os
 import re
 import json
 import shutil
-
 from flask import jsonify
-from database import UserRole, get_session, Tour, TourStatus
-from src.command.command_partern import DBTransactionInvoker, CreateTourCommand, ToggleUserStatusCommand, UpdateTourCommand
+
+from database import (
+    UserRole, 
+    get_session, 
+    Tour, 
+    TourStatus
+)
+from command.component import DBTransactionInvoker
+from command.tour import CreateTourCommand, UpdateTourCommand
+from command.user import ToggleUserStatusCommand
 
 class TourAdminService:
     
