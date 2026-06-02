@@ -11,7 +11,7 @@ import admin_controller
 # and template_folder for html files in folder admin
 admin_bp = Blueprint('admin', __name__, 
                      url_prefix='/admin',
-                     template_folder='templates')
+                     template_folder='templates/admin')
 
 controller = admin_controller.AdminController
 

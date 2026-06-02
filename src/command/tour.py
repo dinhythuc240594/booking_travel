@@ -1,5 +1,5 @@
 from command.component import DatabaseCommand
-from booking import CreateBookingCommand
+from command.booking import CreateBookingCommand
 import datetime
 
 from database import (

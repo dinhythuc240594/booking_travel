@@ -1,5 +1,6 @@
-menuManager = {
-    
+// Menu Management System
+const menuManager = {
+    // Default menu structure
     defaultMenus: [
         {
             id: 1,
@@ -57,102 +58,44 @@ menuManager = {
         }
     ],
 
-    menuConfig: {
-        'menu-manager': {
-            apiBase: '/api/menu-items',
-            selectors: {
-                addBtn: '#addMenuBtn',
-                saveBtn: '#saveMenuBtn',
-                resetBtn: '#resetMenuBtn',
-                previewBtn: '#previewMenuBtn',
-                treeList: '#menuTreeList',
-                treeView: '#menuTreeView',
-                modal: '#menuModal',
-                modalTitle: '#menuModalTitle',
-                form: '#menuForm',
-                formId: '#menuId',
-                formName: '#menuName',
-                formSlug: '#menuSlug',
-                formParent: '#menuParent',
-                formIcon: '#menuIcon',
-                formOrder: '#menuOrder',
-                formVisible: '#menuVisible',
-                previewModal: '#previewModal',
-                previewList: '#previewMenuList'
-            }
-        },
-    },
-
     // Initialize menu system
-    init: function() {
+    init() {
         if (!localStorage.getItem('vnews_menus')) {
             this.saveMenus(this.defaultMenus);
         }
     },
 
     // Get all menus
-    getMenus: async function() {
-        var menus = null;
-        try {
-            const apiBase = menuManager.getApiBase();
-            const response = await fetch(apiBase);
-            const result = await response.json();
-
-            if (result.success && result.data && result.data.length === 0) {
-                const initResponse = await fetch(`${apiBase}/get_menus`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                const initResult = await initResponse.json();
-                if (initResult.success) {
-                    menus = initResult.data;
-                }
-            }
-
-        } catch (error) {
-            
-        }
+    getMenus() {
+        const menus = localStorage.getItem('vnews_menus');
         return menus ? JSON.parse(menus) : this.defaultMenus;
     },
 
-    getApiBase: function() {
-        var config = menuManager.getMenuConfig();
-        return config.apiBase;
-    },
-
-    getMenuConfig: function() {
-        var activeSection = $('.content-section.active').attr('id');
-        return menuConfig[activeSection] || menuConfig['menu-manager'];
-    },
-
     // Get parent menus only
-    getParentMenus: function() {
+    getParentMenus() {
         const menus = this.getMenus();
         return menus.filter(menu => menu.parent_id === null).sort((a, b) => a.order - b.order);
     },
 
     // Get child menus by parent id
-    getChildMenus: function(parentId) {
+    getChildMenus(parentId) {
         const menus = this.getMenus();
         return menus.filter(menu => menu.parent_id === parentId).sort((a, b) => a.order - b.order);
     },
 
     // Get menu by id
-    getMenuById: function(id) {
+    getMenuById(id) {
         const menus = this.getMenus();
         return menus.find(menu => menu.id === id);
     },
 
     // Save menus to localStorage
-    saveMenus: function(menus) {
+    saveMenus(menus) {
         localStorage.setItem('vnews_menus', JSON.stringify(menus));
     },
 
     // Add new menu
-    addMenu: function(menuData) {
+    addMenu(menuData) {
         const menus = this.getMenus();
         const newId = Math.max(...menus.map(m => m.id), 0) + 1;
         
@@ -172,7 +115,7 @@ menuManager = {
     },
 
     // Update menu
-    updateMenu: function(id, menuData) {
+    updateMenu(id, menuData) {
         const menus = this.getMenus();
         const index = menus.findIndex(menu => menu.id === id);
         
@@ -189,7 +132,7 @@ menuManager = {
     },
 
     // Delete menu
-    deleteMenu: function(id) {
+    deleteMenu(id) {
         let menus = this.getMenus();
         
         // Delete child menus first
@@ -203,7 +146,7 @@ menuManager = {
     },
 
     // Toggle visibility
-    toggleVisibility: function(id) {
+    toggleVisibility(id) {
         const menus = this.getMenus();
         const menu = menus.find(m => m.id === id);
         if (menu) {
@@ -215,7 +158,7 @@ menuManager = {
     },
 
     // Update order
-    updateOrder: function(id, newOrder) {
+    updateOrder(id, newOrder) {
         const menus = this.getMenus();
         const menu = menus.find(m => m.id === id);
         if (menu) {
@@ -227,7 +170,7 @@ menuManager = {
     },
 
     // Generate slug from name
-    slugify: function(text) {
+    slugify(text) {
         const from = "àáäâãèéëêìíïîòóöôõùúüûñçăắằẳẵặâấầẩẫậđèéẹẻẽêếềểễệìíịỉĩòóọỏõôốồổỗộơớờởỡợùúụủũưứừửữựỳýỵỷỹ";
         const to = "aaaaaeeeeiiiioooooouuuuncaaaaaaaaaaaadeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyy";
         
@@ -247,8 +190,8 @@ menuManager = {
     },
 
     // Build hierarchical menu structure
-    buildMenuTree: async function() {
-        const menus = await menuManager.getMenus();
+    buildMenuTree() {
+        const menus = this.getMenus();
         const parentMenus = menus.filter(m => m.parent_id === null && m.visible)
                                   .sort((a, b) => a.order - b.order);
         
@@ -264,5 +207,7 @@ menuManager = {
         this.saveMenus(this.defaultMenus);
         return true;
     }
+};
 
-}
+// Initialize on load
+menuManager.init();
