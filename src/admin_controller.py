@@ -6,7 +6,7 @@ import re
 import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from utils import validate_email, validate_password, generate_slug
+from utils import validate_email, validate_password, generate_slug, verify_password, hash_password
 from email_utils import send_email
 from database import (
     Bookings,
@@ -1002,13 +1002,95 @@ class AdminController:
             User.user_id == session['user_id']
         ).first()
 
-        booking = self.db_session.query(Bookings).filter(
-            Bookings.user_id == user.user_id
-        ).order_by(Bookings.created_at.desc()).limit(20).all()
+        if request.method == 'POST':
+            action = request.form.get('action')
+            if action == 'update_avatar':
+                if 'avatar' not in request.files:
+                    return jsonify({'success': False, 'message': 'Không có file được chọn'}), 400
+                
+                file = request.files['avatar']
+                if file.filename == '':
+                    return jsonify({'success': False, 'message': 'Không có file được chọn'}), 400
+                
+                if file and self._allowed_file(file.filename):
+                    filename = secure_filename(f"avatar_{user.id}_{file.filename}")
+                    # Tạo đường dẫn upload folder
+                    upload_folder = os.path.join('src', 'static', 'uploads', 'avatars')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    filepath = os.path.join(upload_folder, filename)
+                    file.save(filepath)
+                    
+                    # Xóa avatar cũ nếu có
+                    if user.avatar:
+                        old_path = user.avatar.lstrip('/')
+                        old_path = os.path.join('src', old_path) if not old_path.startswith('src') else old_path
+                        if os.path.exists(old_path):
+                            try:
+                                os.remove(old_path)
+                            except:
+                                pass
+                    
+                    # Lưu đường dẫn avatar (relative to static folder)
+                    avatar_url = f"static/uploads/avatars/{filename}"
+                    user.avatar = avatar_url
+                    self.db_session.commit()
+                    
+                    # Cập nhật session
+                    session['avatar'] = avatar_url
+                    
+                    return jsonify({'success': True, 'message': 'Cập nhật avatar thành công', 'avatar_url': f'/{avatar_url}'})
+                else:
+                    return jsonify({'success': False, 'message': 'File không hợp lệ. Chỉ chấp nhận: png, jpg, jpeg, gif, webp'}), 400
+            
+            elif action == 'update_info':
+                full_name = request.form.get('full_name', '').strip()
+                email = request.form.get('email', '').strip()
+                phone = request.form.get('phone', '').strip()
+                
+                if email and email != user.email:
+                    existing_user = self.user_model.get_by_email(email)
+                    if existing_user and existing_user.id != user.id:
+                        flash('Email này đã được sử dụng', 'error')
+                        return redirect(url_for('admin.profile'))
+                
+                user.full_name = full_name if full_name else None
+                user.email = email
+                user.phone = phone if phone else None
+                self.db_session.commit()
+                
+                session['full_name'] = user.full_name or user.username
+                
+                flash('Cập nhật thông tin thành công', 'success')
+                return redirect(url_for('admin.profile'))
+            
+            elif action == 'change_password':
+                current_password = request.form.get('current_password')
+                new_password = request.form.get('new_password')
+                confirm_password = request.form.get('confirm_password')
+                
+                if not verify_password(user.password_hash, current_password):
+                    flash('Mật khẩu hiện tại không đúng', 'error')
+                    return redirect(url_for('admin.profile'))
+                
+                if new_password != confirm_password:
+                    flash('Mật khẩu mới và xác nhận không khớp', 'error')
+                    return redirect(url_for('admin.profile'))
+                
+                if len(new_password) < 6:
+                    flash('Mật khẩu phải có ít nhất 6 ký tự', 'error')
+                    return redirect(url_for('admin.profile'))
+                
+                user.password_hash = hash_password(new_password)
+                self.db_session.commit()
+                
+                flash('Đổi mật khẩu thành công', 'success')
+                return redirect(url_for('admin.profile'))
+            
+            flash('Hành động không hợp lệ', 'error')
+            return redirect(url_for('admin.profile'))
 
         return render_template('admin/profile.html', 
-                             user=user, 
-                             booking=booking
+                             user=user
                              )
     
     # User Management Methods
@@ -1138,7 +1220,7 @@ class AdminController:
             self.db_session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
     
-    def api_update_user(self):
+    def api_update_user(self, user_id: int):
         """API cập nhật user hoặc lấy thông tin user"""
         if 'user_id' not in session:
             return jsonify({'success': False, 'error': 'Unauthorized'}), 401
@@ -1148,7 +1230,7 @@ class AdminController:
             return jsonify({'success': False, 'error': 'Permission denied'}), 403
         
         try:
-            user = self.user_model.get_by_id(session['user_id'])
+            user = self.user_model.get_by_id(user_id)
             if not user:
                 return jsonify({'success': False, 'error': 'Không tìm thấy người dùng'}), 404
             
