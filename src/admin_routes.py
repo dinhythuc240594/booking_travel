@@ -189,14 +189,9 @@ class ApiCreateUser(BaseAdminView):
 
 
 class ApiUpdateUser(BaseAdminView):
-    def get(self, user_id):
-        return self.api_update_user(user_id)
-    
-    def put(self, user_id):
-        return self.api_update_user(user_id)
-    
-    def post(self, user_id):
-        return self.api_update_user(user_id) # Hỗ trợ POST dự phòng
+
+    def post(self):
+        return self.api_update_user() # Hỗ trợ POST dự phòng
 
 
 class ApiToggleUserStatus(BaseAdminView):
@@ -256,7 +251,7 @@ admin_bp.add_url_rule('/api/upload-image', 'api_upload_image', ApiUploadImage.as
 # API Users & Settings
 admin_bp.add_url_rule('/api/users', 'api_users_list', ApiUsersList.as_view('api_users_list'))
 admin_bp.add_url_rule('/api/users/create', 'api_create_user', ApiCreateUser.as_view('api_create_user'))
-admin_bp.add_url_rule('/api/users/<int:user_id>', 'api_update_user', ApiUpdateUser.as_view('api_update_user'))
+admin_bp.add_url_rule('/api/users/update', 'api_update_user', ApiUpdateUser.as_view('api_update_user'))
 admin_bp.add_url_rule('/api/users/<int:user_id>/toggle-status', 'api_toggle_user_status', ApiToggleUserStatus.as_view('api_toggle_user_status'))
 admin_bp.add_url_rule('/api/settings', 'api_settings', ApiSettings.as_view('api_settings'))
 admin_bp.add_url_rule('/api/settings/test-email', 'api_test_email', ApiTestEmail.as_view('api_test_email'))

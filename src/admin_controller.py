@@ -739,8 +739,8 @@ class AdminController:
         })
     
     def api_rejected_tour(self):
-        """API lấy danh sách bài viết bị từ chối (bao gồm cả news và news_international)"""
-        # Lấy bài viết trong nước bị từ chối
+
+        # Lấy tour bị từ chối
         news_tour = self.tour_model.get_all(status=TourStatus.REJECTED, limit=100)
         
         # Lấy thông tin từ chối từ database
@@ -1138,7 +1138,7 @@ class AdminController:
             self.db_session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
     
-    def api_update_user(self, user_id: int):
+    def api_update_user(self):
         """API cập nhật user hoặc lấy thông tin user"""
         if 'user_id' not in session:
             return jsonify({'success': False, 'error': 'Unauthorized'}), 401
@@ -1148,7 +1148,7 @@ class AdminController:
             return jsonify({'success': False, 'error': 'Permission denied'}), 403
         
         try:
-            user = self.user_model.get_by_id(user_id)
+            user = self.user_model.get_by_id(session['user_id'])
             if not user:
                 return jsonify({'success': False, 'error': 'Không tìm thấy người dùng'}), 404
             

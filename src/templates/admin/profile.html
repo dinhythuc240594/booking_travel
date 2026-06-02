@@ -76,22 +76,12 @@
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="saved-tab" data-bs-toggle="tab" data-bs-target="#saved" type="button" role="tab">
-                                        <i class="fas fa-bookmark me-2"></i>Tin đã lưu
+                                        <i class="fas fa-bookmark me-2"></i>Tour đã lưu
                                     </button>
                                 </li>
                                 <li class="nav-item" role="presentation">
                                     <button class="nav-link" id="viewed-tab" data-bs-toggle="tab" data-bs-target="#viewed" type="button" role="tab">
-                                        <i class="fas fa-eye me-2"></i>Tin đã xem
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab">
-                                        <i class="fas fa-comments me-2"></i>Ý kiến của bạn ({{ total_comments }})
-                                    </button>
-                                </li>
-                                <li class="nav-item" role="presentation">
-                                    <button class="nav-link" id="newsletter-tab" data-bs-toggle="tab" data-bs-target="#newsletter" type="button" role="tab">
-                                        <i class="fas fa-envelope me-2"></i>Newsletter
+                                        <i class="fas fa-eye me-2"></i>Tour đã xem
                                     </button>
                                 </li>
                             </ul>
@@ -139,7 +129,7 @@
                         <!-- Tab 2: Chỉnh sửa thông tin -->
                         <div class="tab-pane fade" id="edit" role="tabpanel">
                             <div class="form-section">
-                                <form method="POST" action="{{ url_for('client.update_profile') }}" enctype="multipart/form-data">
+                                <form method="POST" action="{{ url_for('admin.api_update_user') }}" enctype="multipart/form-data">
                                     <input type="hidden" name="action" value="update_info">
                                     <div class="form-group mb-3">
                                         <label class="form-label">Họ và tên</label>
@@ -163,7 +153,7 @@
                         <!-- Tab 3: Đổi mật khẩu -->
                         <div class="tab-pane fade" id="password" role="tabpanel">
                             <div class="form-section">
-                                <form method="POST" action="{{ url_for('client.update_profile') }}" id="changePasswordForm">
+                                <form method="POST" action="{{ url_for('admin.api_update_user') }}" id="changePasswordForm">
                                     <input type="hidden" name="action" value="change_password">
                                     <div class="form-group mb-3">
                                         <label class="form-label">Mật khẩu hiện tại</label>
@@ -380,7 +370,7 @@
                     form.append('avatar', input.files[0]);
                     form.append('action', 'update_avatar');
                     
-                    fetch('{{ url_for("client.update_profile") }}', {
+                    fetch('{{ url_for("admin.api_update_user") }}', {
                         method: 'POST',
                         body: form
                     })
@@ -525,45 +515,6 @@
                         firstError.focus();
                     }
                 }
-            });
-        }
-        
-        // Newsletter unsubscribe from profile
-        const unsubscribeBtnVn = document.getElementById('unsubscribeBtnVn');
-        if (unsubscribeBtnVn) {
-            unsubscribeBtnVn.addEventListener('click', function() {
-                if (!confirm('Bạn có chắc chắn muốn hủy đăng ký nhận bản tin?')) {
-                    return;
-                }
-                
-                const btn = this;
-                const originalText = btn.innerHTML;
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
-                
-                fetch('{{ url_for("client.newsletter_unsubscribe_from_profile") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert(data.message);
-                        location.reload();
-                    } else {
-                        alert(data.message || 'Có lỗi xảy ra');
-                        btn.disabled = false;
-                        btn.innerHTML = originalText;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Có lỗi xảy ra khi hủy đăng ký');
-                    btn.disabled = false;
-                    btn.innerHTML = originalText;
-                });
             });
         }
     </script>
