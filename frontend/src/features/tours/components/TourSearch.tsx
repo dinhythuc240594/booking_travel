@@ -99,7 +99,7 @@ export default function TourSearch() {
     <div className="w-full max-w-4xl mx-auto">
       {/* Switch chọn Trong nước / Nước ngoài */}
       <div className="flex gap-2 mb-3 ml-2 justify-center md:justify-start">
-        <button
+        {/* <button
           type="button"
           onClick={() => {
             setLocationType("domestic");
@@ -128,7 +128,7 @@ export default function TourSearch() {
           )}
         >
           Nước ngoài
-        </button>
+        </button> */}
       </div>
 
       {/* Form tìm kiếm */}

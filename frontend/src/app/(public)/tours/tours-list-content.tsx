@@ -236,8 +236,8 @@ export default function ToursListContent() {
                 <div className="flex flex-col gap-2">
                   {[
                     { id: "all", label: "Tất cả" },
-                    { id: "domestic", label: "Trong nước" },
-                    { id: "international", label: "Nước ngoài / Quốc tế" },
+                    // { id: "domestic", label: "Trong nước" },
+                    // { id: "international", label: "Nước ngoài / Quốc tế" },
                   ].map((item) => (
                     <label key={item.id} className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer select-none">
                       <input
