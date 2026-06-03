@@ -100,15 +100,24 @@ class ApiTourList(BaseAdminView):
     def get(self):
         return self.api_tour_list()
 
+
 class ApiMyTour(BaseAdminView):
 
     def get(self):
         return self.api_my_tour()
 
+
+class ApiLocation(BaseAdminView):
+
+    def get(self):
+        return self.api_location()
+
+
 class ApiCurrentUser(BaseAdminView):
 
     def get(self):
         return self.api_current_user()
+
 
 class ApiEditorNotifications(BaseAdminView):
 
@@ -250,6 +259,8 @@ admin_bp.add_url_rule('/api/tour/<int:tour_id>', 'api_tour_detail', ApiTourDetai
 admin_bp.add_url_rule('/api/tour/create', 'api_create_tour', ApiCreateTour.as_view('api_create_tour'))
 admin_bp.add_url_rule('/api/tour/<int:tour_id>/edit', 'api_edit_tour', ApiEditTour.as_view('api_edit_tour'))
 admin_bp.add_url_rule('/api/upload-image', 'api_upload_image', ApiUploadImage.as_view('api_upload_image'))
+admin_bp.add_url_rule('/api/locations', 'api_locations', ApiLocation.as_view('api_locations'))
+
 
 # API Users & Settings
 admin_bp.add_url_rule('/api/users', 'api_users_list', ApiUsersList.as_view('api_users_list'))

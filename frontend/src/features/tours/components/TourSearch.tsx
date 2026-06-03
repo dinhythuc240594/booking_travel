@@ -15,7 +15,7 @@ export default function TourSearch() {
   const router = useRouter();
   const [destination, setDestination] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
-  
+
   // Custom Guest State
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
@@ -37,7 +37,7 @@ export default function TourSearch() {
     const fetchLocations = async () => {
       try {
         setIsFetchingLocations(true);
-        const res = await fetch(`/api/locations?type=${locationType}`);
+        const res = await fetch(`/admin/api/locations?type=${locationType}`);
         if (res.ok) {
           const data = await res.json();
           setLocationsList(data);
@@ -67,12 +67,12 @@ export default function TourSearch() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const params = new URLSearchParams();
     if (destination.trim()) params.append("search", destination.trim());
     if (date) params.append("date", date);
     params.append("type", locationType);
-    
+
     const totalGuests = adults + children;
     if (totalGuests > 1) {
       params.append("guests", totalGuests.toString());
@@ -137,7 +137,7 @@ export default function TourSearch() {
         className="w-full backdrop-blur-xl bg-white/80 dark:bg-zinc-900/80 border border-white/20 dark:border-zinc-800/40 shadow-2xl rounded-3xl p-4 md:p-5 relative z-100"
       >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-          
+
           {/* 1. Điểm đến (Destination Autocomplete) */}
           <div ref={destRef} className="md:col-span-5 relative flex items-center">
             <div className="absolute left-4 text-zinc-400 dark:text-zinc-500">
@@ -161,7 +161,7 @@ export default function TourSearch() {
                 autoComplete="off"
               />
             </div>
-            
+
             {/* Nút xóa nhanh input */}
             {destination && (
               <button
@@ -285,7 +285,7 @@ export default function TourSearch() {
             {/* Popover Điều khiển Số khách */}
             {isGuestPickerOpen && (
               <div className="absolute top-[calc(100%+12px)] right-0 w-72 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl rounded-2xl p-5 z-50 animate-fade-in text-left">
-                
+
                 {/* Người lớn */}
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex flex-col">

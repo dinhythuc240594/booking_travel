@@ -1,3 +1,4 @@
+from database import Location
 from flask import Blueprint, render_template, request, jsonify, abort, redirect, url_for, flash, session, current_app
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
@@ -1283,6 +1284,26 @@ class AdminController:
             self.db_session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
     
+    def api_location(self):
+        """API lấy danh sách địa điểm"""
+        try:
+            location_type = request.args.get('type', '')
+            query = self.db_session.query(Location)
+            
+            if location_type:
+                query = query.filter(Location.location_type == location_type)
+            
+            locations = query.all()
+            locations_data = {l.location_id: {'name': l.name, 'location_type': l.location_type} for l in locations}
+            
+            return jsonify({
+                'success': True,
+                'locations': locations_data
+            })
+        except Exception as e:
+            self.db_session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
     # Settings Management Methods
     def api_get_settings(self):
         """API lấy settings"""
