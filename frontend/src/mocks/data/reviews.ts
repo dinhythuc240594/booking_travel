@@ -61,7 +61,7 @@ export const mockReviews: Review[] = [
     userName: "Bùi Quốc Anh",
     avatarUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=80",
     rating: 5,
-    comment: "Chuyến đi Thái Lan cực kỳ vui vẻ! Pattaya náo nhiệt, đảo san hô Koh Larn nước rất trong. Đồ ăn Thái hơi cay nhưng rất ngon miệng. Cảm ơn ViTravel đã tổ chức một tour quốc tế trọn vẹn và an toàn.",
+    comment: "Chuyến đi Thái Lan cực kỳ vui vẻ! Pattaya náo nhiệt, đảo san hô Koh Larn nước rất trong. Đồ ăn Thái hơi cay nhưng rất ngon miệng. Cảm ơn VnTravel đã tổ chức một tour quốc tế trọn vẹn và an toàn.",
     date: "2026-05-28",
   }
 ];

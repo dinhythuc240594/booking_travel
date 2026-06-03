@@ -62,7 +62,7 @@ export default function BookingsPage() {
               Yêu Cầu Đăng Nhập
             </h2>
             <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-8 leading-relaxed">
-              Bạn cần đăng nhập tài khoản để xem lịch sử hành trình và các booking đã thực hiện với ViTravel.
+              Bạn cần đăng nhập tài khoản để xem lịch sử hành trình và các booking đã thực hiện với VnTravel.
             </p>
             <div className="space-y-3">
               <Link href={`/login?redirect=/bookings`} className="block">
@@ -203,7 +203,7 @@ export default function BookingsPage() {
                 Chưa Có Giao Dịch Nào
               </h3>
               <p className="text-zinc-500 dark:text-zinc-400 text-sm max-w-md mx-auto mb-8 leading-relaxed">
-                Bạn chưa thực hiện bất kỳ đặt chỗ nào. Hãy đồng hành cùng ViTravel để khám phá những danh lam thắng cảnh và kỳ quan thiên nhiên tươi đẹp!
+                Bạn chưa thực hiện bất kỳ đặt chỗ nào. Hãy đồng hành cùng VnTravel để khám phá những danh lam thắng cảnh và kỳ quan thiên nhiên tươi đẹp!
               </p>
               <Link href="/tours">
                 <Button className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white border-0 shadow-md hover:shadow-lg px-8 py-6 font-bold transition-all duration-300">

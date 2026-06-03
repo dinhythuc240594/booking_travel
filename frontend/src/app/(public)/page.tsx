@@ -86,8 +86,6 @@ export default function PublicPage() {
                 <Sparkles className="w-3.5 h-3.5" /> Khám phá các chân trời mới
               </span>
               <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-tight mb-4">
-                Hành Trình Vạn Dặm
-                <br />
                 Bắt Đầu Từ Một{" "}
                 <span className="bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
                   Điểm Chạm
@@ -205,7 +203,7 @@ export default function PublicPage() {
         <section className="py-24 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
             <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50">
-              Tại Sao Chọn ViTravel?
+              Tại Sao Chọn VnTravel?
             </h2>
             <p className="text-zinc-500 dark:text-zinc-400 mt-3 text-sm sm:text-base">
               Chúng tôi luôn nỗ lực hết mình để đem lại những trải nghiệm tốt

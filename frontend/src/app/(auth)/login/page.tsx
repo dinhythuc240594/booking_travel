@@ -147,7 +147,7 @@ function LoginContent() {
               <Compass className="w-6 h-6 animate-spin-slow" />
             </div>
             <span className="font-bold text-2xl tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
-              ViTravel
+              VnTravel
             </span>
           </Link>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white">

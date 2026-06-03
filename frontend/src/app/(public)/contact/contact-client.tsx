@@ -34,7 +34,7 @@ const branches: Branch[] = [
   {
     id: "hanoi",
     name: "Trụ sở chính Hà Nội",
-    address: "Tòa nhà ViTravel, 12 Tràng Thi, Phường Hàng Trống, Quận Hoàn Kiếm, Hà Nội",
+    address: "Tòa nhà VnTravel, 12 Tràng Thi, Phường Hàng Trống, Quận Hoàn Kiếm, Hà Nội",
     phone: "024 7300 6868",
     email: "hanoi@vitravel.com",
     hours: "8:00 - 18:00 (Tất cả các ngày trong tuần)",
@@ -72,22 +72,22 @@ interface FAQ {
 const faqs: FAQ[] = [
   {
     question: "Tôi có thể tự thiết kế lịch trình tour riêng không?",
-    answer: "Có, ViTravel cung cấp dịch vụ thiết kế tour riêng (Customized Tour) hoàn hảo cho các gia đình, hội nhóm bạn bè hoặc doanh nghiệp. Bạn chỉ cần chọn chủ đề 'Yêu cầu thiết kế tour riêng' trong form liên hệ và cung cấp các thông tin cơ bản về điểm đến mong muốn, số lượng người và khoảng ngân sách. Đội ngũ chuyên viên thiết kế hành trình của chúng tôi sẽ liên hệ lại để cùng bạn xây dựng một lịch trình cá nhân hóa lý tưởng nhất."
+    answer: "Có, VnTravel cung cấp dịch vụ thiết kế tour riêng (Customized Tour) hoàn hảo cho các gia đình, hội nhóm bạn bè hoặc doanh nghiệp. Bạn chỉ cần chọn chủ đề 'Yêu cầu thiết kế tour riêng' trong form liên hệ và cung cấp các thông tin cơ bản về điểm đến mong muốn, số lượng người và khoảng ngân sách. Đội ngũ chuyên viên thiết kế hành trình của chúng tôi sẽ liên hệ lại để cùng bạn xây dựng một lịch trình cá nhân hóa lý tưởng nhất."
   },
   {
     question: "Thời gian phản hồi sau khi gửi yêu cầu liên hệ là bao lâu?",
-    answer: "Chúng tôi cam kết phản hồi tất cả các yêu cầu liên hệ trong giờ làm việc (8:00 - 18:00 hàng ngày) trong vòng tối đa 30 phút. Đối với những yêu cầu được gửi ngoài giờ làm việc hoặc vào các ngày nghỉ lễ lớn, chuyên viên chăm sóc khách hàng của ViTravel sẽ ưu tiên xử lý và liên hệ lại với bạn trước 9:00 sáng ngày làm việc tiếp theo."
+    answer: "Chúng tôi cam kết phản hồi tất cả các yêu cầu liên hệ trong giờ làm việc (8:00 - 18:00 hàng ngày) trong vòng tối đa 30 phút. Đối với những yêu cầu được gửi ngoài giờ làm việc hoặc vào các ngày nghỉ lễ lớn, chuyên viên chăm sóc khách hàng của VnTravel sẽ ưu tiên xử lý và liên hệ lại với bạn trước 9:00 sáng ngày làm việc tiếp theo."
   },
   {
     question: "Tôi có thể thanh toán đặt tour bằng các phương thức nào?",
-    answer: "ViTravel hỗ trợ đa dạng phương thức thanh toán an toàn, linh hoạt bao gồm: Chuyển khoản ngân hàng trực tuyến nhanh (QR Pay), thẻ ATM nội địa, thẻ quốc tế Visa/Mastercard/JCB qua cổng thanh toán bảo mật, thanh toán qua ví điện tử thông dụng (Momo, VNPAY, ShopeePay), hoặc trả tiền mặt trực tiếp tại các văn phòng chi nhánh của ViTravel trên toàn quốc."
+    answer: "VnTravel hỗ trợ đa dạng phương thức thanh toán an toàn, linh hoạt bao gồm: Chuyển khoản ngân hàng trực tuyến nhanh (QR Pay), thẻ ATM nội địa, thẻ quốc tế Visa/Mastercard/JCB qua cổng thanh toán bảo mật, thanh toán qua ví điện tử thông dụng (Momo, VNPAY, ShopeePay), hoặc trả tiền mặt trực tiếp tại các văn phòng chi nhánh của VnTravel trên toàn quốc."
   },
   {
-    question: "Chính sách hủy tour và hoàn tiền của ViTravel như thế nào?",
+    question: "Chính sách hủy tour và hoàn tiền của VnTravel như thế nào?",
     answer: "Chính sách hủy và hoàn trả tiền sẽ phụ thuộc cụ thể vào từng gói tour và thời điểm hủy trước ngày khởi hành. Thông thường, nếu quý khách thực hiện yêu cầu hủy trước 15 ngày khởi hành, quý khách sẽ được hoàn trả 100% tiền cọc (trừ các chi phí vé máy bay không hoàn hủy nếu có). Các mốc thời gian cụ thể và chi tiết hoàn tiền luôn được ghi rõ ràng, minh bạch trong Hợp đồng Dịch vụ Lữ hành ký kết trước khi thanh toán."
   },
   {
-    question: "ViTravel có cung cấp hướng dẫn viên tiếng nước ngoài không?",
+    question: "VnTravel có cung cấp hướng dẫn viên tiếng nước ngoài không?",
     answer: "Có, chúng tôi sở hữu mạng lưới hướng dẫn viên du lịch chuyên nghiệp, giàu kinh nghiệm thực tế và có chứng chỉ hành nghề chuẩn quốc tế với nhiều ngôn ngữ như Tiếng Anh, Tiếng Trung, Tiếng Hàn, Tiếng Nhật, Tiếng Pháp, Tiếng Đức... Vui lòng ghi rõ yêu cầu về ngôn ngữ của hướng dẫn viên trong lời nhắn để chúng tôi chuẩn bị chu đáo nhất cho đoàn của bạn."
   }
 ];
@@ -187,7 +187,7 @@ export default function ContactClient() {
 
           <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-white mt-10">
             <span className="inline-flex items-center gap-1 px-3.5 py-1 rounded-full bg-cyan-500/20 backdrop-blur-md text-cyan-300 text-xs font-bold uppercase tracking-wider mb-4 border border-cyan-400/30">
-              <Sparkles className="w-3.5 h-3.5" /> Kết nối cùng ViTravel
+              <Sparkles className="w-3.5 h-3.5" /> Kết nối cùng VnTravel
             </span>
             <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
               Liên Hệ Với Chúng Tôi
@@ -279,7 +279,7 @@ export default function ContactClient() {
                   Gửi Yêu Cầu Cho Chúng Tôi
                 </h2>
                 <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                  Hãy điền đầy đủ các thông tin bên dưới. Chuyên viên tư vấn lữ hành của ViTravel sẽ liên hệ lại trực tiếp qua số điện thoại hoặc email trong vòng tối đa 30 phút.
+                  Hãy điền đầy đủ các thông tin bên dưới. Chuyên viên tư vấn lữ hành của VnTravel sẽ liên hệ lại trực tiếp qua số điện thoại hoặc email trong vòng tối đa 30 phút.
                 </p>
               </div>
 

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ViTravel - Hệ Thống Đặt Tour Du Lịch Thông Minh",
+  title: "VnTravel - Hệ Thống Đặt Tour Du Lịch Thông Minh",
   description: "Khám phá và đặt các tour du lịch chất lượng cao dễ dàng.",
 };
 

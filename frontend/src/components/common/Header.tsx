@@ -67,7 +67,7 @@ export default function Header({ transparent = false }: HeaderProps) {
                 <Compass className="w-6 h-6 animate-spin-slow" />
               </div>
               <span className="font-sans font-bold text-xl sm:text-2xl tracking-tight bg-gradient-to-r from-cyan-500 to-blue-600 bg-clip-text text-transparent">
-                ViTravel
+                VnTravel
               </span>
             </Link>
           </div>

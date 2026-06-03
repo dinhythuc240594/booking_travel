@@ -29,11 +29,11 @@ export default function Footer() {
                 <Compass className="w-6 h-6" />
               </div>
               <span className="font-bold text-xl text-white tracking-tight">
-                ViTravel
+                VnTravel
               </span>
             </Link>
             <p className="text-sm text-zinc-400 leading-6">
-              ViTravel tự hào mang đến những hành trình du lịch hoàn hảo, kết nối bạn với những kỳ quan thiên nhiên và trải nghiệm văn hóa tuyệt vời nhất trên khắp thế giới.
+              VnTravel tự hào mang đến những hành trình du lịch hoàn hảo, kết nối bạn với những kỳ quan thiên nhiên và trải nghiệm văn hóa tuyệt vời nhất trên khắp thế giới.
             </p>
             <div className="flex space-x-4">
               <Link href="#" className="p-2 bg-zinc-800 hover:bg-cyan-500 hover:text-white rounded-lg transition-colors duration-300">
@@ -129,7 +129,7 @@ export default function Footer() {
 
         {/* Bản quyền */}
         <div className="border-t border-zinc-800 mt-16 pt-8 flex flex-col sm:flex-row justify-between items-center text-xs text-zinc-500 gap-4">
-          <p>© {new Date().getFullYear()} ViTravel Inc. Bảo lưu mọi quyền.</p>
+          <p>© {new Date().getFullYear()} VnTravel Inc. Bảo lưu mọi quyền.</p>
           <div className="flex space-x-6">
             <Link href="#" className="hover:text-zinc-400 transition-colors">Điều khoản dịch vụ</Link>
             <Link href="#" className="hover:text-zinc-400 transition-colors">Chính sách bảo mật</Link>
