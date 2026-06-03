@@ -1,0 +1,67 @@
+import { Review } from "@/types/review";
+
+export const mockReviews: Review[] = [
+  {
+    id: "rev-sapa-01",
+    tourId: "tour-sapa-01",
+    userName: "Trần Minh Tâm",
+    avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop&q=80",
+    rating: 5,
+    comment: "Chuyến đi tuyệt vời! Tour được tổ chức rất chuyên nghiệp. Hướng dẫn viên nhiệt tình, chu đáo. Cảnh sắc Sa Pa mùa này cực đẹp, đỉnh Fansipan mây phủ bồng bềnh rất mãn nhãn. Ẩm thực tại bản cũng rất ngon.",
+    date: "2026-05-15",
+  },
+  {
+    id: "rev-sapa-02",
+    tourId: "tour-sapa-01",
+    userName: "Nguyễn Thị Mai",
+    avatarUrl: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop&q=80",
+    rating: 4,
+    comment: "Trải nghiệm leo núi Fansipan thật phấn khích. Khách sạn trung tâm, sạch sẽ, ăn sáng phong phú. Điểm trừ duy nhất là thời tiết hôm đầu hơi sương mù nên không ngắm được toàn cảnh thị trấn, hôm sau trời nắng thì tuyệt đẹp.",
+    date: "2026-05-20",
+  },
+  {
+    id: "rev-halong-01",
+    tourId: "tour-halong-02",
+    userName: "Phạm Hải Đăng",
+    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&auto=format&fit=crop&q=80",
+    rating: 5,
+    comment: "Dịch vụ du thuyền 5 sao đẳng cấp thật sự! Phòng Suite rộng rãi, ban công riêng ngắm vịnh cực chill. Đồ ăn buffet hải sản tươi rói. Các hoạt động chèo thuyền kayak và leo đảo Ti Tốp rất thú vị. Gia đình tôi rất hài lòng.",
+    date: "2026-05-18",
+  },
+  {
+    id: "rev-phuquoc-01",
+    tourId: "tour-phuquoc-03",
+    userName: "Lê Hoàng Yến",
+    avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80",
+    rating: 5,
+    comment: "Phú Quốc tuyệt đẹp! Nước biển xanh ngọc bích, bãi cát mịn màng. Resort 5 sao có hồ bơi vô cực sang chảnh chụp hình rất đẹp. Tour lặn ngắm san hô tại hòn Móng Tay vô cùng lý thú, san hô rất tự nhiên và nhiều màu sắc.",
+    date: "2026-05-22",
+  },
+  {
+    id: "rev-hoian-01",
+    tourId: "tour-hoian-04",
+    userName: "Vũ Nam Khánh",
+    avatarUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&auto=format&fit=crop&q=80",
+    rating: 4,
+    comment: "Hội An cổ kính và yên bình. Chuyến đi mang lại nhiều giá trị văn hóa và lịch sử. Thánh địa Mỹ Sơn rất huyền bí. Show diễn Ký Ức Hội An hoành tráng đáng đồng tiền bát gạo, cực kỳ mãn nhãn.",
+    date: "2026-05-10",
+  },
+  {
+    id: "rev-hagiang-01",
+    tourId: "tour-hagiang-05",
+    userName: "Đặng Thu Thảo",
+    avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=100&auto=format&fit=crop&q=80",
+    rating: 5,
+    comment: "Hà Giang quá đỗi hùng vĩ! Cung đường đèo Mã Pí Lèng thực sự kích thích. Đi thuyền trên sông Nho Quế ngắm hẻm Tu Sản là trải nghiệm tuyệt vời nhất cuộc đời tôi. Hướng dẫn viên bản địa am hiểu văn hóa và chăm sóc đoàn rất tốt.",
+    date: "2026-05-25",
+  },
+  {
+    id: "rev-thailand-01",
+    tourId: "tour-thailand-06",
+    userName: "Bùi Quốc Anh",
+    avatarUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100&auto=format&fit=crop&q=80",
+    rating: 5,
+    comment: "Chuyến đi Thái Lan cực kỳ vui vẻ! Pattaya náo nhiệt, đảo san hô Koh Larn nước rất trong. Đồ ăn Thái hơi cay nhưng rất ngon miệng. Cảm ơn ViTravel đã tổ chức một tour quốc tế trọn vẹn và an toàn.",
+    date: "2026-05-28",
+  }
+];
