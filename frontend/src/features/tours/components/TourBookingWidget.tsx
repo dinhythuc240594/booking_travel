@@ -34,7 +34,7 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
 
     if (!isAuthenticated || !user) {
       // Nếu chưa đăng nhập, chuyển sang trang login và chuyển hướng ngược lại sau khi đăng nhập
-      router.push(`/login?redirect=/tours/${tour.slug}`);
+      router.push(`${process.env.NEXT_PUBLIC_WEB_BASE_URL}/login?redirect=/tours/${tour.slug}`);
       return;
     }
 
@@ -73,7 +73,7 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
       <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2">
         Giá chỉ từ
       </h3>
-      
+
       {/* Hiển thị giá */}
       <div className="flex items-baseline gap-2 mb-6 pb-6 border-b border-zinc-100 dark:border-zinc-800">
         {tour.discountPrice ? (
@@ -206,14 +206,14 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
       {isSuccessModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           {/* Backdrop */}
-          <div 
+          <div
             onClick={() => setIsSuccessModalOpen(false)}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
-          
+
           {/* Modal Content */}
           <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 max-w-md w-full rounded-3xl p-6 sm:p-8 shadow-2xl animate-scale-up text-center z-10">
-            
+
             <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <CheckCircle2 className="w-10 h-10" />
             </div>
@@ -225,7 +225,7 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
             <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-2">
               Đặt Chỗ Thành Công!
             </h3>
-            
+
             <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-6">
               Mã giao dịch: <span className="font-mono font-semibold text-zinc-600 dark:text-zinc-400">{recentBookingId}</span>
             </p>

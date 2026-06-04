@@ -37,7 +37,7 @@ export default function TourSearch() {
     const fetchLocations = async () => {
       try {
         setIsFetchingLocations(true);
-        const res = await fetch(`/admin/api/locations?type=${locationType}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/locations?type=${locationType}`);
         if (res.ok) {
           const data = await res.json();
           setLocationsList(data);
@@ -84,7 +84,7 @@ export default function TourSearch() {
     setIsDestDropdownOpen(false);
     setIsGuestPickerOpen(false);
 
-    router.push(`/tours?${params.toString()}`);
+    router.push(`${process.env.NEXT_PUBLIC_WEB_BASE_URL}/tours?${params.toString()}`);
   };
 
   const getGuestLabel = () => {

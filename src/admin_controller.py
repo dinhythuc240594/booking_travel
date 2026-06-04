@@ -29,6 +29,24 @@ from models import (
     SettingModel,
 )
 
+DOMESTIC = [
+    { "name": "Sa Pa, Lào Cai", "searchKey": "Sa Pa" },
+    { "name": "Vịnh Hạ Long, Quảng Ninh", "searchKey": "Hạ Long" },
+    { "name": "Đảo Phú Quốc, Kiên Giang", "searchKey": "Phú Quốc" },
+    { "name": "Hội An, Quảng Nam", "searchKey": "Hội An" },
+    { "name": "Đồng Văn, Hà Giang", "searchKey": "Hà Giang" },
+    { "name": "Đà Lạt, Lâm Đồng", "searchKey": "Đà Lạt" },
+    { "name": "Nha Trang, Khánh Hòa", "searchKey": "Nha Trang" },
+]
+
+CATEGORY = [
+    { "id": "all", "name": "Tất cả" },
+    { "id": "beach", "name": "Biển đảo" },
+    { "id": "mountain", "name": "Núi rừng" },
+    { "id": "resort", "name": "Nghỉ dưỡng" },
+    { "id": "culture", "name": "Văn hóa" },
+    { "id": "international", "name": "Quốc tế" },
+]
 
 class AdminController:
     """Controller class quản lý các route của admin"""
@@ -157,6 +175,12 @@ class AdminController:
         Danh sách tour
         Route: GET /admin/tour
         """
+        search = request.args.get('search', None)
+        date_from = request.args.get('date_from', None)
+        date_to = request.args.get('date_to', None)
+        guest = request.args.get('guest', None)
+        adult = request.args.get('adult', None)
+        children = request.args.get('children', None)
         status_filter = request.args.get('status', None)
         page = request.args.get('page', 1, type=int)
         per_page = 20
@@ -1294,8 +1318,21 @@ class AdminController:
                 query = query.filter(Location.location_type == location_type)
             
             locations = query.all()
-            locations_data = {l.location_id: {'name': l.name, 'location_type': l.location_type} for l in locations}
-            
+            locations_data = {}
+            domestic = []
+            for location in locations:
+                location.name = location.name.strip()
+                location.location_type = location.location_type.strip()
+                location.searchKey = location.name.replace(",", " ")
+                domestic.append(location)
+
+            if not domestic:
+                domestic = DOMESTIC
+
+            locations_data = {
+                "domestic": domestic,
+            }
+
             return jsonify({
                 'success': True,
                 'locations': locations_data

@@ -403,6 +403,11 @@ class Tour(Base):
     content = Column(Text, nullable=False)
     duration_days = Column(Integer, nullable=False, default=1)
     price_per_person = Column(Numeric(10, 2), nullable=False, default=0.0)
+    
+    start_date = Column(DateTime, nullable=True)
+    end_date = Column(DateTime, nullable=True)
+    departure_city = Column(String(100), nullable=True)
+    arrival_city = Column(String(100), nullable=True)
     thumbnail = Column(String(255), nullable=True)
     images = Column(Text, nullable=True)  # JSON Array lưu ảnh
     is_published = Column(Boolean, default=False)

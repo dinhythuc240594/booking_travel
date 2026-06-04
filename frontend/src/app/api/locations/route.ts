@@ -10,14 +10,14 @@ const locations = {
     { name: "Đà Lạt, Lâm Đồng", searchKey: "Đà Lạt" },
     { name: "Nha Trang, Khánh Hòa", searchKey: "Nha Trang" },
   ],
-  international: [
-    { name: "Bangkok - Pattaya, Thái Lan", searchKey: "Thái Lan" },
-    { name: "Tokyo - Kyoto, Nhật Bản", searchKey: "Nhật Bản" },
-    { name: "Seoul - Đảo Jeju, Hàn Quốc", searchKey: "Hàn Quốc" },
-    { name: "Singapore Marina Bay, Singapore", searchKey: "Singapore" },
-    { name: "Bali, Indonesia", searchKey: "Bali" },
-    { name: "Paris, Pháp", searchKey: "Pháp" },
-  ],
+  // international: [
+  //   { name: "Bangkok - Pattaya, Thái Lan", searchKey: "Thái Lan" },
+  //   { name: "Tokyo - Kyoto, Nhật Bản", searchKey: "Nhật Bản" },
+  //   { name: "Seoul - Đảo Jeju, Hàn Quốc", searchKey: "Hàn Quốc" },
+  //   { name: "Singapore Marina Bay, Singapore", searchKey: "Singapore" },
+  //   { name: "Bali, Indonesia", searchKey: "Bali" },
+  //   { name: "Paris, Pháp", searchKey: "Pháp" },
+  // ],
 };
 
 export async function GET(request: Request) {
