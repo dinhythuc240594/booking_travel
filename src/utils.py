@@ -3,6 +3,25 @@ import re
 
 import database as db
 
+DOMESTIC = [
+    { "name": "Sa Pa, Lào Cai", "searchKey": "Sa Pa" },
+    { "name": "Vịnh Hạ Long, Quảng Ninh", "searchKey": "Hạ Long" },
+    { "name": "Đảo Phú Quốc, Kiên Giang", "searchKey": "Phú Quốc" },
+    { "name": "Hội An, Quảng Nam", "searchKey": "Hội An" },
+    { "name": "Đồng Văn, Hà Giang", "searchKey": "Hà Giang" },
+    { "name": "Đà Lạt, Lâm Đồng", "searchKey": "Đà Lạt" },
+    { "name": "Nha Trang, Khánh Hòa", "searchKey": "Nha Trang" },
+]
+
+TOUR_CATEGORY = [
+    { "id": "all", "name": "Tất cả" },
+    { "id": "beach", "name": "Biển đảo" },
+    { "id": "mountain", "name": "Núi rừng" },
+    { "id": "resort", "name": "Nghỉ dưỡng" },
+    { "id": "culture", "name": "Văn hóa" },
+    { "id": "international", "name": "Quốc tế" },
+]
+
 # hash password before save into db
 def hash_password(password: str) -> str:
     return generate_password_hash(password)

@@ -6,6 +6,7 @@ from flask import Flask, request, session
 from datetime import datetime, timezone
 import pytz
 import re
+from flask_cors import CORS
 
 from config import envConfig
 from database import init_db
@@ -26,6 +27,8 @@ def create_app():
         Flask app instance
     """
     app = Flask(__name__)
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/*": {"origins": "*"}})
     app.config.from_object(envConfig)
 
     # Set default configuration

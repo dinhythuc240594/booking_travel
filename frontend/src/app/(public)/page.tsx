@@ -28,7 +28,7 @@ export default function PublicPage() {
     const filteredTours = async () => {
       try {
         setIsFetchingTours(true);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/tours?category=${activeCategory}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/tours?category=${activeCategory}`);
         if (res.ok) {
           const data = await res.json();
           setListTours(data);

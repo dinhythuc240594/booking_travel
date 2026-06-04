@@ -20,7 +20,6 @@ from database import (
     PasswordResetToken,
     Setting,
     User,
-    Category,
 )
 from models import (
     TourModel,
@@ -28,25 +27,6 @@ from models import (
     BookingModel,
     SettingModel,
 )
-
-DOMESTIC = [
-    { "name": "Sa Pa, Lào Cai", "searchKey": "Sa Pa" },
-    { "name": "Vịnh Hạ Long, Quảng Ninh", "searchKey": "Hạ Long" },
-    { "name": "Đảo Phú Quốc, Kiên Giang", "searchKey": "Phú Quốc" },
-    { "name": "Hội An, Quảng Nam", "searchKey": "Hội An" },
-    { "name": "Đồng Văn, Hà Giang", "searchKey": "Hà Giang" },
-    { "name": "Đà Lạt, Lâm Đồng", "searchKey": "Đà Lạt" },
-    { "name": "Nha Trang, Khánh Hòa", "searchKey": "Nha Trang" },
-]
-
-TOUR_CATEGORY = [
-    { "id": "all", "name": "Tất cả" },
-    { "id": "beach", "name": "Biển đảo" },
-    { "id": "mountain", "name": "Núi rừng" },
-    { "id": "resort", "name": "Nghỉ dưỡng" },
-    { "id": "culture", "name": "Văn hóa" },
-    { "id": "international", "name": "Quốc tế" },
-]
 
 class AdminController:
     """Controller class quản lý các route của admin"""
@@ -1308,38 +1288,38 @@ class AdminController:
             self.db_session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
     
-    def api_location(self):
-        """API lấy danh sách địa điểm"""
-        try:
-            location_type = request.args.get('type', '')
-            query = self.db_session.query(Location)
+    # def api_location(self):
+    #     """API lấy danh sách địa điểm"""
+    #     try:
+    #         location_type = request.args.get('type', '')
+    #         query = self.db_session.query(Location)
             
-            if location_type:
-                query = query.filter(Location.location_type == location_type)
+    #         if location_type:
+    #             query = query.filter(Location.location_type == location_type)
             
-            locations = query.all()
-            locations_data = {}
-            domestic = []
-            for location in locations:
-                location.name = location.name.strip()
-                location.location_type = location.location_type.strip()
-                location.searchKey = location.name.replace(",", " ")
-                domestic.append(location)
+    #         locations = query.all()
+    #         locations_data = {}
+    #         domestic = []
+    #         for location in locations:
+    #             location.name = location.name.strip()
+    #             location.location_type = location.location_type.strip()
+    #             location.searchKey = location.name.replace(",", " ")
+    #             domestic.append(location)
 
-            if not domestic:
-                domestic = DOMESTIC
+    #         if not domestic:
+    #             domestic = DOMESTIC
 
-            locations_data = {
-                "domestic": domestic,
-            }
+    #         locations_data = {
+    #             "domestic": domestic,
+    #         }
 
-            return jsonify({
-                'success': True,
-                'locations': locations_data
-            })
-        except Exception as e:
-            self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
+    #         return jsonify({
+    #             'success': True,
+    #             'locations': locations_data
+    #         })
+    #     except Exception as e:
+    #         self.db_session.rollback()
+    #         return jsonify({'success': False, 'error': str(e)}), 500
 
     # Settings Management Methods
     def api_get_settings(self):

@@ -3,7 +3,7 @@ from flask import render_template, request, jsonify, abort, redirect, url_for, f
 import pytz
 import json
 from datetime import datetime, timedelta
-from utils import validate_email, validate_password, validate_phone, hash_password
+from utils import validate_email, validate_password, validate_phone, hash_password, DOMESTIC
 from email_utils import generate_token, send_password_reset_email
 from database import (
     get_session,
@@ -12,6 +12,7 @@ from database import (
     Viewedtour,
     Savedtour, 
     PasswordResetToken,
+    Location
 )
 
 from models import (
@@ -43,9 +44,15 @@ class Controller():
         Route: GET /
         """
         try:
-            latest_tour = self.tour_model.get_public_tours(limit=limit, offset=offset)
-            tours_json = [self.tour_model._tour_to_dict(tour) for tour in latest_tour]
-            return tours_json
+            category = request.args.get('category')
+            if category:
+                tours_list = self.tour_model.get_by_category_name(category)
+                tours_json = [self.tour_model._tour_to_dict(tour) for tour in tours_list]
+                return tours_json
+            else:
+                tours_list = self.tour_model.get_public_tours(limit=limit, offset=offset)
+                tours_json = [self.tour_model._tour_to_dict(tour) for tour in tours_list]
+                return tours_json
         finally:
             self.db_session.close()
 
@@ -307,17 +314,17 @@ class Controller():
         finally:
             self.db_session.close()
 
-    def tour_category(self):
-        category =  request.args.get('category')
-        try:
-            tours_model = self.tour_model
-            tours_list = tours_model.get_by_category_name(category)
-            json_tours = [tours_model._tour_to_dict(tour) for tour in tours_list]
-            return json_tours
-        except Exception as e:
-            self.db_session.rollback()
-            print(f"Error in tour_category: {str(e)}")
-            return None
+    # def tour_category(self):
+    #     category =  request.args.get('category') 
+    #     try:
+    #         tours_model = self.tour_model
+    #         tours_list = tours_model.get_by_category_name(category)
+    #         json_tours = [tours_model._tour_to_dict(tour) for tour in tours_list]
+    #         return json_tours
+    #     except Exception as e:
+    #         self.db_session.rollback()
+    #         print(f"Error in tour_category: {str(e)}")
+    #         return None
 
     def bookings(self):
         try:
@@ -328,4 +335,35 @@ class Controller():
         except Exception as e:
             self.db_session.rollback()
             print(f"Error in bookings: {str(e)}")
-            return None
+            return {}
+
+    def locations(self):
+        """API lấy danh sách địa điểm"""
+        try:
+            location_type = request.args.get('type', '')
+            query = self.db_session.query(Location)
+            
+            if location_type:
+                query = query.filter(Location.location_type == location_type)
+            
+            locations = query.all()
+            locations_data = {}
+            domestic = []
+            for location in locations:
+                location.name = location.name.strip()
+                location.location_type = location.location_type.strip()
+                location.searchKey = location.name.replace(",", " ")
+                domestic.append(location)
+
+            if not domestic:
+                domestic = DOMESTIC
+
+            locations_data = {
+                "domestic": domestic,
+            }
+
+            return locations_data
+        except Exception as e:
+            self.db_session.rollback()
+            print(f"error: " + str(e))
+            return []

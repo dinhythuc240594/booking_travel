@@ -142,17 +142,23 @@ class Bookings(BaseClientView):
         return self.bookings()
 
 
-class TourCategory(BaseClientView):
-    
+class Location(BaseClientView):
+
     def get(self):
-        return self.tour_category()
+        return self.locations()
+
+# class TourCategory(BaseClientView):
+    
+#     def get(self):
+#         return self.tour_category()
 
 
 client_bp.add_url_rule('/', 'home', Home.as_view('home'))
 client_bp.add_url_rule('/home', 'home1', Home.as_view('home1'))
 client_bp.add_url_rule('/search', 'search', Search.as_view('search'))
 client_bp.add_url_rule('/tours', 'tours', Tours.as_view('tours'))
-client_bp.add_url_rule('/catagory', 'tours_category', TourCategory.as_view('tours_category'))
+client_bp.add_url_rule('/locations', 'locations', Location.as_view('locations'))
+# client_bp.add_url_rule('/catagory', 'tours_category', TourCategory.as_view('tours_category'))
 client_bp.add_url_rule('/bookings', 'bookings', Bookings.as_view('bookings'))
 client_bp.add_url_rule('/tour/<tours_slug>', 'tours_detail', ToursDetail.as_view('tours_detail'))
 

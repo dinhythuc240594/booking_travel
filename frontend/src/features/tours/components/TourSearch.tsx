@@ -37,7 +37,7 @@ export default function TourSearch() {
     const fetchLocations = async () => {
       try {
         setIsFetchingLocations(true);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/locations?type=${locationType}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/locations?type=${locationType}`);
         if (res.ok) {
           const data = await res.json();
           setLocationsList(data);
