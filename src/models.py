@@ -172,6 +172,10 @@ class BookingModel:
         """Đọc thông tin Bookings qua ID"""
         return BookingService.get_booking_by_id(booking_id)
 
+    def get_by_user_id(self, user_id: int) -> db.Bookings:
+        """Đọc thông tin Bookings qua User ID"""
+        return BookingService.get_bookings_by_user_id(user_id)
+
     def update_status(self, booking_id: int, new_status: db.BookingStatusEnum) -> bool:
         """Cập nhật trạng thái Bookings (VD: từ pending sang completed)"""
         return BookingService.update_booking_status(booking_id, new_status)
@@ -180,6 +184,21 @@ class BookingModel:
         """Hủy Bookings (Soft logic)"""
         return BookingService.cancel_booking(booking_id)
 
+    def _booking_to_dict(self, booking: db.Bookings):
+        booking_dict = {
+            'id': booking.id,
+            'user_id': booking.user_id,
+            'tour_id': booking.tour_id,
+            'hotel_id': booking.hotel_id,
+            'nights': booking.nights,
+            'persons': booking.persons,
+            'payment_method': booking.payment_method,
+            'status': booking.status,
+            'created_at': booking.created_at,
+            'updated_at': booking.updated_at
+        }
+        return booking_dict 
+        
 
 class TourModel:
     """Model class managers Tours follow OOP"""
@@ -224,6 +243,12 @@ class TourModel:
             db.Tour.is_deleted == False
         ).first()
     
+    def get_by_category_name(self, category_name: str) -> db.Tour:
+        return self.db.query(db.Tour).filter(
+            db.Tour.category_name == category_name,
+            db.Tour.is_deleted == False
+        ).all()
+
     def get_all(self, limit: int = None, offset: int = 0, 
                 status: db.TourStatus = None, include_deleted: bool = False) -> list[db.Tour]:
         query = self.db.query(db.Tour)

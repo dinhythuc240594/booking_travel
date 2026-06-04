@@ -83,6 +83,7 @@ class BookingService:
             return False
         except Exception as e:
             session.rollback()
+            print(f"Error in update_booking_status: {str(e)}")
             return False
         finally:
             session.close()
@@ -91,3 +92,12 @@ class BookingService:
     def cancel_booking(booking_id: int):
         """Hủy Bookings (Soft logic) thay vì xóa khỏi CSDL"""
         return BookingService.update_booking_status(booking_id, BookingStatusEnum.cancelled)
+
+    @staticmethod
+    def get_bookings_by_user_id(user_id: int):
+        """Đọc thông tin Bookings qua User ID"""
+        session = get_session()
+        try:
+            return session.query(Bookings).filter(Bookings.user_id == user_id).all()
+        finally:
+            session.close()

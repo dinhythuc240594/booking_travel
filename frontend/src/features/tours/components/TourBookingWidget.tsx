@@ -257,7 +257,7 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
               <button
                 onClick={() => {
                   setIsSuccessModalOpen(false);
-                  router.push("/bookings"); // Hoặc /profile
+                  router.push(`${process.env.NEXT_PUBLIC_WEB_BASE_URL}/bookings`); // Hoặc /profile
                 }}
                 className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-1 cursor-pointer border-0"
               >

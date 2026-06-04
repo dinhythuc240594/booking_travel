@@ -17,6 +17,7 @@ from database import (
 from models import (
     TourModel,
     UserModel,
+    BookingModel,
 )
 
 PER_PAGE = 25
@@ -32,6 +33,7 @@ class Controller():
     def __init__(self):
         """initialize controller"""
         self.db_session = get_session()
+        self.booking_model = BookingModel(self.db_session)
         self.tour_model = TourModel(self.db_session)
         self.user_model = UserModel(self.db_session)
 
@@ -304,3 +306,26 @@ class Controller():
             return json_tours
         finally:
             self.db_session.close()
+
+    def tour_category(self):
+        category =  request.args.get('category')
+        try:
+            tours_model = self.tour_model
+            tours_list = tours_model.get_by_category_name(category)
+            json_tours = [tours_model._tour_to_dict(tour) for tour in tours_list]
+            return json_tours
+        except Exception as e:
+            self.db_session.rollback()
+            print(f"Error in tour_category: {str(e)}")
+            return None
+
+    def bookings(self):
+        try:
+            booking_model = self.booking_model
+            booking_list = booking_model.get_by_user_id(session['user_id'])
+            json_bookings = [booking_model._booking_to_dict(booking) for booking in booking_list]
+            return json_bookings
+        except Exception as e:
+            self.db_session.rollback()
+            print(f"Error in bookings: {str(e)}")
+            return None

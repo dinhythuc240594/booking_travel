@@ -1341,19 +1341,6 @@ class AdminController:
             self.db_session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
 
-    def tour_category(self):
-        category =  request.args.get('category')
-        try:
-            tour = self.db_session.query(Tour).filter(Tour.tour_category == category).all()
-            
-            return jsonify({
-                'success': True,
-                'tour': tour
-            })
-        except Exception as e:
-            self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
-
     # Settings Management Methods
     def api_get_settings(self):
         """API lấy settings"""
