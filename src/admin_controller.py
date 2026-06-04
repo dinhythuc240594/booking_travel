@@ -20,7 +20,7 @@ from database import (
     PasswordResetToken,
     Setting,
     User,
-    Tag,
+    Category,
 )
 from models import (
     TourModel,
@@ -39,7 +39,7 @@ DOMESTIC = [
     { "name": "Nha Trang, Khánh Hòa", "searchKey": "Nha Trang" },
 ]
 
-CATEGORY = [
+TOUR_CATEGORY = [
     { "id": "all", "name": "Tất cả" },
     { "id": "beach", "name": "Biển đảo" },
     { "id": "mountain", "name": "Núi rừng" },
@@ -1336,6 +1336,19 @@ class AdminController:
             return jsonify({
                 'success': True,
                 'locations': locations_data
+            })
+        except Exception as e:
+            self.db_session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    def tour_category(self):
+        category =  request.args.get('category')
+        try:
+            tour = self.db_session.query(Tour).filter(Tour.tour_category == category).all()
+            
+            return jsonify({
+                'success': True,
+                'tour': tour
             })
         except Exception as e:
             self.db_session.rollback()

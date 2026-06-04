@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import TourSearch from "@/features/tours/components/TourSearch";
 import TourFilter from "@/features/tours/components/TourFilter";
 import TourCard from "@/features/tours/components/TourCard";
-import { mockTours } from "@/mocks/data/tours";
+import { useRouter } from "next/navigation";
+import { Tour } from "@/types/tour";
+
 import {
   ShieldCheck,
   BadgePercent,
@@ -19,13 +21,30 @@ import { cn } from "@/lib/utils";
 
 export default function PublicPage() {
   const [activeCategory, setActiveCategory] = useState("all");
+  const [listTours, setListTours] = useState<Tour[]>([]);
+  const [isFetchingTour, setIsFetchingTours] = useState(false);
 
-  // Lọc tour theo danh mục được chọn
-  const filteredTours = (
-    activeCategory === "all"
-      ? mockTours
-      : mockTours.filter((tour) => tour.category === activeCategory)
-  ).slice(0, 6);
+  useEffect(() => {
+    const filteredTours = async () => {
+      try {
+        setIsFetchingTours(true);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/tours?category=${activeCategory}`);
+        if (res.ok) {
+          const data = await res.json();
+          setListTours(data);
+        }
+      } catch (err) {
+        console.error("Lỗi khi tải danh sách địa danh:", err);
+      } finally {
+        setIsFetchingTours(false);
+      }
+    };
+    filteredTours();
+  }, [activeCategory]);
+
+
+  // // Lọc tour theo danh mục được chọn
+  // const filteredTours = listTours;
 
   // Danh sách các điểm đến hàng đầu để dựng Spotlight Grid
   const spotDestinations = [
@@ -125,9 +144,9 @@ export default function PublicPage() {
           </div>
 
           {/* Grid danh sách TourCard */}
-          {filteredTours.length > 0 ? (
+          {listTours.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredTours.map((tour) => (
+              {listTours.map((tour) => (
                 <div key={tour.id} className="animate-fade-in duration-500">
                   <TourCard tour={tour} />
                 </div>

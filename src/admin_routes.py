@@ -59,6 +59,14 @@ class TourList(BaseAdminView):
     def get(self):
         return self.tour_list()
 
+class TourCategory(BaseAdminView):
+    
+    def get(self):
+        return self.tour_category()
+
+    # def post(self):
+    #     return self.tour_category()
+
 class TourCreate(BaseAdminView):
     
     def get(self):
@@ -237,6 +245,7 @@ admin_bp.add_url_rule('/profile', 'profile', Profile.as_view('profile'))
 # Tour Pages
 admin_bp.add_url_rule('/tour', 'tour_list', TourList.as_view('tour_list'))
 admin_bp.add_url_rule('/tours', 'tours_list', TourList.as_view('tours_list')) # Alias chống lỗi url_for('admin.tours_list')
+admin_bp.add_url_rule('/catagory', 'tours_category', TourCategory.as_view('tours_category'))
 admin_bp.add_url_rule('/tour/create', 'tour_create', TourCreate.as_view('tour_create'))
 admin_bp.add_url_rule('/tour/<int:tour_id>/edit', 'tours_edit', ToursEdit.as_view('tours_edit'))
 admin_bp.add_url_rule('/tour/<int:tour_id>/approve', 'tours_approve', ToursApprove.as_view('tours_approve'))

@@ -257,14 +257,14 @@ function LoginContent() {
         </form>
 
         {/* Divider */}
-        <div className="my-6 flex items-center gap-3">
+        {/* <div className="my-6 flex items-center gap-3">
           <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-grow" />
           <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Hoặc sử dụng demo</span>
           <div className="h-px bg-zinc-200 dark:bg-zinc-800 flex-grow" />
-        </div>
+        </div> */}
 
         {/* Quick Demo Login Panels */}
-        <div className="space-y-2 mb-6">
+        {/* <div className="space-y-2 mb-6">
           <div className="grid grid-cols-3 gap-2">
             {[
               { role: "customer", label: "Khách hàng", icon: Users, color: "text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20" },
@@ -290,7 +290,7 @@ function LoginContent() {
           <p className="text-[10px] text-center text-zinc-400 dark:text-zinc-500">
             *Nhấp để đăng nhập nhanh tức thì bằng tài khoản mẫu hệ thống
           </p>
-        </div>
+        </div> */}
 
         {/* Link to Register */}
         <div className="text-center pt-2.5 border-t border-zinc-150 dark:border-zinc-850 text-xs text-zinc-500">

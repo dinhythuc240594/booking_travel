@@ -60,7 +60,7 @@ export default function ToursListContent() {
       if (currentPage > 1) params.append("page", currentPage.toString());
 
       startTransition(() => {
-        router.push(`/tours?${params.toString()}`);
+        router.push(`${process.env.NEXT_PUBLIC_WEB_BASE_URL}/tours?${params.toString()}`);
       });
     }, 400);
 

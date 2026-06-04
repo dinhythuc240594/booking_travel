@@ -403,6 +403,7 @@ class Tour(Base):
     content = Column(Text, nullable=False)
     duration_days = Column(Integer, nullable=False, default=1)
     price_per_person = Column(Numeric(10, 2), nullable=False, default=0.0)
+    tour_category = Column(String(50), nullable=True)
     
     start_date = Column(DateTime, nullable=True)
     end_date = Column(DateTime, nullable=True)
