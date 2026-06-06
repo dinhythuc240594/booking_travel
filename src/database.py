@@ -282,6 +282,8 @@ class Location(Base):
     is_deleted = Column(Boolean, default=False)
     is_published = Column(Boolean, default=True)
     status = Column(TourStatusType(), default=TourStatus.DRAFT)
+    is_popular = Column(Boolean, default=False)
+    image_url = Column(Text, nullable=True)
 
     # Relationships
     hotels = relationship("Hotels", back_populates="location", cascade="all, delete")
@@ -402,13 +404,10 @@ class Tour(Base):
     summary = Column(Text, nullable=True)
     content = Column(Text, nullable=False)
     duration_days = Column(Integer, nullable=False, default=1)
-    price_per_person = Column(Numeric(10, 2), nullable=False, default=0.0)
-    tour_category = Column(String(50), nullable=True)
-    
-    start_date = Column(DateTime, nullable=True)
-    end_date = Column(DateTime, nullable=True)
-    departure_city = Column(String(100), nullable=True)
-    arrival_city = Column(String(100), nullable=True)
+    category_name = Column(String(250), nullable=True)
+    price_per_adult = Column(Numeric(10, 2), nullable=False, default=0.0)
+    price_per_child = Column(Numeric(10, 2), nullable=False, default=0.0)
+
     thumbnail = Column(String(255), nullable=True)
     images = Column(Text, nullable=True)  # JSON Array lưu ảnh
     is_published = Column(Boolean, default=False)

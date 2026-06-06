@@ -1,4 +1,6 @@
 
+from hashlib import new
+from database import Tour
 from flask import render_template, request, jsonify, abort, redirect, url_for, flash, session
 import pytz
 import json
@@ -38,10 +40,10 @@ class Controller():
         self.tour_model = TourModel(self.db_session)
         self.user_model = UserModel(self.db_session)
 
-    def list_tour(self, limit=None, offset=None):
+    def list_tour(self, limit = 25, offset = 0):
         """
-        List latest tour
-        Route: GET /
+        Danh sách tour
+        Route: GET /tour
         """
         try:
             category = request.args.get('category')
@@ -50,7 +52,7 @@ class Controller():
                 tours_json = [self.tour_model._tour_to_dict(tour) for tour in tours_list]
                 return tours_json
             else:
-                tours_list = self.tour_model.get_public_tours(limit=limit, offset=offset)
+                tours_list = self.tour_model.get_public_tours(limit, offset)
                 tours_json = [self.tour_model._tour_to_dict(tour) for tour in tours_list]
                 return tours_json
         finally:
@@ -85,16 +87,30 @@ class Controller():
         Check login for user
         """
         
-        username = request.form.get('username')
-        password = request.form.get('password')
-        remember = True if request.form.get('remember') == 'on' else False
+        if not request.is_json:
+            return jsonify({
+                'status': 400,
+                'message': 'Yêu cầu không đúng định dạng',
+                'user': {}
+            })
+        
+        data = request.get_json()
+
+        email = data.get('email')
+        password = data.get('password')
+        remember = True if data.get('remember') == 'on' else False
+
+        print(f"username: {email}\npassword: {password}")
 
         # check status locked of account before authentication
-        if self.user_model.is_locked_user(username):
-            flash('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên', 'error')
-            return redirect(url_for('client.user_login'))
+        if self.user_model.is_locked_user(email):
+            return jsonify({
+                'status': 400,
+                'message': 'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên',
+                'user': {}
+            })
         
-        user = self.user_model.authenticate(username, password)
+        user = self.user_model.authenticate(email, password)
         
         if user and user.is_active and user.role == UserRole.CUSTOMER:
             session['user_id'] = user.user_id
@@ -107,11 +123,27 @@ class Controller():
             else:
                 session.permanent = False
 
-            flash('Đăng nhập thành công', 'success')
-            return redirect(url_for('client.home'))
+            user = {
+                "id": user.user_id,
+                "email": user.email,
+                "name": user.full_name,
+                "role": user.role.value,
+                "phone": user.phone_number,
+                "createdAt": user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
+                "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
+            }
+
+            return jsonify({
+                'status': 200,
+                'message': 'success',
+                'user': user
+            })
         else:
-            flash('Tên đăng nhập hoặc mật khẩu không đúng', 'error')
-            return redirect(url_for('client.user_login'))
+            return jsonify({
+                'status': 401,
+                'message': 'failed',
+                'user': {}
+            })
 
     def register(self):
         """
@@ -119,16 +151,27 @@ class Controller():
         Route: POST /register
         """
         
+        if not request.is_json:
+            return jsonify({
+                'status': 400,
+                'message': 'Yêu cầu không đúng định dạng',
+                'user': {}
+            })
+
+        data = request.get_json()
+
         # Validation
         errors = []
         
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        full_name = request.form.get('full_name', '').strip()
-        phone = request.form.get('phone', '').strip()
+        username = data.get('email', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        confirm_password = data.get('confirm_password', '')
+        full_name = data.get('full_name', '').strip()
+        phone = data.get('phone', '').strip()
         
+        print(f"username: {username}\nemail: {email}\npassword: {password}\nconfirm_password: {confirm_password}\nfull_name: {full_name}\nphone: {phone}")
+
         # Validate username
         if not username:
             errors.append('Tên đăng nhập không được để trống')
@@ -157,7 +200,11 @@ class Controller():
         
         if errors:
             for error in errors:
-                flash(error, 'error')
+                return jsonify({
+                    'status': 400,
+                    'message': error,
+                    'user': {}
+                })
         else:
             try:
                 # Clean phone number
@@ -173,9 +220,27 @@ class Controller():
                 )
                 
                 if user:
-                    return jsonify({"message": "User created", "user_id": user.user_id}), 201
+                    user = {
+                        "id": user.user_id,
+                        "email": user.email,
+                        "name": user.full_name,
+                        "role": user.role.value,
+                        "phone": user.phone_number,
+                        "createdAt": user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
+                        "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
+                    }
+                    return jsonify({
+                        'status': 200,
+                        'message': 'success',
+                        'user': user
+                    })
             except Exception as e:
-                return jsonify({"error": "Failed to create user", "message": str(e)}), 400
+                print(e)
+                return jsonify({
+                    'status': 400,
+                    'message': 'failed',
+                    'user': {}
+                })
 
     def forgot_password(self):
         """
@@ -296,7 +361,7 @@ class Controller():
         finally:
             self.db_session.close()
     
-    def search_tours(self, keyword, page):
+    def search_tours(self):
         """
         Search tour by keyword
         Route: GET /search?q=<keyword>
@@ -305,12 +370,30 @@ class Controller():
 
             tours_model = self.tour_model
 
-            if not keyword:
-                return []
-
-            tours_list = tours_model.search(keyword, page, PER_PAGE)
-            json_tours = [tours_model._tour_to_dict(tour) for tour in tours_list]
-            return json_tours
+            search = request.args.get('search', None)
+            date_from = request.args.get('date_from', None)
+            date_to = request.args.get('date_to', None)
+            guest = request.args.get('guest', None)
+            adult = request.args.get('adult', 1)
+            children = request.args.get('children', 0)
+            status_filter = request.args.get('status', None)
+            page = request.args.get('page', 1, type=int)
+            per_page = 25
+            offset = (page - 1) * per_page
+            
+            status = None
+            if status_filter:
+                try:
+                    status = TourStatus(status_filter)
+                except ValueError:
+                    status = None
+            
+            tour_list = self.tour_model.get_public_tours(
+                limit=per_page,
+                offset=offset
+            )
+            tours_json = [self.tour_model._tour_to_dict(tour, adult, children) for tour in tour_list]
+            return tours_json
         finally:
             self.db_session.close()
 
@@ -340,11 +423,15 @@ class Controller():
     def locations(self):
         """API lấy danh sách địa điểm"""
         try:
-            location_type = request.args.get('type', '')
+            location_type = request.args.get('type', 'all')
+            is_popular = request.args.get('is_popular', False)
             query = self.db_session.query(Location)
             
-            if location_type:
+            if location_type != 'all':
                 query = query.filter(Location.location_type == location_type)
+            
+            if is_popular == 'true':
+                query = query.filter(Location.is_popular == True)
             
             locations = query.all()
             locations_data = {}
@@ -353,10 +440,28 @@ class Controller():
                 location.name = location.name.strip()
                 location.location_type = location.location_type.strip()
                 location.searchKey = location.name.replace(",", " ")
+                location.image = location.image_url
                 domestic.append(location)
 
             if not domestic:
                 domestic = DOMESTIC
+
+            if is_popular:
+                for location in domestic:
+                    count_tour = self.db_session.query(Tour).filter(
+                        Tour.location_id == location.location_id,
+                        Tour.status == TourStatus.PUBLISHED
+                    ).count()
+                    location.toursCount = count_tour
+
+                domestic.sort(key=lambda x : x.toursCount, reverse=True) 
+                domestic = domestic[:6]
+
+                for location in domestic:
+                    if location.toursCount > 10:
+                        location.className = "md:col-span-1 md:row-span-2 h-[340px] md:h-[420px]"
+                    else:
+                        location.className = "md:col-span-1 md:row-span-1 h-[200px]"
 
             locations_data = {
                 "domestic": domestic,

@@ -16,7 +16,7 @@ const categories: CategoryItem[] = [
   { id: "mountain", name: "Núi rừng", icon: Mountain },
   { id: "resort", name: "Nghỉ dưỡng", icon: Hotel },
   { id: "culture", name: "Văn hóa", icon: Landmark },
-  { id: "international", name: "Quốc tế", icon: Plane },
+  // { id: "international", name: "Quốc tế", icon: Plane },
 ];
 
 interface TourFilterProps {
@@ -31,7 +31,7 @@ export default function TourFilter({ activeCategory, onCategoryChange }: TourFil
         {categories.map((cat) => {
           const Icon = cat.icon;
           const isActive = activeCategory === cat.id;
-          
+
           return (
             <button
               key={cat.id}

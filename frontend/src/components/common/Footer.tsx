@@ -21,7 +21,7 @@ export default function Footer() {
     <footer className="bg-zinc-900 text-zinc-300 border-t border-zinc-800 pt-16 pb-8 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          
+
           {/* Cột 1: Thông tin thương hiệu */}
           <div className="space-y-6">
             <Link href="/" className="flex items-center gap-2 group">
@@ -38,7 +38,7 @@ export default function Footer() {
             <div className="flex space-x-4">
               <Link href="#" className="p-2 bg-zinc-800 hover:bg-cyan-500 hover:text-white rounded-lg transition-colors duration-300">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z"/>
+                  <path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c4.56-.93 8-4.96 8-9.75z" />
                 </svg>
               </Link>
               <Link href="#" className="p-2 bg-zinc-800 hover:bg-cyan-500 hover:text-white rounded-lg transition-colors duration-300">
@@ -50,7 +50,7 @@ export default function Footer() {
               </Link>
               <Link href="#" className="p-2 bg-zinc-800 hover:bg-cyan-500 hover:text-white rounded-lg transition-colors duration-300">
                 <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                  <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
                 </svg>
               </Link>
             </div>
@@ -69,9 +69,9 @@ export default function Footer() {
               <li>
                 <Link href="/tours?category=mountain" className="hover:text-cyan-400 transition-colors">Chinh Phục Núi Rừng</Link>
               </li>
-              <li>
+              {/* <li>
                 <Link href="/tours?category=international" className="hover:text-cyan-400 transition-colors">Tours Quốc Tế</Link>
-              </li>
+              </li> */}
             </ul>
           </div>
 

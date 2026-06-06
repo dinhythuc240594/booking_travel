@@ -6,21 +6,22 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
-import { mockUsers } from "@/mocks/data/users";
+// import { mockUsers } from "@/mocks/data/users";
 import { UserRole } from "@/constants/enums";
-import { 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Compass, 
-  Loader2, 
-  AlertCircle, 
-  CheckCircle2, 
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Compass,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
   User as UserIcon,
   Phone
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { User } from "@/types/user";
 
 function RegisterContent() {
   const router = useRouter();
@@ -32,12 +33,13 @@ function RegisterContent() {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [data, setData] = useState<{ status: number, message: string, user: User }>();
 
   // Lấy đường dẫn chuyển hướng từ tham số redirect
   const redirectUrl = searchParams.get("redirect") || "/";
@@ -48,7 +50,7 @@ function RegisterContent() {
     }
   }, [isAuthenticated, router, redirectUrl]);
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -84,66 +86,101 @@ function RegisterContent() {
 
     setLoading(true);
 
-    setTimeout(() => {
-      // Đọc danh sách custom users đã lưu
-      let customUsers = [];
-      try {
-        customUsers = JSON.parse(localStorage.getItem("vitravel-custom-users") || "[]");
-      } catch (err) {
-        console.error("Lỗi đọc custom users từ localStorage:", err);
-      }
+    const registerUser = async () => {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/signup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          full_name: name,
+          email: email,
+          phone: phoneNumber,
+          password: password,
+          confirm_password: confirmPassword,
+        }),
+      });
+      const data = await response.json();
+      setData(data);
+    }
 
-      // Kiểm tra trùng email
-      const emailExists = [...mockUsers, ...customUsers].some(
-        (u) => u.email.toLowerCase() === email.trim().toLowerCase()
-      );
+    await registerUser();
 
-      if (emailExists) {
-        setError("Email này đã được sử dụng cho tài khoản khác.");
-        setLoading(false);
-        return;
-      }
-
-      // Tạo user mới
-      const newUserId = "u-" + Math.floor(100000 + Math.random() * 900000);
-      const newUser = {
-        id: newUserId,
-        email: email.trim().toLowerCase(),
-        name: name.trim(),
-        role: UserRole.CUSTOMER,
-        phoneNumber: phoneNumber.trim(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        password: password, // Lưu để thực hiện login giả lập
-      };
-
-      // Lưu lại vào localStorage
-      try {
-        localStorage.setItem("vitravel-custom-users", JSON.stringify([...customUsers, newUser]));
-      } catch (err) {
-        console.error("Lỗi ghi custom users vào localStorage:", err);
-      }
-
-      // Tách password ra khỏi đối tượng trước khi đăng nhập lưu vào Zustand store
-      const userWithoutPassword = {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-        phoneNumber: newUser.phoneNumber,
-        createdAt: newUser.createdAt,
-        updatedAt: newUser.updatedAt,
-      };
-      
-      // Thực hiện đăng nhập trực tiếp
-      login(userWithoutPassword, "mock-jwt-token-xyz");
+    if (data?.message === "success") {
+      login(data.user, "mock-jwt-token-xyz");
       setSuccess(true);
       setLoading(false);
-
       setTimeout(() => {
         router.push(redirectUrl);
-      }, 1200);
-    }, 900);
+      }, 1000);
+    }
+    else {
+      setError(data?.message || "Email hoặc mật khẩu không chính xác.");
+      setLoading(false);
+    }
+
+    // setTimeout(() => {
+    //   // Đọc danh sách custom users đã lưu
+    //   let customUsers = [];
+    //   try {
+    //     customUsers = JSON.parse(localStorage.getItem("vitravel-custom-users") || "[]");
+    //   } catch (err) {
+    //     console.error("Lỗi đọc custom users từ localStorage:", err);
+    //   }
+
+
+    //   const mockUsers = [{}];
+    //   // Kiểm tra trùng email
+    //   const emailExists = [...mockUsers, ...customUsers].some(
+    //     (u) => u.email.toLowerCase() === email.trim().toLowerCase()
+    //   );
+
+    //   if (emailExists) {
+    //     setError("Email này đã được sử dụng cho tài khoản khác.");
+    //     setLoading(false);
+    //     return;
+    //   }
+
+    //   // Tạo user mới
+    //   const newUserId = "u-" + Math.floor(100000 + Math.random() * 900000);
+    //   const newUser = {
+    //     id: newUserId,
+    //     email: email.trim().toLowerCase(),
+    //     name: name.trim(),
+    //     role: UserRole.CUSTOMER,
+    //     phoneNumber: phoneNumber.trim(),
+    //     createdAt: new Date().toISOString(),
+    //     updatedAt: new Date().toISOString(),
+    //     password: password, // Lưu để thực hiện login giả lập
+    //   };
+
+    //   // Lưu lại vào localStorage
+    //   try {
+    //     localStorage.setItem("vitravel-custom-users", JSON.stringify([...customUsers, newUser]));
+    //   } catch (err) {
+    //     console.error("Lỗi ghi custom users vào localStorage:", err);
+    //   }
+
+    //   // Tách password ra khỏi đối tượng trước khi đăng nhập lưu vào Zustand store
+    //   const userWithoutPassword = {
+    //     id: newUser.id,
+    //     email: newUser.email,
+    //     name: newUser.name,
+    //     role: newUser.role,
+    //     phoneNumber: newUser.phoneNumber,
+    //     createdAt: newUser.createdAt,
+    //     updatedAt: newUser.updatedAt,
+    //   };
+
+    //   // Thực hiện đăng nhập trực tiếp
+    //   login(userWithoutPassword, "mock-jwt-token-xyz");
+    //   setSuccess(true);
+    //   setLoading(false);
+
+    //   setTimeout(() => {
+    //     router.push(redirectUrl);
+    //   }, 1200);
+    // }, 900);
   };
 
   return (
@@ -154,7 +191,7 @@ function RegisterContent() {
 
       {/* Main Glassmorphic Panel */}
       <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        
+
         {/* Top Header */}
         <div className="text-center mb-6">
           <Link href="/" className="inline-flex items-center gap-2 group mb-2">
@@ -342,8 +379,8 @@ function RegisterContent() {
         {/* Link to Login */}
         <div className="text-center pt-6 mt-6 border-t border-zinc-150 dark:border-zinc-850 text-xs text-zinc-500">
           Đã có tài khoản thành viên?{" "}
-          <Link 
-            href={`/login?redirect=${encodeURIComponent(redirectUrl)}`} 
+          <Link
+            href={`/login?redirect=${encodeURIComponent(redirectUrl)}`}
             className="font-bold text-cyan-500 hover:text-cyan-600 transition-colors"
           >
             Đăng nhập ngay
@@ -359,7 +396,7 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-50 flex flex-col font-sans">
       <Header />
-      
+
       <main className="flex-grow flex items-center justify-center px-4 pt-28 pb-20 relative">
         <Suspense fallback={
           <div className="flex flex-col items-center justify-center">

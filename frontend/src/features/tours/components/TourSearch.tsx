@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Search, MapPin, Calendar, Users, Plus, Minus, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 
 interface LocationOption {
   name: string;
@@ -65,13 +64,12 @@ export default function TourSearch() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const params = new URLSearchParams();
     if (destination.trim()) params.append("search", destination.trim());
     if (date) params.append("date", date);
-    params.append("type", locationType);
 
     const totalGuests = adults + children;
     if (totalGuests > 1) {
@@ -83,8 +81,7 @@ export default function TourSearch() {
     // Đóng toàn bộ dropdowns
     setIsDestDropdownOpen(false);
     setIsGuestPickerOpen(false);
-
-    router.push(`${process.env.NEXT_PUBLIC_WEB_BASE_URL}/tours?${params.toString()}`);
+    router.push(`/tours?${params.toString()}`);
   };
 
   const getGuestLabel = () => {

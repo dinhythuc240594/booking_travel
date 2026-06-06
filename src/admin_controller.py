@@ -155,13 +155,7 @@ class AdminController:
         Danh sách tour
         Route: GET /admin/tour
         """
-        search = request.args.get('search', None)
-        date_from = request.args.get('date_from', None)
-        date_to = request.args.get('date_to', None)
-        guest = request.args.get('guest', None)
-        adult = request.args.get('adult', None)
-        children = request.args.get('children', None)
-        status_filter = request.args.get('status', None)
+        status_filter = request.args.get('status', 'ALL')
         page = request.args.get('page', 1, type=int)
         per_page = 20
         offset = (page - 1) * per_page

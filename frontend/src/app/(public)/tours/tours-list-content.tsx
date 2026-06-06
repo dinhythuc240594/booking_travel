@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect, useTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { mockTours } from "@/mocks/data/tours";
+import { Tour } from "@/types/tour";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import TourCard from "@/features/tours/components/TourCard";
 import Pagination from "@/components/common/Pagination";
-import { 
-  Filter, SlidersHorizontal, ArrowUpDown, RefreshCw, MapPin, 
-  Clock, Star, Compass, Grid, X 
+import {
+  Filter, SlidersHorizontal, ArrowUpDown, RefreshCw, MapPin,
+  Clock, Star, Compass, Grid, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -22,8 +22,12 @@ export default function ToursListContent() {
 
   // Đọc các giá trị ban đầu từ URL
   const initialSearch = searchParams.get("search") || "";
-  const initialType = searchParams.get("type") || "all"; // all, domestic, international
+  const initialType = searchParams.get("type") || "all";
   const initialCategory = searchParams.get("category") || "all";
+  const initialDate = searchParams.get("date") || "";
+  const initialGuests = searchParams.get("guests") || "0";
+  const initialAdults = searchParams.get("adults") || "0";
+  const initialChildren = searchParams.get("children") || "0";
 
   // State các bộ lọc
   const [searchQuery, setSearchQuery] = useState(initialSearch);
@@ -35,6 +39,11 @@ export default function ToursListContent() {
   const [sortBy, setSortBy] = useState<string>("recommended");
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [date, setDate] = useState<string>(initialDate);
+  const [guests, setGuests] = useState<number>(Number(initialGuests));
+  const [adults, setAdults] = useState<number>(Number(initialAdults));
+  const [children, setChildren] = useState<number>(Number(initialChildren));
 
   // Cập nhật state khi URL thay đổi (nhấn Tìm kiếm từ trang chủ chuyển hướng qua)
   useEffect(() => {
@@ -42,15 +51,23 @@ export default function ToursListContent() {
       setSearchQuery(initialSearch);
       if (initialType !== "all") setRegion(initialType);
       if (initialCategory !== "all") setCategory(initialCategory);
+      if (initialDate) setDate(initialDate);
+      if (initialGuests) setGuests(Number(initialGuests));
+      if (initialAdults) setAdults(Number(initialAdults));
+      if (initialChildren) setChildren(Number(initialChildren));
     }, 0);
     return () => clearTimeout(timer);
-  }, [initialSearch, initialType, initialCategory]);
+  }, [initialSearch, initialType, initialCategory, initialDate, initialGuests, initialAdults, initialChildren]);
 
   // Đồng bộ hóa các bộ lọc lên URL (Debounced để tránh giật lag khi kéo giá)
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       const params = new URLSearchParams();
       if (searchQuery) params.append("search", searchQuery);
+      if (date) params.append("date", date);
+      if (guests) params.append("guests", guests.toString());
+      if (adults) params.append("adults", adults.toString());
+      if (children) params.append("children", children.toString());
       if (region !== "all") params.append("type", region);
       if (category !== "all") params.append("category", category);
       if (maxPrice < 10000000) params.append("maxPrice", maxPrice.toString());
@@ -60,12 +77,28 @@ export default function ToursListContent() {
       if (currentPage > 1) params.append("page", currentPage.toString());
 
       startTransition(() => {
-        router.push(`${process.env.NEXT_PUBLIC_WEB_BASE_URL}/tours?${params.toString()}`);
+        router.push(`/tours?${params.toString()}`);
       });
     }, 400);
 
     return () => clearTimeout(delayDebounce);
   }, [searchQuery, region, category, maxPrice, duration, minRating, sortBy, currentPage, router]);
+
+  useEffect(() => {
+    const search = async () => {
+      const params = new URLSearchParams();
+      if (searchQuery) params.append("search", searchQuery);
+      if (date) params.append("date", date);
+      if (guests) params.append("guests", guests.toString());
+      if (adults) params.append("adults", adults.toString());
+      if (children) params.append("children", children.toString());
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/search?${params.toString()}`);
+      const json = await res.json();
+      const data = json.tours;
+      setTours(data);
+    }
+    search();
+  }, [searchQuery, date, guests, adults, children]);
 
   // Hàm Reset bộ lọc
   const handleResetFilters = () => {
@@ -86,7 +119,7 @@ export default function ToursListContent() {
   };
 
   // LỌC DANH SÁCH TOUR
-  const filteredTours = mockTours.filter((tour) => {
+  const filteredTours = tours.filter((tour) => {
     // 1. Lọc theo từ khóa tìm kiếm (tiêu đề hoặc địa điểm)
     if (searchQuery.trim()) {
       const term = searchQuery.toLowerCase();
@@ -95,11 +128,7 @@ export default function ToursListContent() {
       if (!inTitle && !inLocation) return false;
     }
 
-    // 2. Lọc theo vùng miền (Trong nước / Nước ngoài)
-    if (region === "domestic" && tour.category === "international") return false;
-    if (region === "international" && tour.category !== "international") return false;
-
-    // 3. Lọc theo thể loại
+    // 2. Lọc theo thể loại
     if (category !== "all" && tour.category !== category) return false;
 
     // 4. Lọc theo giá (Lấy giá ưu đãi nếu có, ngược lại lấy giá gốc)
@@ -153,7 +182,7 @@ export default function ToursListContent() {
     { id: "mountain", name: "Khám phá núi rừng" },
     { id: "resort", name: "Nghỉ dưỡng 5 sao" },
     { id: "culture", name: "Văn hóa - Lịch sử" },
-    { id: "international", name: "Du lịch quốc tế" },
+    // { id: "international", name: "Du lịch quốc tế" },
   ];
 
   return (
@@ -165,14 +194,14 @@ export default function ToursListContent() {
         {/* Background Image phong cảnh mờ */}
         <div className="absolute inset-0 z-0 opacity-40">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img 
-            src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600&auto=format&fit=crop&q=80" 
-            alt="Tours Banner" 
+          <img
+            src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600&auto=format&fit=crop&q=80"
+            alt="Tours Banner"
             className="w-full h-full object-cover"
           />
         </div>
         <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-900/80 to-transparent z-0" />
-        
+
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 text-xs font-semibold uppercase tracking-wider mb-3 border border-cyan-400/20">
             <Compass className="w-3.5 h-3.5" /> Khám phá hành trình
@@ -189,7 +218,7 @@ export default function ToursListContent() {
       {/* BỐ CỤC CHÍNH */}
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          
+
           {/* ================= sidebaR BỘ LỌC (DESKTOP) ================= */}
           <aside className="hidden lg:block lg:col-span-1 bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl p-6 shadow-sm h-fit sticky top-24">
             <div className="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-6">
@@ -197,7 +226,7 @@ export default function ToursListContent() {
                 <SlidersHorizontal className="w-5 h-5 text-cyan-500" />
                 Bộ Lọc Tìm Kiếm
               </span>
-              <button 
+              <button
                 onClick={handleResetFilters}
                 className="text-xs font-semibold text-zinc-400 hover:text-cyan-500 flex items-center gap-1 transition-colors cursor-pointer"
                 title="Đặt lại bộ lọc"
@@ -207,7 +236,7 @@ export default function ToursListContent() {
             </div>
 
             <div className="space-y-6">
-              
+
               {/* Lọc: Từ khóa tìm kiếm */}
               <div>
                 <label htmlFor="search" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2">
@@ -370,10 +399,10 @@ export default function ToursListContent() {
 
           {/* ================= DANH SÁCH TOURS BÊN PHẢI ================= */}
           <div className="col-span-1 lg:col-span-3 flex flex-col">
-            
+
             {/* THANH SẮP XẾP VÀ SỐ LƯỢNG KẾT QUẢ */}
             <div className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-2xl p-4 mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 shadow-sm select-none">
-              
+
               {/* Thống kê số lượng */}
               <div className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-1.5">
                 <Grid className="w-4.5 h-4.5 text-cyan-500" />
@@ -420,13 +449,13 @@ export default function ToursListContent() {
                     </div>
                   ))}
                 </div>
-                
+
                 {/* PHÂN TRANG */}
                 <div className="mt-12">
-                  <Pagination 
-                    currentPage={currentPage} 
-                    totalPages={totalPages} 
-                    onPageChange={setCurrentPage} 
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
                   />
                 </div>
               </>
@@ -440,7 +469,7 @@ export default function ToursListContent() {
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-sm mb-6 leading-relaxed">
                   Chúng tôi không tìm thấy kết quả nào khớp với các bộ lọc hiện tại của bạn. Hãy thử thay đổi mức ngân sách hoặc từ khóa tìm kiếm.
                 </p>
-                <Button 
+                <Button
                   onClick={handleResetFilters}
                   className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-0 cursor-pointer shadow-md"
                 >
@@ -457,11 +486,11 @@ export default function ToursListContent() {
       {isMobileFilterOpen && (
         <div className="fixed inset-0 z-50 lg:hidden flex justify-end animate-fade-in">
           {/* Backdrop tối */}
-          <div 
+          <div
             onClick={() => setIsMobileFilterOpen(false)}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
-          
+
           {/* Nội dung Drawer */}
           <div className="relative w-80 max-w-[85%] bg-white dark:bg-zinc-900 h-full p-6 flex flex-col shadow-2xl animate-slide-in-right z-10 overflow-y-auto">
             <div className="flex justify-between items-center pb-4 border-b border-zinc-100 dark:border-zinc-800 mb-6 flex-shrink-0">
@@ -469,7 +498,7 @@ export default function ToursListContent() {
                 <Filter className="w-5 h-5 text-cyan-500" />
                 Bộ lọc nâng cao
               </span>
-              <button 
+              <button
                 onClick={() => setIsMobileFilterOpen(false)}
                 className="p-1 rounded-lg text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
               >
@@ -479,7 +508,7 @@ export default function ToursListContent() {
 
             {/* Các trường lọc (tương tự Desktop) */}
             <div className="space-y-6 pb-12">
-              
+
               {/* Lọc: Từ khóa */}
               <div>
                 <label htmlFor="search-mobile" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2">
@@ -633,14 +662,14 @@ export default function ToursListContent() {
 
             {/* Nút bấm ở chân Drawer mobile */}
             <div className="mt-auto pt-4 border-t border-zinc-100 dark:border-zinc-800 flex gap-3 flex-shrink-0">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={handleResetFilters}
                 className="flex-1 rounded-full border-zinc-300 dark:border-zinc-700 text-xs cursor-pointer"
               >
                 Xóa tất cả
               </Button>
-              <Button 
+              <Button
                 onClick={() => setIsMobileFilterOpen(false)}
                 className="flex-1 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white border-0 text-xs cursor-pointer shadow-md"
               >

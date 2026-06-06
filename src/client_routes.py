@@ -27,7 +27,7 @@ class BaseClientView(base.BaseView, controller):
 class Home(BaseClientView):
     
     def get(self):
-        data = self.list_tour(limit=10, offset=0)
+        data = self.list_tour()
         return jsonify({
             'tours': data,
             'self': 'home'
@@ -37,22 +37,18 @@ class Home(BaseClientView):
 class Search(BaseClientView):
     
     def get(self):
-        keyword = request.args.get('q', '').strip()
-        page = request.args.get('page', 1)
-        data = self.search_tours(keyword, page)
+        data = self.search_tours()
         
         return jsonify({
             'tours': data,
             'self': 'search',
-            'keyword': keyword,
-            'page': page
         })
 
 
 class Tours(BaseClientView):
     
     def get(self):
-        data = self.list_tour(limit=10, offset=0)
+        data = self.list_tour()
         
         return jsonify({
             'tours': data,
@@ -81,20 +77,16 @@ class ToursDetail(BaseClientView):
 
 class Login(BaseClientView):
     
-    def get(self):
-        return render_template('client/login.html')
-    
     def post(self):
-        self.check_login()
+        data = self.check_login()
+        return data
 
 
 class Register(BaseClientView):
     
-    def get(self):
-        return render_template('client/register.html')
-    
     def post(self):
-        self.register()
+        data = self.register()
+        return data
 
 
 class ForgotPassword(BaseClientView):
@@ -162,8 +154,8 @@ client_bp.add_url_rule('/locations', 'locations', Location.as_view('locations'))
 client_bp.add_url_rule('/bookings', 'bookings', Bookings.as_view('bookings'))
 client_bp.add_url_rule('/tour/<tours_slug>', 'tours_detail', ToursDetail.as_view('tours_detail'))
 
-client_bp.add_url_rule('/signin', 'user_login', Login.as_view('user_login'))
-client_bp.add_url_rule('/signup', 'register', Register.as_view('register'))
+client_bp.add_url_rule('/signin', 'signin', Login.as_view('signin'))
+client_bp.add_url_rule('/signup', 'signup', Register.as_view('signup'))
 client_bp.add_url_rule('/forgot_password', 'forgot_password', ForgotPassword.as_view('forgot_password'))
 
 client_bp.add_url_rule('/introducing', 'introducing', Introducing.as_view('introducing'))

@@ -13,13 +13,13 @@ DOMESTIC = [
     { "name": "Nha Trang, Khánh Hòa", "searchKey": "Nha Trang" },
 ]
 
-TOUR_CATEGORY = [
+CATEGORY_NAME = [
     { "id": "all", "name": "Tất cả" },
     { "id": "beach", "name": "Biển đảo" },
     { "id": "mountain", "name": "Núi rừng" },
     { "id": "resort", "name": "Nghỉ dưỡng" },
     { "id": "culture", "name": "Văn hóa" },
-    { "id": "international", "name": "Quốc tế" },
+    # { "id": "international", "name": "Quốc tế" },
 ]
 
 # hash password before save into db

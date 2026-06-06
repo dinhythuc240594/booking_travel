@@ -7,18 +7,18 @@ import { useAuthStore } from "@/store/auth.store";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import { mockUsers } from "@/mocks/data/users";
-import { 
-  Mail, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  Compass, 
-  Loader2, 
-  AlertCircle, 
-  CheckCircle2, 
+import { User } from "@/types/user";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Compass,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
   User as UserIcon,
   ShieldAlert,
-  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -26,6 +26,8 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { login, isAuthenticated } = useAuthStore();
+  const [user, setUser] = useState(null);
+  const [data, setData] = useState<{ status: number, message: string, user: User }>();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,7 +46,7 @@ function LoginContent() {
     }
   }, [isAuthenticated, router, redirectUrl]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
@@ -55,81 +57,111 @@ function LoginContent() {
 
     setLoading(true);
 
-    setTimeout(() => {
-      // 1. Kiểm tra trong danh sách người dùng tự đăng ký (localStorage)
-      let customUsers = [];
-      try {
-        customUsers = JSON.parse(localStorage.getItem("vitravel-custom-users") || "[]");
-      } catch (err) {
-        console.error("Lỗi đọc custom users:", err);
-      }
+    const fetchUser = async () => {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/signin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
+      const data = await response.json();
+      setData(data);
+    }
 
-      const allUsers = [...mockUsers, ...customUsers];
-      const matchedUser = allUsers.find(
-        (u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password
-      );
+    await fetchUser();
 
-      if (matchedUser) {
-        // Tách password ra khỏi dữ liệu lưu trong store để bảo mật
-        const userWithoutPassword = {
-          id: matchedUser.id,
-          email: matchedUser.email,
-          name: matchedUser.name,
-          role: matchedUser.role,
-          avatarUrl: matchedUser.avatarUrl,
-          phoneNumber: matchedUser.phoneNumber,
-          createdAt: matchedUser.createdAt,
-          updatedAt: matchedUser.updatedAt,
-        };
-        login(userWithoutPassword, "mock-jwt-token-xyz");
-        setSuccess(true);
-        setLoading(false);
-        
-        setTimeout(() => {
-          router.push(redirectUrl);
-        }, 1000);
-      } else {
-        setError("Email hoặc mật khẩu không chính xác.");
-        setLoading(false);
-      }
-    }, 800);
+    if (data?.message === "success") {
+      login(data.user, "mock-jwt-token-xyz");
+      setSuccess(true);
+      setLoading(false);
+      setTimeout(() => {
+        router.push(redirectUrl);
+      }, 1000);
+    }
+    else {
+      setError("Email hoặc mật khẩu không chính xác.");
+      setLoading(false);
+    }
+
+    // setTimeout(() => {
+    //   // 1. Kiểm tra trong danh sách người dùng tự đăng ký (localStorage)
+    //   let customUsers = [];
+    //   try {
+    //     customUsers = JSON.parse(localStorage.getItem("vitravel-custom-users") || "[]");
+    //   } catch (err) {
+    //     console.error("Lỗi đọc custom users:", err);
+    //   }
+
+    //   const allUsers = [...mockUsers, ...customUsers];
+    //   const matchedUser = allUsers.find(
+    //     (u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password
+    //   );
+
+    //   if (matchedUser) {
+    //     // Tách password ra khỏi dữ liệu lưu trong store để bảo mật
+    //     const userWithoutPassword = {
+    //       id: matchedUser.id,
+    //       email: matchedUser.email,
+    //       name: matchedUser.name,
+    //       role: matchedUser.role,
+    //       avatarUrl: matchedUser.avatarUrl,
+    //       phoneNumber: matchedUser.phoneNumber,
+    //       createdAt: matchedUser.createdAt,
+    //       updatedAt: matchedUser.updatedAt,
+    //     };
+    //     login(userWithoutPassword, "mock-jwt-token-xyz");
+    //     setSuccess(true);
+    //     setLoading(false);
+
+    //     setTimeout(() => {
+    //       router.push(redirectUrl);
+    //     }, 1000);
+    //   } else {
+    //     setError("Email hoặc mật khẩu không chính xác.");
+    //     setLoading(false);
+    //   }
+    // }, 800);
   };
 
   // Đăng nhập nhanh
-  const handleQuickLogin = (role: "customer" | "admin" | "user") => {
-    setError(null);
-    setDemoLoginType(role);
-    setLoading(true);
+  // const handleQuickLogin = (role: "customer" | "admin" | "user") => {
+  //   setError(null);
+  //   setDemoLoginType(role);
+  //   setLoading(true);
 
-    const targetUser = mockUsers.find((u) => u.role === role);
+  //   const targetUser = mockUsers.find((u) => u.role === role);
 
-    setTimeout(() => {
-      if (targetUser) {
-        const userWithoutPassword = {
-          id: targetUser.id,
-          email: targetUser.email,
-          name: targetUser.name,
-          role: targetUser.role,
-          avatarUrl: targetUser.avatarUrl,
-          phoneNumber: targetUser.phoneNumber,
-          createdAt: targetUser.createdAt,
-          updatedAt: targetUser.updatedAt,
-        };
-        login(userWithoutPassword, "mock-jwt-token-xyz");
-        setSuccess(true);
-        setLoading(false);
-        setDemoLoginType(null);
-        
-        setTimeout(() => {
-          router.push(redirectUrl);
-        }, 1000);
-      } else {
-        setError("Không tìm thấy tài khoản mẫu phù hợp.");
-        setLoading(false);
-        setDemoLoginType(null);
-      }
-    }, 700);
-  };
+  //   setTimeout(() => {
+  //     if (targetUser) {
+  //       const userWithoutPassword = {
+  //         id: targetUser.id,
+  //         email: targetUser.email,
+  //         name: targetUser.name,
+  //         role: targetUser.role,
+  //         avatarUrl: targetUser.avatarUrl,
+  //         phoneNumber: targetUser.phoneNumber,
+  //         createdAt: targetUser.createdAt,
+  //         updatedAt: targetUser.updatedAt,
+  //       };
+  //       login(userWithoutPassword, "mock-jwt-token-xyz");
+  //       setSuccess(true);
+  //       setLoading(false);
+  //       setDemoLoginType(null);
+
+  //       setTimeout(() => {
+  //         router.push(redirectUrl);
+  //       }, 1000);
+  //     } else {
+  //       setError("Không tìm thấy tài khoản mẫu phù hợp.");
+  //       setLoading(false);
+  //       setDemoLoginType(null);
+  //     }
+  //   }, 700);
+  // };
 
   return (
     <div className="max-w-md w-full relative">
@@ -139,7 +171,7 @@ function LoginContent() {
 
       {/* Main Glassmorphic Login Box */}
       <div className="bg-white/80 dark:bg-zinc-900/80 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-        
+
         {/* Top Branding / Welcome */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2 group mb-3">
@@ -209,8 +241,8 @@ function LoginContent() {
               <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
                 Mật khẩu
               </label>
-              <Link 
-                href="/forgot-password" 
+              <Link
+                href="/forgot-password"
                 className="text-xs font-semibold text-cyan-500 hover:text-cyan-600 transition-colors"
               >
                 Quên mật khẩu?
@@ -295,8 +327,8 @@ function LoginContent() {
         {/* Link to Register */}
         <div className="text-center pt-2.5 border-t border-zinc-150 dark:border-zinc-850 text-xs text-zinc-500">
           Chưa có tài khoản?{" "}
-          <Link 
-            href={`/register?redirect=${encodeURIComponent(redirectUrl)}`} 
+          <Link
+            href={`/register?redirect=${encodeURIComponent(redirectUrl)}`}
             className="font-bold text-cyan-500 hover:text-cyan-600 transition-colors"
           >
             Đăng ký tài khoản mới
@@ -312,7 +344,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-50 flex flex-col font-sans">
       <Header />
-      
+
       <main className="flex-grow flex items-center justify-center px-4 pt-28 pb-20 relative">
         <Suspense fallback={
           <div className="flex flex-col items-center justify-center">

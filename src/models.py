@@ -330,7 +330,7 @@ class TourModel:
             query = query.limit(limit).offset(offset)
         return query.all()
 
-    def _tour_to_dict(self, tour: db.Tour) -> dict:
+    def _tour_to_dict(self, tour: db.Tour, adult: int = 1, children: int = 0) -> dict:
         
         # Parse images JSON string nếu có
         images_list = []
@@ -348,14 +348,15 @@ class TourModel:
             "summary": tour.summary,
             "content": tour.content,
             "duration_days": tour.duration_days,
-            "price_per_person": float(tour.price_per_person) if tour.price_per_person else 0.0, # Convert Decimal -> float
+            "price_per_adult": float(tour.price_per_adult)* (adult),
+            "price_per_child": float(tour.price_per_child)* (children),
+            "total_price": float(tour.price_per_adult)* (adult) + float(tour.price_per_child)* (children),
             "thumbnail": tour.thumbnail,
             "images": images_list, # Trả về list thay vì chuỗi JSON string
             "is_hot": tour.is_hot,
             "is_featured": tour.is_featured,
             "view_count": tour.view_count,
             "status": tour.status.value if tour.status else None, # Lấy giá trị của Enum
-            
             # Convert DateTime -> String
             "published_at": tour.published_at.strftime('%Y-%m-%d %H:%M:%S') if tour.published_at else None,
             "created_at": tour.created_at.strftime('%Y-%m-%d %H:%M:%S') if tour.created_at else None,
