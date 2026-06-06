@@ -1138,7 +1138,7 @@ class AdminController:
                     'username': user.username,
                     'email': user.email,
                     'full_name': user.full_name,
-                    'phone': user.phone,
+                    'phone': user.phone_number,
                     'role': user.role.value if user.role else 'user',
                     'is_active': user.is_active,
                     'created_at': user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
@@ -1242,7 +1242,7 @@ class AdminController:
                         'username': user.username,
                         'email': user.email,
                         'full_name': user.full_name,
-                        'phone': user.phone,
+                        'phone': user.phone_number,
                         'role': user.role.value if user.role else 'user',
                         'is_active': user.is_active
                     }

@@ -1,299 +1,303 @@
 {% extends 'base_admin.html' %}
 {% block title %}Dashboard - BookingTravel Admin{% endblock %}
 {% block head %}
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style_admin.css') }}">
-    <script src="{{ url_for('static', filename='js/menu-manager.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/menu-admin.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style_admin.css') }}">
+<script src="{{ url_for('static', filename='js/menu-manager.js') }}"></script>
+<script src="{{ url_for('static', filename='js/menu-admin.js') }}"></script>
+<script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 {% endblock %}
 {% block template %}
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="sidebar-header">
-            <h4><i class="fas fa-newspaper"></i> BookingTravel Admin</h4>
-        </div>
-        <div class="user-info">
-            <div class="user-avatar">
-                {% if user.avatar %}
-                    <img src="/{{ user.avatar }}" alt="Avatar" class="img-fluid rounded-circle">
-                {% else %}
-                    <i class="fas fa-user-shield"></i>
-                {% endif %}
-            </div>
-            <div class="user-details">
-                <strong id="userName"><a href="{{ url_for('admin.profile') }}">{{ user.full_name }}</a></strong>
-                <span class="badge bg-danger">{{ user.role }}</span>
-            </div>
-        </div>
-        <ul class="sidebar-menu">
-            <li class="nav-divider">
-                <span>QUẢN LÝ HỆ THỐNG</span>
-            </li>
-            <li class="active">
-                <a href="#" data-section="dashboard">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-            </li>  
-            <li>
-                <a href="#" data-section="users-manager">
-                    <i class="fas fa-users"></i> Quản lý người dùng
-                </a>
-            </li>
-            <li class="nav-divider">
-                <span>QUẢN LÝ BÀI VIẾT</span>
-            </li>  
-            <li>
-                <a href="#" data-section="pending">
-                    <i class="fas fa-clock"></i> Bài chờ duyệt
-                    <span class="badge bg-warning" id="pendingCount">{{ stat_pending }}</span>
-                </a>
-            </li>
-            <li>
-                <a href="#" data-section="approved">
-                    <i class="fas fa-check-circle"></i> Bài đã duyệt
-                </a>
-            </li>
-            <li>
-                <a href="#" data-section="rejected">
-                    <i class="fas fa-times-circle"></i> Bài từ chối
-                </a>
-            </li>
-            <li class="nav-divider">
-                <span>KHÁC</span>
-            </li>
-            <li>
-                <a href="#" data-section="settings">
-                    <i class="fas fa-cog"></i> Cài đặt
-                </a>
-            </li>
-            <li>
-                <a href="#" id="logoutBtn">
-                    <i class="fas fa-sign-out-alt"></i> Đăng xuất
-                </a>
-            </li>  
-        </ul>
+<!-- Sidebar -->
+<div class="sidebar">
+    <div class="sidebar-header">
+        <h4><i class="fas fa-newspaper"></i> BookingTravel Admin</h4>
     </div>
+    <div class="user-info">
+        <div class="user-avatar">
+            {% if user.avatar %}
+            <img src="/{{ user.avatar }}" alt="Avatar" class="img-fluid rounded-circle">
+            {% else %}
+            <i class="fas fa-user-shield"></i>
+            {% endif %}
+        </div>
+        <div class="user-details">
+            <strong id="userName"><a href="{{ url_for('admin.profile') }}">{{ user.full_name }}</a></strong>
+            <span class="badge bg-danger">{{ user.role }}</span>
+        </div>
+    </div>
+    <ul class="sidebar-menu">
+        <li class="nav-divider">
+            <span>QUẢN LÝ HỆ THỐNG</span>
+        </li>
+        <li class="active">
+            <a href="#" data-section="dashboard">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="#" data-section="users-manager">
+                <i class="fas fa-users"></i> Quản lý người dùng
+            </a>
+        </li>
+        <li class="nav-divider">
+            <span>QUẢN LÝ BÀI VIẾT</span>
+        </li>
+        <li>
+            <a href="#" data-section="pending">
+                <i class="fas fa-clock"></i> Bài chờ duyệt
+                <span class="badge bg-warning" id="pendingCount">{{ stat_pending }}</span>
+            </a>
+        </li>
+        <li>
+            <a href="#" data-section="approved">
+                <i class="fas fa-check-circle"></i> Bài đã duyệt
+            </a>
+        </li>
+        <li>
+            <a href="#" data-section="rejected">
+                <i class="fas fa-times-circle"></i> Bài từ chối
+            </a>
+        </li>
+        <li class="nav-divider">
+            <span>KHÁC</span>
+        </li>
+        <li>
+            <a href="#" data-section="settings">
+                <i class="fas fa-cog"></i> Cài đặt
+            </a>
+        </li>
+        <li>
+            <a href="#" id="logoutBtn">
+                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+            </a>
+        </li>
+    </ul>
+</div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Header -->
-        <div class="content-header">
-            <h2 id="pageTitle">Dashboard</h2>
-            <div class="header-actions">
-                <div class="dropdown me-2">
-                    <button class="btn btn-outline-secondary position-relative" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge bg-danger position-absolute top-0 start-100 translate-middle" id="notificationCount">0</span>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationDropdown">
-                        <li class="dropdown-header">
-                            <strong>Thông báo</strong>
-                        </li>
-                        <li>
-                            <div class="px-3 py-2 small text-muted" id="notificationEmpty">
-                                Chưa có thông báo mới.
-                            </div>
-                            <div id="notificationList"></div>
-                        </li>
-                    </ul>
-                </div>
-                <!-- <button class="btn btn-outline-secondary">
+<!-- Main Content -->
+<div class="main-content">
+    <!-- Header -->
+    <div class="content-header">
+        <h2 id="pageTitle">Dashboard</h2>
+        <div class="header-actions">
+            <div class="dropdown me-2">
+                <button class="btn btn-outline-secondary position-relative" id="notificationDropdown"
+                    data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge bg-danger position-absolute top-0 start-100 translate-middle"
+                        id="notificationCount">0</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end notification-dropdown"
+                    aria-labelledby="notificationDropdown">
+                    <li class="dropdown-header">
+                        <strong>Thông báo</strong>
+                    </li>
+                    <li>
+                        <div class="px-3 py-2 small text-muted" id="notificationEmpty">
+                            Chưa có thông báo mới.
+                        </div>
+                        <div id="notificationList"></div>
+                    </li>
+                </ul>
+            </div>
+            <!-- <button class="btn btn-outline-secondary">
                     <i class="fas fa-cog"></i>
                 </button> -->
-            </div>
         </div>
+    </div>
 
-        {% include 'admin/users-manager.html' %}
+    {% include 'admin/users-manager.html' %}
 
-        {% include 'admin/setting-section.html' %}
+    {% include 'admin/setting-section.html' %}
 
-        {% include 'admin/dashboard-section.html' %}
+    {% include 'admin/dashboard-section.html' %}
 
-        {% include 'admin/pednding-section.html' %}
+    {% include 'admin/pednding-section.html' %}
 
-        {% include 'admin/approved-section.html' %}
+    {% include 'admin/approved-section.html' %}
 
-        {% include 'admin/rejected-section.html' %}
+    {% include 'admin/rejected-section.html' %}
 
-        <!-- Tour Preview Modal -->
-        <div class="modal fade" id="previewArticleModal" tabindex="-1" aria-labelledby="previewArticleModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-scrollable">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="previewArticleModalLabel">
-                            <i class="fas fa-eye me-2"></i>Xem trước bài viết
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
-                    </div>
-                    <div class="modal-body" id="previewContent">
-                        <!-- Preview content will be loaded here -->
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="fas fa-times me-1"></i>Đóng
-                        </button>
-                        <button type="button" class="btn btn-danger" id="rejectBtn" style="display: none;">
-                            <i class="fas fa-times me-1"></i>Từ chối
-                        </button>
-                        <button type="button" class="btn btn-success" id="approveBtn" style="display: none;">
-                            <i class="fas fa-check me-1"></i>Duyệt bài
-                        </button>
-                    </div>
+    <!-- Tour Preview Modal -->
+    <div class="modal fade" id="previewArticleModal" tabindex="-1" aria-labelledby="previewArticleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="previewArticleModalLabel">
+                        <i class="fas fa-eye me-2"></i>Xem trước bài viết
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
                 </div>
-            </div>
-        </div>
-
-        <!-- Reject Tour Modal -->
-        <div class="modal fade" id="rejectArticleModal" tabindex="-1" aria-labelledby="rejectArticleModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header bg-danger text-white">
-                        <h5 class="modal-title" id="rejectArticleModalLabel">
-                            <i class="fas fa-times-circle me-2"></i>Từ chối bài viết
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="rejectArticleId">
-                        <input type="hidden" id="rejectArticleType">
-                        <div class="mb-3">
-                            <label for="rejectReason" class="form-label">
-                                <strong>Lý do từ chối <span class="text-danger">*</span></strong>
-                            </label>
-                            <textarea 
-                                class="form-control" 
-                                id="rejectReason" 
-                                rows="5" 
-                                placeholder="Vui lòng nhập lý do từ chối bài viết. Lý do này sẽ được gửi đến tác giả qua email."
-                                required></textarea>
-                            <small class="form-text text-muted">
-                                Lý do từ chối sẽ được gửi đến tác giả qua email kèm theo link bài viết.
-                            </small>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            <i class="fas fa-times me-1"></i>Hủy
-                        </button>
-                        <button type="button" class="btn btn-danger" id="confirmRejectBtn">
-                            <i class="fas fa-paper-plane me-1"></i>Gửi từ chối
-                        </button>
-                    </div>
+                <div class="modal-body" id="previewContent">
+                    <!-- Preview content will be loaded here -->
                 </div>
-            </div>
-        </div>
-
-        <!-- Save API Tour Modal -->
-        <div class="modal fade" id="saveAPIArticleModal" tabindex="-1">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Lưu bài viết từ API</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <input type="hidden" id="saveAPIArticleData">
-                        <div class="mb-3">
-                            <label class="form-label">Tiêu đề</label>
-                            <input type="text" class="form-control" id="saveAPITitle" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Tóm tắt</label>
-                            <textarea class="form-control" id="saveAPISummary" rows="3" readonly></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Danh mục <span class="text-danger">*</span></label>
-                            <select class="form-select" id="saveAPICategory" required>
-                                <option value="">-- Chọn danh mục --</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Trạng thái</label>
-                            <select class="form-select" id="saveAPIStatus">
-                                <option value="draft">Bản nháp</option>
-                                <option value="pending">Chờ duyệt</option>
-                                <option value="published">Đã xuất bản</option>
-                            </select>
-                            <small class="text-muted">Bài viết sẽ được lưu với trạng thái đã chọn và đánh dấu là từ API</small>
-                        </div>
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="saveAPIIsHot">
-                                <label class="form-check-label" for="saveAPIIsHot">
-                                    <i class="fas fa-fire text-danger"></i> Tin nóng
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="saveAPIIsFeatured">
-                                <label class="form-check-label" for="saveAPIIsFeatured">
-                                    <i class="fas fa-star text-warning"></i> Tin nổi bật
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
-                        <button type="button" class="btn btn-primary" id="saveAPIArticleBtn">
-                            <i class="fas fa-save"></i> Lưu bài viết
-                        </button>
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Đóng
+                    </button>
+                    <button type="button" class="btn btn-danger" id="rejectBtn" style="display: none;">
+                        <i class="fas fa-times me-1"></i>Từ chối
+                    </button>
+                    <button type="button" class="btn btn-success" id="approveBtn" style="display: none;">
+                        <i class="fas fa-check me-1"></i>Duyệt bài
+                    </button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Reject Tour Modal -->
+    <div class="modal fade" id="rejectArticleModal" tabindex="-1" aria-labelledby="rejectArticleModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title" id="rejectArticleModalLabel">
+                        <i class="fas fa-times-circle me-2"></i>Từ chối bài viết
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="rejectArticleId">
+                    <input type="hidden" id="rejectArticleType">
+                    <div class="mb-3">
+                        <label for="rejectReason" class="form-label">
+                            <strong>Lý do từ chối <span class="text-danger">*</span></strong>
+                        </label>
+                        <textarea class="form-control" id="rejectReason" rows="5"
+                            placeholder="Vui lòng nhập lý do từ chối bài viết. Lý do này sẽ được gửi đến tác giả qua email."
+                            required></textarea>
+                        <small class="form-text text-muted">
+                            Lý do từ chối sẽ được gửi đến tác giả qua email kèm theo link bài viết.
+                        </small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Hủy
+                    </button>
+                    <button type="button" class="btn btn-danger" id="confirmRejectBtn">
+                        <i class="fas fa-paper-plane me-1"></i>Gửi từ chối
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save API Tour Modal -->
+    <div class="modal fade" id="saveAPIArticleModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Lưu bài viết từ API</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="saveAPIArticleData">
+                    <div class="mb-3">
+                        <label class="form-label">Tiêu đề</label>
+                        <input type="text" class="form-control" id="saveAPITitle" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tóm tắt</label>
+                        <textarea class="form-control" id="saveAPISummary" rows="3" readonly></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Danh mục <span class="text-danger">*</span></label>
+                        <select class="form-select" id="saveAPICategory" required>
+                            <option value="">-- Chọn danh mục --</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Trạng thái</label>
+                        <select class="form-select" id="saveAPIStatus">
+                            <option value="draft">Bản nháp</option>
+                            <option value="pending">Chờ duyệt</option>
+                            <option value="published">Đã xuất bản</option>
+                        </select>
+                        <small class="text-muted">Bài viết sẽ được lưu với trạng thái đã chọn và đánh dấu là từ
+                            API</small>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="saveAPIIsHot">
+                            <label class="form-check-label" for="saveAPIIsHot">
+                                <i class="fas fa-fire text-danger"></i> Tin nóng
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="saveAPIIsFeatured">
+                            <label class="form-check-label" for="saveAPIIsFeatured">
+                                <i class="fas fa-star text-warning"></i> Tin nổi bật
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="saveAPIArticleBtn">
+                        <i class="fas fa-save"></i> Lưu bài viết
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block scripts_url %}
-    <script>
-        // Users Management
-        let currentUserPage = 1;
-        let userFilters = {};
-        
-        function loadUsers(page = 1) {
-            currentUserPage = page;
-            const params = new URLSearchParams({
-                page: page,
-                per_page: 20,
-                ...userFilters
-            });
-            
-            $.ajax({
-                url: '/admin/api/users?' + params.toString(),
-                method: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        renderUsersTable(response.users);
-                        renderUsersPagination(response.page, response.total_pages);
-                    }
-                },
-                error: function() {
-                    $('#usersTableBody').html('<tr><td colspan="10" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>');
+<script>
+    // Users Management
+    let currentUserPage = 1;
+    let userFilters = {};
+
+    function loadUsers(page = 1) {
+        currentUserPage = page;
+        const params = new URLSearchParams({
+            page: page,
+            per_page: 20,
+            ...userFilters
+        });
+
+        $.ajax({
+            url: '/admin/api/users?' + params.toString(),
+            method: 'GET',
+            success: function (response) {
+                if (response.success) {
+                    renderUsersTable(response.users);
+                    renderUsersPagination(response.page, response.total_pages);
                 }
-            });
-        }
-        
-        function renderUsersTable(users) {
-            const tbody = $('#usersTableBody');
-            if (users.length === 0) {
-                tbody.html('<tr><td colspan="10" class="text-center">Không có dữ liệu</td></tr>');
-                return;
+            },
+            error: function () {
+                $('#usersTableBody').html('<tr><td colspan="10" class="text-center text-danger">Lỗi khi tải dữ liệu</td></tr>');
             }
-            
-            let html = '';
-            users.forEach(user => {
-                const avatar = user.avatar ? `<img src="/${user.avatar}" class="rounded-circle" width="40" height="40">` 
-                    : `<div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;">${user.username.charAt(0).toUpperCase()}</div>`;
-                
-                const roleBadge = {
-                    'admin': '<span class="badge bg-danger">Admin</span>',
-                    'editor': '<span class="badge bg-info">Editor</span>',
-                    'user': '<span class="badge bg-secondary">User</span>'
-                }[user.role] || '<span class="badge bg-secondary">User</span>';
-                
-                const statusBadge = user.is_active 
-                    ? '<span class="badge bg-success">Hoạt động</span>'
-                    : '<span class="badge bg-danger">Đã khóa</span>';
-                
-                html += `
+        });
+    }
+
+    function renderUsersTable(users) {
+        const tbody = $('#usersTableBody');
+        if (users.length === 0) {
+            tbody.html('<tr><td colspan="10" class="text-center">Không có dữ liệu</td></tr>');
+            return;
+        }
+
+        let html = '';
+        users.forEach(user => {
+            const avatar = user.avatar ? `<img src="/${user.avatar}" class="rounded-circle" width="40" height="40">`
+                : `<div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;">${user.username.charAt(0).toUpperCase()}</div>`;
+
+            const roleBadge = {
+                'admin': '<span class="badge bg-danger">Quản trị viên</span>',
+                'staff': '<span class="badge bg-info">Nhân viên</span>',
+                'user': '<span class="badge bg-secondary">Khách hàng</span>'
+            }[user.role] || '<span class="badge bg-secondary">Khách hàng</span>';
+
+            const statusBadge = user.is_active
+                ? '<span class="badge bg-success">Hoạt động</span>'
+                : '<span class="badge bg-danger">Đã khóa</span>';
+
+            html += `
                     <tr>
                         <td>${avatar}</td>
                         <td>${user.username}</td>
@@ -313,420 +317,420 @@
                         </td>
                     </tr>
                 `;
-            });
-            tbody.html(html);
+        });
+        tbody.html(html);
+    }
+
+    function renderUsersPagination(currentPage, totalPages) {
+        const pagination = $('#usersPagination');
+        if (totalPages <= 1) {
+            pagination.html('');
+            return;
         }
-        
-        function renderUsersPagination(currentPage, totalPages) {
-            const pagination = $('#usersPagination');
-            if (totalPages <= 1) {
-                pagination.html('');
-                return;
-            }
-            
-            let html = '';
-            if (currentPage > 1) {
-                html += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage - 1}">Trước</a></li>`;
-            }
-            
-            for (let i = 1; i <= totalPages; i++) {
-                if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
-                    html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
+
+        let html = '';
+        if (currentPage > 1) {
+            html += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage - 1}">Trước</a></li>`;
+        }
+
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                html += `<li class="page-item ${i === currentPage ? 'active' : ''}">
                         <a class="page-link" href="#" data-page="${i}">${i}</a>
                     </li>`;
-                } else if (i === currentPage - 3 || i === currentPage + 3) {
-                    html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
-                }
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
             }
-            
-            if (currentPage < totalPages) {
-                html += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage + 1}">Sau</a></li>`;
-            }
-            
-            pagination.html(html);
         }
-        
-        // Event handlers
-        $(document).on('click', '#addUserBtn', function() {
-            $('#userModalLabel').html('<i class="fas fa-user-plus me-2"></i>Thêm người dùng mới');
-            $('#userForm')[0].reset();
-            $('#userId').val('');
-            $('#passwordRequired').show();
-            $('#passwordHint').hide();
-            $('#password').prop('required', true);
-            $('#userModal').modal('show');
-        });
-        
-        $(document).on('click', '.edit-user', function() {
-            const userId = $(this).data('id');
-            $.ajax({
-                url: `/admin/api/users/${userId}`,
-                method: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        const user = response.user;
-                        $('#userModalLabel').html('<i class="fas fa-user-edit me-2"></i>Chỉnh sửa người dùng');
-                        $('#userId').val(user.id);
-                        $('#username').val(user.username).prop('disabled', true);
-                        $('#email').val(user.email);
-                        $('#fullName').val(user.full_name || '');
-                        $('#phone').val(user.phone || '');
-                        $('#role').val(user.role);
-                        $('#passwordRequired').hide();
-                        $('#passwordHint').show();
-                        $('#password').prop('required', false).val('');
-                        $('#userModal').modal('show');
-                    }
-                }
-            });
-        });
-        
-        $(document).on('click', '#saveUserBtn', function() {
-            const form = $('#userForm')[0];
-            if (!form.checkValidity()) {
-                form.classList.add('was-validated');
-                return;
-            }
-            
-            const data = {
-                username: $('#username').val(),
-                email: $('#email').val(),
-                full_name: $('#fullName').val(),
-                phone: $('#phone').val(),
-                role: $('#role').val()
-            };
-            
-            const password = $('#password').val();
-            if (password) {
-                data.password = password;
-            }
-            
-            const userId = $('#userId').val();
-            const url = userId ? `/admin/api/users/${userId}` : '/admin/api/users';
-            const method = userId ? 'PUT' : 'POST';
-            
-            $.ajax({
-                url: url,
-                method: method,
-                contentType: 'application/json',
-                data: JSON.stringify(data),
-                success: function(response) {
-                    if (response.success) {
-                        $('#userModal').modal('hide');
-                        loadUsers(currentUserPage);
-                        alert(response.message || 'Thành công');
-                    } else {
-                        alert(response.error || 'Có lỗi xảy ra');
-                    }
-                },
-                error: function(xhr) {
-                    const error = xhr.responseJSON?.error || 'Có lỗi xảy ra';
-                    alert(error);
-                }
-            });
-        });
-        
-        $(document).on('click', '.toggle-user-status', function() {
-            const userId = $(this).data('id');
-            const action = $(this).hasClass('btn-warning') ? 'khóa' : 'mở khóa';
-            
-            if (!confirm(`Bạn có chắc muốn ${action} tài khoản này?`)) {
-                return;
-            }
-            
-            $.ajax({
-                url: `/admin/api/users/${userId}/toggle-status`,
-                method: 'POST',
-                success: function(response) {
-                    if (response.success) {
-                        loadUsers(currentUserPage);
-                        alert(response.message);
-                    } else {
-                        alert(response.error || 'Có lỗi xảy ra');
-                    }
-                }
-            });
-        });
-        
-        $('#userSearchInput, #userRoleFilter, #userStatusFilter').on('change keyup', function() {
-            userFilters = {};
-            const search = $('#userSearchInput').val();
-            const role = $('#userRoleFilter').val();
-            const status = $('#userStatusFilter').val();
-            
-            if (search) userFilters.search = search;
-            if (role) userFilters.role = role;
-            if (status) userFilters.status = status;
-            
-            loadUsers(1);
-        });
-        
-        $('#clearUserFilters').on('click', function() {
-            $('#userSearchInput').val('');
-            $('#userRoleFilter').val('');
-            $('#userStatusFilter').val('');
-            userFilters = {};
-            loadUsers(1);
-        });
-        
-        $(document).on('click', '#usersPagination .page-link', function(e) {
-            e.preventDefault();
-            const page = $(this).data('page');
-            if (page) {
-                loadUsers(page);
-            }
-        });
-        
-        // Load users when section is shown
-        $('a[data-section="users-manager"]').on('click', function() {
-            setTimeout(() => {
-                if ($('#users-manager').hasClass('active')) {
-                    loadUsers();
-                }
-            }, 100);
-        });
-    </script>
 
-    <script>
-        // Settings Management
-        let settingsLoaded = false;
-        
-        function loadSettings() {
-            if (settingsLoaded) return;
-            
-            $.ajax({
-                url: '/admin/api/settings',
-                method: 'GET',
-                success: function(response) {
-                    if (response.success && response.settings) {
-                        const settings = response.settings;
-                        
-                        // Load API settings
-                        $('#apiToken').val(settings.api_token?.value || '');
-                        $('#apiBaseUrl').val(settings.api_base_url?.value || 'https://news-api.techreview.pro');
-                        
-                        // Load SMTP settings
-                        $('#smtpServer').val(settings.smtp_server?.value || 'smtp.gmail.com');
-                        $('#smtpPort').val(settings.smtp_port?.value || '587');
-                        $('#smtpUsername').val(settings.smtp_username?.value || '');
-                        $('#smtpPassword').val(settings.smtp_password?.value || '');
-                        $('#smtpFromEmail').val(settings.smtp_from_email?.value || '');
-                        $('#smtpUseTls').val(settings.smtp_use_tls?.value || 'true');
-                        
-                        settingsLoaded = true;
-                    }
-                },
-                error: function() {
-                    console.error('Error loading settings');
-                }
-            });
+        if (currentPage < totalPages) {
+            html += `<li class="page-item"><a class="page-link" href="#" data-page="${currentPage + 1}">Sau</a></li>`;
         }
-        
-        function saveSettings() {
-            // Validate required fields
-            let isValid = true;
-            $('.form-control').removeClass('is-invalid');
-            
-            // Validate API Token
-            if (!$('#apiToken').val().trim()) {
-                $('#apiToken').addClass('is-invalid');
-                $('#apiToken').next('.invalid-feedback').text('API Token là bắt buộc');
-                isValid = false;
-            }
-            
-            // Validate SMTP required fields
-            if (!$('#smtpServer').val().trim()) {
-                $('#smtpServer').addClass('is-invalid');
-                $('#smtpServer').next('.invalid-feedback').text('SMTP Server là bắt buộc');
-                isValid = false;
-            }
-            
-            if (!$('#smtpPort').val().trim()) {
-                $('#smtpPort').addClass('is-invalid');
-                $('#smtpPort').next('.invalid-feedback').text('SMTP Port là bắt buộc');
-                isValid = false;
-            }
-            
-            if (!$('#smtpUsername').val().trim()) {
-                $('#smtpUsername').addClass('is-invalid');
-                $('#smtpUsername').next('.invalid-feedback').text('SMTP Username là bắt buộc');
-                isValid = false;
-            }
-            
-            if (!$('#smtpPassword').val().trim()) {
-                $('#smtpPassword').addClass('is-invalid');
-                $('#smtpPassword').parent().next('.invalid-feedback').text('SMTP Password là bắt buộc');
-                isValid = false;
-            }
-            
-            if (!isValid) {
-                alert('Vui lòng điền đầy đủ các trường bắt buộc');
-                return;
-            }
-            
-            const btn = $('#saveSettingsBtn');
-            const originalText = btn.html();
-            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Đang lưu...');
-            
-            const settings = {
-                api_token: $('#apiToken').val().trim(),
-                api_base_url: $('#apiBaseUrl').val().trim() || 'https://news-api.techreview.pro',
-                smtp_server: $('#smtpServer').val().trim(),
-                smtp_port: $('#smtpPort').val().trim(),
-                smtp_username: $('#smtpUsername').val().trim(),
-                smtp_password: $('#smtpPassword').val().trim(),
-                smtp_from_email: $('#smtpFromEmail').val().trim() || $('#smtpUsername').val().trim(),
-                smtp_use_tls: $('#smtpUseTls').val()
-            };
-            
-            $.ajax({
-                url: '/admin/api/settings',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(settings),
-                success: function(response) {
-                    if (response.success) {
-                        alert('Lưu cài đặt thành công!');
-                        settingsLoaded = false; // Reload on next show
-                    } else {
-                        alert(response.error || 'Có lỗi xảy ra khi lưu cài đặt');
-                    }
-                },
-                error: function(xhr) {
-                    const error = xhr.responseJSON?.error || 'Có lỗi xảy ra khi lưu cài đặt';
-                    alert(error);
-                },
-                complete: function() {
-                    btn.prop('disabled', false).html(originalText);
+
+        pagination.html(html);
+    }
+
+    // Event handlers
+    $(document).on('click', '#addUserBtn', function () {
+        $('#userModalLabel').html('<i class="fas fa-user-plus me-2"></i>Thêm người dùng mới');
+        $('#userForm')[0].reset();
+        $('#userId').val('');
+        $('#passwordRequired').show();
+        $('#passwordHint').hide();
+        $('#password').prop('required', true);
+        $('#userModal').modal('show');
+    });
+
+    $(document).on('click', '.edit-user', function () {
+        const userId = $(this).data('id');
+        $.ajax({
+            url: `/admin/api/users/${userId}`,
+            method: 'GET',
+            success: function (response) {
+                if (response.success) {
+                    const user = response.user;
+                    $('#userModalLabel').html('<i class="fas fa-user-edit me-2"></i>Chỉnh sửa người dùng');
+                    $('#userId').val(user.id);
+                    $('#username').val(user.username).prop('disabled', true);
+                    $('#email').val(user.email);
+                    $('#fullName').val(user.full_name || '');
+                    $('#phone').val(user.phone || '');
+                    $('#role').val(user.role);
+                    $('#passwordRequired').hide();
+                    $('#passwordHint').show();
+                    $('#password').prop('required', false).val('');
+                    $('#userModal').modal('show');
                 }
-            });
+            }
+        });
+    });
+
+    $(document).on('click', '#saveUserBtn', function () {
+        const form = $('#userForm')[0];
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return;
         }
-        
-        function testSmtpConnection() {
-            const btn = $('#testSmtpBtn');
-            const originalText = btn.html();
-            btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Đang kiểm tra...');
-            
-            // Get current user email from session or prompt
-            const testEmail = prompt('Nhập email để gửi email test:', '');
-            if (!testEmail) {
-                btn.prop('disabled', false).html(originalText);
-                return;
+
+        const data = {
+            username: $('#username').val(),
+            email: $('#email').val(),
+            full_name: $('#fullName').val(),
+            phone: $('#phone').val(),
+            role: $('#role').val()
+        };
+
+        const password = $('#password').val();
+        if (password) {
+            data.password = password;
+        }
+
+        const userId = $('#userId').val();
+        const url = userId ? `/admin/api/users/update/${userId}` : `/admin/api/users/create`;
+        const method = userId ? 'PUT' : 'POST';
+
+        $.ajax({
+            url: url,
+            method: method,
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (response) {
+                if (response.success) {
+                    $('#userModal').modal('hide');
+                    loadUsers(currentUserPage);
+                    alert(response.message || 'Thành công');
+                } else {
+                    alert(response.error || 'Có lỗi xảy ra');
+                }
+            },
+            error: function (xhr) {
+                const error = xhr.responseJSON?.error || 'Có lỗi xảy ra';
+                alert(error);
             }
-            
-            // Validate email format
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(testEmail)) {
-                alert('Email không đúng định dạng');
-                btn.prop('disabled', false).html(originalText);
-                return;
+        });
+    });
+
+    $(document).on('click', '.toggle-user-status', function () {
+        const userId = $(this).data('id');
+        const action = $(this).hasClass('btn-warning') ? 'khóa' : 'mở khóa';
+
+        if (!confirm(`Bạn có chắc muốn ${action} tài khoản này?`)) {
+            return;
+        }
+
+        $.ajax({
+            url: `/admin/api/users/${userId}/toggle-status`,
+            method: 'POST',
+            success: function (response) {
+                if (response.success) {
+                    loadUsers(currentUserPage);
+                    alert(response.message);
+                } else {
+                    alert(response.error || 'Có lỗi xảy ra');
+                }
             }
-            
-            // Save settings first, then test
-            const settings = {
-                api_token: $('#apiToken').val().trim(),
-                api_base_url: $('#apiBaseUrl').val().trim() || 'https://news-api.techreview.pro',
-                smtp_server: $('#smtpServer').val().trim(),
-                smtp_port: $('#smtpPort').val().trim(),
-                smtp_username: $('#smtpUsername').val().trim(),
-                smtp_password: $('#smtpPassword').val().trim(),
-                smtp_from_email: $('#smtpFromEmail').val().trim() || $('#smtpUsername').val().trim(),
-                smtp_use_tls: $('#smtpUseTls').val()
-            };
-            
-            $.ajax({
-                url: '/admin/api/settings',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(settings),
-                success: function(response) {
-                    if (response.success) {
-                        // Test email sending
-                        $.ajax({
-                            url: '/admin/api/test-email',
-                            method: 'POST',
-                            contentType: 'application/json',
-                            data: JSON.stringify({ email: testEmail }),
-                            success: function(testResponse) {
-                                if (testResponse.success) {
-                                    alert('Gửi email test thành công! Vui lòng kiểm tra hộp thư của bạn.');
-                                } else {
-                                    alert('Lỗi khi gửi email test: ' + (testResponse.error || 'Vui lòng kiểm tra lại cài đặt SMTP'));
-                                }
-                            },
-                            error: function() {
-                                alert('Lỗi khi gửi email test. Vui lòng kiểm tra lại cài đặt SMTP.');
-                            },
-                            complete: function() {
-                                btn.prop('disabled', false).html(originalText);
+        });
+    });
+
+    $('#userSearchInput, #userRoleFilter, #userStatusFilter').on('change keyup', function () {
+        userFilters = {};
+        const search = $('#userSearchInput').val();
+        const role = $('#userRoleFilter').val();
+        const status = $('#userStatusFilter').val();
+
+        if (search) userFilters.search = search;
+        if (role) userFilters.role = role;
+        if (status) userFilters.status = status;
+
+        loadUsers(1);
+    });
+
+    $('#clearUserFilters').on('click', function () {
+        $('#userSearchInput').val('');
+        $('#userRoleFilter').val('');
+        $('#userStatusFilter').val('');
+        userFilters = {};
+        loadUsers(1);
+    });
+
+    $(document).on('click', '#usersPagination .page-link', function (e) {
+        e.preventDefault();
+        const page = $(this).data('page');
+        if (page) {
+            loadUsers(page);
+        }
+    });
+
+    // Load users when section is shown
+    $('a[data-section="users-manager"]').on('click', function () {
+        setTimeout(() => {
+            if ($('#users-manager').hasClass('active')) {
+                loadUsers();
+            }
+        }, 100);
+    });
+</script>
+
+<script>
+    // Settings Management
+    let settingsLoaded = false;
+
+    function loadSettings() {
+        if (settingsLoaded) return;
+
+        $.ajax({
+            url: '/admin/api/settings',
+            method: 'GET',
+            success: function (response) {
+                if (response.success && response.settings) {
+                    const settings = response.settings;
+
+                    // Load API settings
+                    $('#apiToken').val(settings.api_token?.value || '');
+                    $('#apiBaseUrl').val(settings.api_base_url?.value || 'https://news-api.techreview.pro');
+
+                    // Load SMTP settings
+                    $('#smtpServer').val(settings.smtp_server?.value || 'smtp.gmail.com');
+                    $('#smtpPort').val(settings.smtp_port?.value || '587');
+                    $('#smtpUsername').val(settings.smtp_username?.value || '');
+                    $('#smtpPassword').val(settings.smtp_password?.value || '');
+                    $('#smtpFromEmail').val(settings.smtp_from_email?.value || '');
+                    $('#smtpUseTls').val(settings.smtp_use_tls?.value || 'true');
+
+                    settingsLoaded = true;
+                }
+            },
+            error: function () {
+                console.error('Error loading settings');
+            }
+        });
+    }
+
+    function saveSettings() {
+        // Validate required fields
+        let isValid = true;
+        $('.form-control').removeClass('is-invalid');
+
+        // Validate API Token
+        if (!$('#apiToken').val().trim()) {
+            $('#apiToken').addClass('is-invalid');
+            $('#apiToken').next('.invalid-feedback').text('API Token là bắt buộc');
+            isValid = false;
+        }
+
+        // Validate SMTP required fields
+        if (!$('#smtpServer').val().trim()) {
+            $('#smtpServer').addClass('is-invalid');
+            $('#smtpServer').next('.invalid-feedback').text('SMTP Server là bắt buộc');
+            isValid = false;
+        }
+
+        if (!$('#smtpPort').val().trim()) {
+            $('#smtpPort').addClass('is-invalid');
+            $('#smtpPort').next('.invalid-feedback').text('SMTP Port là bắt buộc');
+            isValid = false;
+        }
+
+        if (!$('#smtpUsername').val().trim()) {
+            $('#smtpUsername').addClass('is-invalid');
+            $('#smtpUsername').next('.invalid-feedback').text('SMTP Username là bắt buộc');
+            isValid = false;
+        }
+
+        if (!$('#smtpPassword').val().trim()) {
+            $('#smtpPassword').addClass('is-invalid');
+            $('#smtpPassword').parent().next('.invalid-feedback').text('SMTP Password là bắt buộc');
+            isValid = false;
+        }
+
+        if (!isValid) {
+            alert('Vui lòng điền đầy đủ các trường bắt buộc');
+            return;
+        }
+
+        const btn = $('#saveSettingsBtn');
+        const originalText = btn.html();
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Đang lưu...');
+
+        const settings = {
+            api_token: $('#apiToken').val().trim(),
+            api_base_url: $('#apiBaseUrl').val().trim() || 'https://news-api.techreview.pro',
+            smtp_server: $('#smtpServer').val().trim(),
+            smtp_port: $('#smtpPort').val().trim(),
+            smtp_username: $('#smtpUsername').val().trim(),
+            smtp_password: $('#smtpPassword').val().trim(),
+            smtp_from_email: $('#smtpFromEmail').val().trim() || $('#smtpUsername').val().trim(),
+            smtp_use_tls: $('#smtpUseTls').val()
+        };
+
+        $.ajax({
+            url: '/admin/api/settings',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(settings),
+            success: function (response) {
+                if (response.success) {
+                    alert('Lưu cài đặt thành công!');
+                    settingsLoaded = false; // Reload on next show
+                } else {
+                    alert(response.error || 'Có lỗi xảy ra khi lưu cài đặt');
+                }
+            },
+            error: function (xhr) {
+                const error = xhr.responseJSON?.error || 'Có lỗi xảy ra khi lưu cài đặt';
+                alert(error);
+            },
+            complete: function () {
+                btn.prop('disabled', false).html(originalText);
+            }
+        });
+    }
+
+    function testSmtpConnection() {
+        const btn = $('#testSmtpBtn');
+        const originalText = btn.html();
+        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Đang kiểm tra...');
+
+        // Get current user email from session or prompt
+        const testEmail = prompt('Nhập email để gửi email test:', '');
+        if (!testEmail) {
+            btn.prop('disabled', false).html(originalText);
+            return;
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(testEmail)) {
+            alert('Email không đúng định dạng');
+            btn.prop('disabled', false).html(originalText);
+            return;
+        }
+
+        // Save settings first, then test
+        const settings = {
+            api_token: $('#apiToken').val().trim(),
+            api_base_url: $('#apiBaseUrl').val().trim() || 'https://news-api.techreview.pro',
+            smtp_server: $('#smtpServer').val().trim(),
+            smtp_port: $('#smtpPort').val().trim(),
+            smtp_username: $('#smtpUsername').val().trim(),
+            smtp_password: $('#smtpPassword').val().trim(),
+            smtp_from_email: $('#smtpFromEmail').val().trim() || $('#smtpUsername').val().trim(),
+            smtp_use_tls: $('#smtpUseTls').val()
+        };
+
+        $.ajax({
+            url: '/admin/api/settings',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(settings),
+            success: function (response) {
+                if (response.success) {
+                    // Test email sending
+                    $.ajax({
+                        url: '/admin/api/test-email',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({ email: testEmail }),
+                        success: function (testResponse) {
+                            if (testResponse.success) {
+                                alert('Gửi email test thành công! Vui lòng kiểm tra hộp thư của bạn.');
+                            } else {
+                                alert('Lỗi khi gửi email test: ' + (testResponse.error || 'Vui lòng kiểm tra lại cài đặt SMTP'));
                             }
-                        });
-                    } else {
-                        alert('Lỗi khi lưu cài đặt: ' + (response.error || 'Vui lòng kiểm tra lại'));
-                        btn.prop('disabled', false).html(originalText);
-                    }
-                },
-                error: function(xhr) {
-                    const error = xhr.responseJSON?.error || 'Lỗi khi lưu cài đặt';
-                    alert(error);
+                        },
+                        error: function () {
+                            alert('Lỗi khi gửi email test. Vui lòng kiểm tra lại cài đặt SMTP.');
+                        },
+                        complete: function () {
+                            btn.prop('disabled', false).html(originalText);
+                        }
+                    });
+                } else {
+                    alert('Lỗi khi lưu cài đặt: ' + (response.error || 'Vui lòng kiểm tra lại'));
                     btn.prop('disabled', false).html(originalText);
                 }
+            },
+            error: function (xhr) {
+                const error = xhr.responseJSON?.error || 'Lỗi khi lưu cài đặt';
+                alert(error);
+                btn.prop('disabled', false).html(originalText);
+            }
+        });
+    }
+
+    // Toggle password visibility
+    $('#toggleSmtpPassword').on('click', function () {
+        const passwordInput = $('#smtpPassword');
+        const icon = $(this).find('i');
+
+        if (passwordInput.attr('type') === 'password') {
+            passwordInput.attr('type', 'text');
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+        } else {
+            passwordInput.attr('type', 'password');
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+        }
+    });
+
+    // Event handlers
+    $('#saveSettingsBtn').on('click', saveSettings);
+    $('#testSmtpBtn').on('click', testSmtpConnection);
+
+    // Load settings when section is shown
+    function loadSettingsSection() {
+        if ($('#settings').hasClass('active')) {
+            loadSettings();
+        }
+    }
+
+    // Event handler for settings section
+    $(document).on('click', 'a[data-section="settings"]', function () {
+        setTimeout(loadSettingsSection, 100);
+    });
+
+    // Also load when section becomes active (for programmatic activation)
+    $(document).ready(function () {
+        // Check if settings section is already active
+        if ($('#settings').hasClass('active')) {
+            loadSettings();
+        }
+
+        // Watch for section changes
+        const observer = new MutationObserver(function (mutations) {
+            mutations.forEach(function (mutation) {
+                if (mutation.target.id === 'settings' && mutation.target.classList.contains('active')) {
+                    loadSettings();
+                }
+            });
+        });
+
+        const settingsSection = document.getElementById('settings');
+        if (settingsSection) {
+            observer.observe(settingsSection, {
+                attributes: true,
+                attributeFilter: ['class']
             });
         }
-        
-        // Toggle password visibility
-        $('#toggleSmtpPassword').on('click', function() {
-            const passwordInput = $('#smtpPassword');
-            const icon = $(this).find('i');
-            
-            if (passwordInput.attr('type') === 'password') {
-                passwordInput.attr('type', 'text');
-                icon.removeClass('fa-eye').addClass('fa-eye-slash');
-            } else {
-                passwordInput.attr('type', 'password');
-                icon.removeClass('fa-eye-slash').addClass('fa-eye');
-            }
-        });
-        
-        // Event handlers
-        $('#saveSettingsBtn').on('click', saveSettings);
-        $('#testSmtpBtn').on('click', testSmtpConnection);
-        
-        // Load settings when section is shown
-        function loadSettingsSection() {
-            if ($('#settings').hasClass('active')) {
-                loadSettings();
-            }
-        }
-        
-        // Event handler for settings section
-        $(document).on('click', 'a[data-section="settings"]', function() {
-            setTimeout(loadSettingsSection, 100);
-        });
-        
-        // Also load when section becomes active (for programmatic activation)
-        $(document).ready(function() {
-            // Check if settings section is already active
-            if ($('#settings').hasClass('active')) {
-                loadSettings();
-            }
-            
-            // Watch for section changes
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.target.id === 'settings' && mutation.target.classList.contains('active')) {
-                        loadSettings();
-                    }
-                });
-            });
-            
-            const settingsSection = document.getElementById('settings');
-            if (settingsSection) {
-                observer.observe(settingsSection, {
-                    attributes: true,
-                    attributeFilter: ['class']
-                });
-            }
-        });
-    </script>
+    });
+</script>
 {% endblock %}
