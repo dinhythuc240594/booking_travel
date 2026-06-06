@@ -255,10 +255,10 @@ admin_bp.add_url_rule('/api/tour/pending-articles', 'api_pending_tour', ApiPendi
 admin_bp.add_url_rule('/api/tour/approved-articles', 'api_approved_tour', ApiApprovedTour.as_view('api_approved_tour'))
 admin_bp.add_url_rule('/api/tour/rejected-articles', 'api_rejected_tour', ApiRejectedTour.as_view('api_rejected_tour'))
 admin_bp.add_url_rule('/api/tour/external-articles', 'api_api_tour', ApiApiTour.as_view('api_api_tour'))
+admin_bp.add_url_rule('/api/tour/article/<int:tour_id>', 'api_tour_detail', ApiTourDetail.as_view('api_tour_detail'))
+admin_bp.add_url_rule('/api/tour/article/create', 'api_create_tour', ApiCreateTour.as_view('api_create_tour'))
+admin_bp.add_url_rule('/api/tour/article/<int:tour_id>/edit', 'api_edit_tour', ApiEditTour.as_view('api_edit_tour'))
 admin_bp.add_url_rule('/api/chart-data', 'api_chart_data', ApiChartData.as_view('api_chart_data'))
-admin_bp.add_url_rule('/api/tour/<int:tour_id>', 'api_tour_detail', ApiTourDetail.as_view('api_tour_detail'))
-admin_bp.add_url_rule('/api/tour/create', 'api_create_tour', ApiCreateTour.as_view('api_create_tour'))
-admin_bp.add_url_rule('/api/tour/<int:tour_id>/edit', 'api_edit_tour', ApiEditTour.as_view('api_edit_tour'))
 admin_bp.add_url_rule('/api/upload-image', 'api_upload_image', ApiUploadImage.as_view('api_upload_image'))
 
 # API Users & Settings

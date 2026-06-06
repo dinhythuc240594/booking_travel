@@ -1068,7 +1068,7 @@ async function submitArticle() {
 // View article (read-only for pending articles)
 async function viewArticle(articleId) {
     try {
-        const response = await fetch(`/admin/api/article/${articleId}`);
+        const response = await fetch(`/admin/api/tour/article/${articleId}`);
         const result = await response.json();
         if (result.success) {
             const article = result.data;
@@ -1214,7 +1214,7 @@ async function viewArticle(articleId) {
 // Edit article
 async function editArticle(articleId) {
     try {
-        const response = await fetch(`/admin/api/article/${articleId}`);
+        const response = await fetch(`/admin/api/tour/article/${articleId}`);
         const result = await response.json();
         if (result.success) {
             const article = result.data;

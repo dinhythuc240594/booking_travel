@@ -288,7 +288,7 @@ async function loadApprovedArticles() {
                         <td>${article.date}</td>
                         <td><span class="badge bg-success">${article.views} lượt xem</span></td>
                         <td>
-                            <button class="btn btn-sm btn-primary btn-preview" data-id="${article.id}" title="Xem">
+                            <button class="btn btn-sm btn-primary btn-preview" data-id="${article.tour_id}" title="Xem">
                                 <i class="fas fa-eye"></i>
                             </button>
                         </td>
@@ -339,7 +339,7 @@ async function loadRejectedArticles() {
                             <small class="text-muted">${rejectedAt}</small>
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-primary btn-preview" data-id="${article.id}" data-type="${article.type || ''}" title="Xem">
+                            <button class="btn btn-sm btn-primary btn-preview" data-id="${article.tour_id}" data-type="${article.type || ''}" title="Xem">
                                 <i class="fas fa-eye"></i>
                             </button>
                             ${hasReason ? `
@@ -1135,7 +1135,7 @@ async function previewArticle(articleId, articleType) {
         // Fetch article data from API - sử dụng endpoint phù hợp với loại bài viết
         const apiEndpoint = articleType === 'international'
             ? `/admin/api/international-article/${articleId}`
-            : `/admin/api/article/${articleId}`;
+            : `/admin/api/tour/article/${articleId}`;
         const response = await fetch(apiEndpoint);
         const result = await response.json();
         if (result.success) {
