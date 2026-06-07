@@ -1,3 +1,4 @@
+from random import random
 from database import Location
 from flask import Blueprint, render_template, request, jsonify, abort, redirect, url_for, flash, session, current_app
 from sqlalchemy.orm import Session
@@ -7,7 +8,7 @@ import re
 import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, DOMESTIC
+from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME
 from email_utils import send_email
 from database import (
     Bookings,
@@ -147,6 +148,8 @@ class AdminController:
         
         user = self.user_model.get_by_id(user_id)
 
+        location_list = self.location_model.get_all()
+
         return render_template('editor/editor.html',
                              draft_tours=draft_tours,
                              pending_tours=pending_tours,
@@ -155,6 +158,8 @@ class AdminController:
                              stat_draft=len(draft_tours),
                              stat_pending=len(pending_tours),
                              stat_published=len(published_tours),
+                             categories=CATEGORY_NAME,
+                             locations=location_list,
                              user=user)
     
     def tour_list(self):
@@ -889,6 +894,10 @@ class AdminController:
                 'is_featured': tour.is_featured if hasattr(tour, 'is_featured') else False,
                 'is_hot': tour.is_hot if hasattr(tour, 'is_hot') else False,
                 'is_deleted': tour.is_deleted if hasattr(tour, 'is_deleted') else False,
+                'category_name': tour.category_name,
+                'location_id': tour.location_id,
+                'price_per_adult': tour.price_per_adult,
+                'price_per_child': tour.price_per_child,
             }
         })
 
@@ -915,10 +924,12 @@ class AdminController:
             status = TourStatus.DRAFT
             
         data_dict['status'] = status
-        data_dict['slug'] = generate_slug(data.get('title'), status.value)
+        data_dict['slug'] = generate_slug(data.get('title'), status.value) + str(random())[:8]
+        data_dict['price_per_adult'] = float(data.get('price_per_adult', '0.0'))
+        data_dict['price_per_child'] = float(data.get('price_per_child', '0.0'))
 
-        success, message = self.user_model.create_tour(data_dict)
-        return jsonify({'success': success, 'message': message})
+        data = self.user_model.create_tour(data_dict)
+        return jsonify({'success': data['success'], 'message': data['message'], 'data': data['data']})
 
     def api_edit_tour(self, tour_id: int):
         user_id = session.get('user_id')
@@ -931,8 +942,17 @@ class AdminController:
             if field in data and isinstance(data[field], str):
                 data[field] = data[field].lower() in ('true', '1', 'yes', 'on')
 
-        success, message = self.user_model.edit_tour(tour_id, data)
-        return jsonify({'success': success, 'message': message})
+        data = self.user_model.edit_tour(tour_id, data)
+        return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
+
+    def api_delete_tour(self, tour_id: int):
+        
+        data = self.user_model.delete_tour(tour_id)
+        return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
+
+    def api_get_category(self):
+        categories = CATEGORY_NAME
+        return jsonify({'success': True, 'data': categories})
 
     def api_get_user(self, user_id: int):
         user = self.user_model.get_by_id(user_id)
@@ -1421,7 +1441,7 @@ class AdminController:
             locations_data = []
             for location in locations:
                 locations_data.append({
-                    'id': location.location_id,
+                    'location_id': location.location_id,
                     'name': location.name,
                     'search_key': location.search_key,
                     'city': location.city,
@@ -1448,7 +1468,7 @@ class AdminController:
             return jsonify({
                 'success': True,
                 'location': {
-                    'id': location.location_id,
+                    'location_id': location.location_id,
                     'name': location.name,
                     'search_key': location.search_key,
                     'city': location.city,

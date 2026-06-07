@@ -200,7 +200,7 @@ $(document).ready(function () {
 
     // Save edit
     $('#saveEditBtn').click(function () {
-        saveEdit();
+        saveEdit('draft');
     });
     // Submit draft for review from edit modal
     $('#submitEditBtn').click(function () {
@@ -306,7 +306,7 @@ async function requestMyArticles({ page = 1, perPage = 10, status = null, search
         params.append('search', search);
     }
 
-    const response = await fetch(`/admin/api/my-articles?${params.toString()}`, {
+    const response = await fetch(`/admin/api/tour/my-articles?${params.toString()}`, {
         method: 'GET',
         headers: { 'Accept': 'application/json' }
     });
@@ -384,7 +384,7 @@ async function loadNotifications(showToastNotifications) {
 
         // Phát hiện các bài viết mới được duyệt/từ chối
         notifications.forEach(notif => {
-            const articleId = notif.id.toString();
+            const articleId = notif.tour_id.toString();
             if (!notifiedArticleIds.has(articleId)) {
                 newNotifications.push(notif);
                 notifiedArticleIds.add(articleId);
@@ -430,7 +430,7 @@ function displayNotifications(notifications) {
     $notificationEmpty.hide();
 
     // Đếm số notification chưa đọc (các bài mới)
-    const unreadCount = notifications.filter(n => !notifiedArticleIds.has(n.id.toString())).length;
+    const unreadCount = notifications.filter(n => !notifiedArticleIds.has(n.tour_id.toString())).length;
 
     if (unreadCount > 0) {
         $notificationCount.text(unreadCount).show();
@@ -440,7 +440,7 @@ function displayNotifications(notifications) {
 
     let html = '';
     notifications.slice(0, 10).forEach(notif => {
-        const isUnread = !notifiedArticleIds.has(notif.id.toString());
+        const isUnread = !notifiedArticleIds.has(notif.tour_id.toString());
         const dateStr = notif.published_at || notif.updated_at || '';
         const date = dateStr ? new Date(dateStr + 'Z').toLocaleString('vi-VN', {
             timeZone: 'Asia/Ho_Chi_Minh',
@@ -613,7 +613,7 @@ async function fetchMyArticlesForSection(status, page, search, tableId, paginati
         }
 
         const articles = (result.data || []).map(item => ({
-            id: item.id,
+            tour_id: item.tour_id,
             title: item.title,
             category: item.category_name || (item.category && item.category.name) || '',
             status: item.status,
@@ -685,7 +685,7 @@ function displayArticles(articles, tableBodyId) {
         }
         html += '<td style="display: none;">';
         html += '<label class="visibility-switch">';
-        html += '<input type="checkbox" class="visibility-toggle" data-id="' + article.id + '" ' + checked + '>';
+        html += '<input type="checkbox" class="visibility-toggle" data-id="' + article.tour_id + '" ' + checked + '>';
         html += '<span class="visibility-slider"></span>';
         html += '</label>';
         html += '</td>';
@@ -694,27 +694,27 @@ function displayArticles(articles, tableBodyId) {
         // Chỉ hiển thị nút edit và delete cho bài viết draft
         // Bài viết pending chỉ có quyền xem
         if (article.status === 'draft' || article.status === 'rejected') {
-            html += '<button class="btn btn-sm btn-info btn-action btn-edit" data-id="' + article.id + '" title="Chỉnh sửa">';
+            html += '<button class="btn btn-sm btn-info btn-action btn-edit" data-id="' + article.tour_id + '" title="Chỉnh sửa">';
             html += '<i class="fas fa-edit"></i>';
             html += '</button>';
-            html += '<button class="btn btn-sm btn-danger btn-action btn-delete" data-id="' + article.id + '" title="Xóa">';
+            html += '<button class="btn btn-sm btn-danger btn-action btn-delete" data-id="' + article.tour_id + '" title="Xóa">';
             html += '<i class="fas fa-trash"></i>';
             html += '</button>';
         } else if (article.status === 'pending') {
             // Bài viết pending chỉ có quyền xem, không có nút action
-            html += '<button class="btn btn-sm btn-info btn-action btn-view" data-id="' + article.id + '" title="Xem bài viết">';
+            html += '<button class="btn btn-sm btn-info btn-action btn-view" data-id="' + article.tour_id + '" title="Xem bài viết">';
             html += '<i class="fas fa-eye"></i>';
             html += '</button>';
         } else {
             // Các trạng thái khác (published, rejected) vẫn có nút delete
-            html += '<button class="btn btn-sm btn-danger btn-action btn-delete" data-id="' + article.id + '" title="Xóa">';
+            html += '<button class="btn btn-sm btn-danger btn-action btn-delete" data-id="' + article.tour_id + '" title="Xóa">';
             html += '<i class="fas fa-trash"></i>';
             html += '</button>';
         }
 
         if (article.status === 'rejected') {
             html += '<button class="btn btn-sm btn-danger btn-action btn-view-rejection"';
-            html += 'data-id="' + article.id + '" data-title="' + article.title + '" data-reason="' + article.rejection_reason + '" data-rejected-by="' + article.rejected_by + '" data-rejected-at="' + article.rejected_at + '" title="Xem lý do từ chối">';
+            html += 'data-id="' + article.tour_id + '" data-title="' + article.title + '" data-reason="' + article.rejection_reason + '" data-rejected-by="' + article.rejected_by + '" data-rejected-at="' + article.rejected_at + '" title="Xem lý do từ chối">';
             html += '<i class="fas fa-info-circle"></i>';
             html += '</button>';
         }
@@ -827,8 +827,11 @@ async function saveDraft() {
     const title = $('#articleTitle').val().trim();
     const content = $('#articleContent').summernote('code');
     const category = $('#articleCategory').val();
+    const location_id = $('#articleLocation').val();
     const description = $('#articleDescription').val().trim();
     const thumbnail = $('#articleImageUrl').val() || '';
+    const price_per_adult = $('#price_per_adult').val() || 0;
+    const price_per_child = $('#price_per_child').val() || 0;
     const isHot = $('#articleIsHot').is(':checked');
     const isFeatured = $('#articleIsFeatured').is(':checked');
     // const tags = normalizeTagString($('#articleTags').val());
@@ -848,6 +851,21 @@ async function saveDraft() {
         return;
     }
 
+    if (!location_id) {
+        showToast('Cảnh báo', 'Vui lòng chọn địa điểm!', 'warning');
+        return;
+    }
+
+    if (!price_per_adult) {
+        showToast('Cảnh báo', 'Vui lòng nhập giá người lớn!', 'warning');
+        return;
+    }
+
+    if (!price_per_child) {
+        showToast('Cảnh báo', 'Vui lòng nhập giá trẻ em!', 'warning');
+        return;
+    }
+
     // Validate tags - chỉ chấp nhận tags có sẵn
     // if (tags) {
     //     const tagValidation = validateTags(tags);
@@ -860,7 +878,7 @@ async function saveDraft() {
     showSpinner();
 
     try {
-        const response = await fetch('/admin/api/create-article', {
+        const response = await fetch('/admin/api/tour/article/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -868,7 +886,10 @@ async function saveDraft() {
             body: JSON.stringify({
                 title: title,
                 content: content,
-                category_id: parseInt(category),
+                category_name: category,
+                location_id: location_id,
+                price_per_adult: price_per_adult,
+                price_per_child: price_per_child,
                 summary: description,
                 thumbnail: thumbnail,
                 is_hot: isHot,
@@ -953,6 +974,9 @@ async function submitArticle() {
     const title = $('#articleTitle').val().trim();
     const content = $('#articleContent').summernote('code');
     const category = $('#articleCategory').val();
+    const location_id = $('#articleLocation').val();
+    const price_per_adult = $('#price_per_adult').val() || 0;
+    const price_per_child = $('#price_per_child').val() || 0;
     const description = $('#articleDescription').val().trim();
     const thumbnail = $('#articleImageUrl').val() || '';
     const isHot = $('#articleIsHot').is(':checked');
@@ -975,6 +999,21 @@ async function submitArticle() {
         return;
     }
 
+    if (!location_id) {
+        showToast('Cảnh báo', 'Vui lòng chọn địa điểm!', 'warning');
+        return;
+    }
+
+    if (!price_per_adult) {
+        showToast('Cảnh báo', 'Vui lòng nhập giá người lớn!', 'warning');
+        return;
+    }
+
+    if (!price_per_child) {
+        showToast('Cảnh báo', 'Vui lòng nhập giá trẻ em!', 'warning');
+        return;
+    }
+
     // // Validate tags - chỉ chấp nhận tags có sẵn
     // const tagValidation = validateTags(tags);
     // if (!tagValidation.valid) {
@@ -985,7 +1024,7 @@ async function submitArticle() {
     showSpinner();
 
     try {
-        const response = await fetch('/admin/api/create-article', {
+        const response = await fetch('/admin/api/tour/article/create', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -993,7 +1032,10 @@ async function submitArticle() {
             body: JSON.stringify({
                 title: title,
                 content: content,
-                category_id: parseInt(category),
+                category_name: category,
+                location_id: location_id,
+                price_per_adult: price_per_adult,
+                price_per_child: price_per_child,
                 summary: description,
                 thumbnail: thumbnail,
                 is_hot: isHot,
@@ -1204,15 +1246,22 @@ async function editArticle(articleId) {
                 }
             }
 
-            $('#editArticleId').val(article.id);
+            $('#editArticleId').val(article.tour_id);
             $('#editArticleTitle').val(article.title);
             $('#editArticleContent').summernote('code', article.content);
-            $('#editArticleCategory').val(article.category_id);
+            $('#editArticleCategory').val(article.category_name);
+            $('#editArticleLocation').val(article.location_id);
+            $('#editArticlePricePerAdult').val(article.price_per_adult);
+            $('#editArticlePricePerChild').val(article.price_per_child);
             $('#editArticleDescription').val(article.summary);
             $('#editArticleImageUrl').val(article.thumbnail || '');
             $('#editArticleImagePreview').attr('src', article.thumbnail || '/static/images/default-image.png');
             $('#editArticleIsHot').prop('checked', article.is_hot || false);
             $('#editArticleIsFeatured').prop('checked', article.is_featured || false);
+            $('#editArticleDurationDays').val(article.duration_days);
+            $('#editArticlePricePerAdult').val(article.price_per_adult);
+            $('#editArticlePricePerChild').val(article.price_per_child);
+            $('#editArticleSlug').val(article.slug);
             // $('#editArticleTags').val(article.tags || '');
 
             const modal = new bootstrap.Modal(document.getElementById('editModal'));
@@ -1236,6 +1285,12 @@ async function saveEdit(newStatus = null) {
     const image = $('#editArticleImageUrl').val();
     const isHot = $('#editArticleIsHot').is(':checked');
     const isFeatured = $('#editArticleIsFeatured').is(':checked');
+    const location_id = $('#editArticleLocation').val();
+    const price_per_adult = $('#editArticlePricePerAdult').val() || 0;
+    const price_per_child = $('#editArticlePricePerChild').val() || 0;
+    const slug = $('#editArticleSlug').val();
+    const duration_days = $('#editArticleDurationDays').val() || 0;
+    const status = "draft";
     // const tags = normalizeTagString($('#editArticleTags').val());
     if (!title) {
         showToast('Cảnh báo', 'Vui lòng nhập tiêu đề bài viết!', 'warning');
@@ -1258,6 +1313,10 @@ async function saveEdit(newStatus = null) {
         showToast('Cảnh báo', 'Vui lòng chọn ảnh đại diện!', 'warning');
         return;
     }
+    if (!location_id) {
+        showToast('Cảnh báo', 'Vui lòng chọn địa điểm!', 'warning');
+        return;
+    }
     // if (!tags) {
     //     showToast('Cảnh báo', 'Vui lòng nhập tags!', 'warning');
     //     return;
@@ -1275,18 +1334,25 @@ async function saveEdit(newStatus = null) {
             id: articleId,
             title: title,
             content: content,
-            category_id: parseInt(category),
+            category_name: category,
             summary: description,
             thumbnail: image,
             is_hot: isHot,
             is_featured: isFeatured,
+            location_id: location_id,
+            price_per_adult: price_per_adult,
+            price_per_child: price_per_child,
+            slug: slug,
+            duration_days: duration_days,
             // tags: tags
         };
         if (newStatus) {
             payload.status = newStatus;
+        } else {
+            payload.status = status;
         }
 
-        const response = await fetch(`/admin/api/edit-article/${articleId}`, {
+        const response = await fetch(`/admin/api/tour/article/${articleId}/edit`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1313,7 +1379,7 @@ async function deleteArticle(articleId) {
     showSpinner();
 
     try {
-        const response = await fetch(`/admin/news/${articleId}/delete`, {
+        const response = await fetch(`/admin/api/tour/article/${articleId}/delete`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -1415,181 +1481,181 @@ $(document).on('click', '.rss-preset', function (e) {
     $('#rssFeedUrl').val($(this).data('url'));
 });
 
-$('#fetchRssBtn').click(function () {
-    const rssUrl = $('#rssFeedUrl').val().trim();
-    const limit = $('#rssLimit').val() || 20;
+// $('#fetchRssBtn').click(function () {
+//     const rssUrl = $('#rssFeedUrl').val().trim();
+//     const limit = $('#rssLimit').val() || 20;
 
-    if (!rssUrl) {
-        alert('Vui lòng nhập URL RSS feed');
-        return;
-    }
+//     if (!rssUrl) {
+//         alert('Vui lòng nhập URL RSS feed');
+//         return;
+//     }
 
-    $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
+//     $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
 
-    $.ajax({
-        url: '/admin/api/fetch-api-news',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            source_type: 'rss',
-            rss_url: rssUrl,
-            limit: parseInt(limit)
-        }),
-        success: function (response) {
-            if (response.success) {
-                displayRssArticles(response.data);
-                showToast('Thành công', `Đã tải ${response.count} bài viết từ RSS`, 'success');
-            } else {
-                alert('Lỗi: ' + response.error);
-            }
-        },
-        error: function (xhr) {
-            const error = xhr.responseJSON ? xhr.responseJSON.error : 'Không thể kết nối đến server';
-            alert('Lỗi: ' + error);
-        },
-        complete: function () {
-            $('#fetchRssBtn').prop('disabled', false).html('<i class="fas fa-download"></i> Tải bài');
-        }
-    });
-});
+//     $.ajax({
+//         url: '/admin/api/fetch-api-news',
+//         method: 'POST',
+//         contentType: 'application/json',
+//         data: JSON.stringify({
+//             source_type: 'rss',
+//             rss_url: rssUrl,
+//             limit: parseInt(limit)
+//         }),
+//         success: function (response) {
+//             if (response.success) {
+//                 displayRssArticles(response.data);
+//                 showToast('Thành công', `Đã tải ${response.count} bài viết từ RSS`, 'success');
+//             } else {
+//                 alert('Lỗi: ' + response.error);
+//             }
+//         },
+//         error: function (xhr) {
+//             const error = xhr.responseJSON ? xhr.responseJSON.error : 'Không thể kết nối đến server';
+//             alert('Lỗi: ' + error);
+//         },
+//         complete: function () {
+//             $('#fetchRssBtn').prop('disabled', false).html('<i class="fas fa-download"></i> Tải bài');
+//         }
+//     });
+// });
 
-function displayRssArticles(articles) {
-    if (!articles || articles.length === 0) {
-        $('#rssArticlesList').html('<p class="text-muted text-center">Không có bài viết nào</p>');
-        return;
-    }
+// function displayRssArticles(articles) {
+//     if (!articles || articles.length === 0) {
+//         $('#rssArticlesList').html('<p class="text-muted text-center">Không có bài viết nào</p>');
+//         return;
+//     }
 
-    let html = '<div class="row">';
-    articles.forEach((article, index) => {
-        html += `
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <h6 class="card-title">${article.title}</h6>
-                        <p class="card-text small text-muted">${article.summary.substring(0, 150)}...</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted"><i class="fas fa-calendar"></i> ${new Date(article.published_at).toLocaleString('vi-VN')}</small>
-                            <button class="btn btn-sm btn-primary save-rss-article" data-index="${index}">
-                                <i class="fas fa-save"></i> Lưu
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    html += '</div>';
+//     let html = '<div class="row">';
+//     articles.forEach((article, index) => {
+//         html += `
+//             <div class="col-md-6 mb-3">
+//                 <div class="card">
+//                     <div class="card-body">
+//                         <h6 class="card-title">${article.title}</h6>
+//                         <p class="card-text small text-muted">${article.summary.substring(0, 150)}...</p>
+//                         <div class="d-flex justify-content-between align-items-center">
+//                             <small class="text-muted"><i class="fas fa-calendar"></i> ${new Date(article.published_at).toLocaleString('vi-VN')}</small>
+//                             <button class="btn btn-sm btn-primary save-rss-article" data-index="${index}">
+//                                 <i class="fas fa-save"></i> Lưu
+//                             </button>
+//                         </div>
+//                     </div>
+//                 </div>
+//             </div>
+//         `;
+//     });
+//     html += '</div>';
 
-    $('#rssArticlesList').html(html);
-    window.rssArticlesData = articles;
-}
+//     $('#rssArticlesList').html(html);
+//     window.rssArticlesData = articles;
+// }
 
 // API News handlers
-$('#fetchApiBtn').click(function () {
-    const apiUrl = $('#apiUrl').val().trim();
-    const apiKey = $('#apiKey').val().trim();
-    const country = $('#apiCountry').val();
-    const category = $('#apiCategory').val();
-    const limit = $('#apiLimit').val() || 20;
+// $('#fetchApiBtn').click(function () {
+//     const apiUrl = $('#apiUrl').val().trim();
+//     const apiKey = $('#apiKey').val().trim();
+//     const country = $('#apiCountry').val();
+//     const category = $('#apiCategory').val();
+//     const limit = $('#apiLimit').val() || 20;
 
-    if (!apiKey) {
-        alert('Vui lòng nhập API key');
-        return;
-    }
+//     if (!apiKey) {
+//         alert('Vui lòng nhập API key');
+//         return;
+//     }
 
-    $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
+//     $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
 
-    $.ajax({
-        url: '/admin/api/fetch-api-news',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            source_type: 'api',
-            api_url: apiUrl,
-            api_key: apiKey,
-            country: country,
-            category: category,
-            limit: parseInt(limit)
-        }),
-        success: function (response) {
-            if (response.success) {
-                displayApiArticles(response.data);
-                showToast('Thành công', `Đã tải ${response.count} bài viết từ API`, 'success');
-            } else {
-                alert('Lỗi: ' + response.error);
-            }
-        },
-        error: function (xhr) {
-            const error = xhr.responseJSON ? xhr.responseJSON.error : 'Không thể kết nối đến server';
-            alert('Lỗi: ' + error);
-        },
-        complete: function () {
-            $('#fetchApiBtn').prop('disabled', false).html('<i class="fas fa-download"></i> Tải bài từ API');
-        }
-    });
-});
+//     $.ajax({
+//         url: '/admin/api/fetch-api-news',
+//         method: 'POST',
+//         contentType: 'application/json',
+//         data: JSON.stringify({
+//             source_type: 'api',
+//             api_url: apiUrl,
+//             api_key: apiKey,
+//             country: country,
+//             category: category,
+//             limit: parseInt(limit)
+//         }),
+//         success: function (response) {
+//             if (response.success) {
+//                 displayApiArticles(response.data);
+//                 showToast('Thành công', `Đã tải ${response.count} bài viết từ API`, 'success');
+//             } else {
+//                 alert('Lỗi: ' + response.error);
+//             }
+//         },
+//         error: function (xhr) {
+//             const error = xhr.responseJSON ? xhr.responseJSON.error : 'Không thể kết nối đến server';
+//             alert('Lỗi: ' + error);
+//         },
+//         complete: function () {
+//             $('#fetchApiBtn').prop('disabled', false).html('<i class="fas fa-download"></i> Tải bài từ API');
+//         }
+//     });
+// });
 
-function displayApiArticles(articles) {
-    if (!articles || articles.length === 0) {
-        $('#apiArticlesList').html('<p class="text-muted text-center">Không có bài viết nào</p>');
-        return;
-    }
+// function displayApiArticles(articles) {
+//     if (!articles || articles.length === 0) {
+//         $('#apiArticlesList').html('<p class="text-muted text-center">Không có bài viết nào</p>');
+//         return;
+//     }
 
-    let html = '<div class="row">';
-    articles.forEach((article, index) => {
-        html += `
-            <div class="col-md-6 mb-3">
-                <div class="card">
-                    ${article.thumbnail ? `<img src="${article.thumbnail}" class="card-img-top" alt="thumbnail" style="height: 200px; object-fit: cover;">` : ''}
-                    <div class="card-body">
-                        <h6 class="card-title">${article.title}</h6>
-                        <p class="card-text small text-muted">${article.summary.substring(0, 150)}...</p>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <small class="text-muted"><i class="fas fa-calendar"></i> ${new Date(article.published_at).toLocaleString('vi-VN')}</small>
-                            <button class="btn btn-sm btn-primary save-api-article" data-index="${index}">
-                                <i class="fas fa-save"></i> Lưu
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-    html += '</div>';
+//     let html = '<div class="row">';
+//     articles.forEach((article, index) => {
+//         html += `
+//             <div class="col-md-6 mb-3">
+//                 <div class="card">
+//                     ${article.thumbnail ? `<img src="${article.thumbnail}" class="card-img-top" alt="thumbnail" style="height: 200px; object-fit: cover;">` : ''}
+//                     <div class="card-body">
+//                         <h6 class="card-title">${article.title}</h6>
+//                         <p class="card-text small text-muted">${article.summary.substring(0, 150)}...</p>
+//                         <div class="d-flex justify-content-between align-items-center">
+//                             <small class="text-muted"><i class="fas fa-calendar"></i> ${new Date(article.published_at).toLocaleString('vi-VN')}</small>
+//                             <button class="btn btn-sm btn-primary save-api-article" data-index="${index}">
+//                                 <i class="fas fa-save"></i> Lưu
+//                             </button>
+//                         </div>
+//                     </div>
+//                 </div>
+//             </div>
+//         `;
+//     });
+//     html += '</div>';
 
-    $('#apiArticlesList').html(html);
-    window.apiArticlesData = articles;
-}
+//     $('#apiArticlesList').html(html);
+//     window.apiArticlesData = articles;
+// }
 
 // Save RSS article
-$(document).on('click', '.save-rss-article', function () {
-    const index = $(this).data('index');
-    const article = window.rssArticlesData[index];
+// $(document).on('click', '.save-rss-article', function () {
+//     const index = $(this).data('index');
+//     const article = window.rssArticlesData[index];
 
-    if (!article) {
-        alert('Không tìm thấy bài viết');
-        return;
-    }
+//     if (!article) {
+//         alert('Không tìm thấy bài viết');
+//         return;
+//     }
 
-    // TODO: Show modal to select category and status, then save
-    console.log('Save RSS article:', article);
-    alert('Chức năng lưu bài sẽ được hoàn thiện sau. Bài viết: ' + article.title);
-});
+//     // TODO: Show modal to select category and status, then save
+//     console.log('Save RSS article:', article);
+//     alert('Chức năng lưu bài sẽ được hoàn thiện sau. Bài viết: ' + article.title);
+// });
 
-// Save API article
-$(document).on('click', '.save-api-article', function () {
-    const index = $(this).data('index');
-    const article = window.apiArticlesData[index];
+// // Save API article
+// $(document).on('click', '.save-api-article', function () {
+//     const index = $(this).data('index');
+//     const article = window.apiArticlesData[index];
 
-    if (!article) {
-        alert('Không tìm thấy bài viết');
-        return;
-    }
+//     if (!article) {
+//         alert('Không tìm thấy bài viết');
+//         return;
+//     }
 
-    // TODO: Show modal to select category and status, then save
-    console.log('Save API article:', article);
-    alert('Chức năng lưu bài sẽ được hoàn thiện sau. Bài viết: ' + article.title);
-});
+//     // TODO: Show modal to select category and status, then save
+//     console.log('Save API article:', article);
+//     alert('Chức năng lưu bài sẽ được hoàn thiện sau. Bài viết: ' + article.title);
+// });
 
 // ===== Tag Autocomplete Functionality =====
 

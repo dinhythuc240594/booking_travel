@@ -117,8 +117,8 @@ class UserModel:
         success, message, result_data = TourAdminService.create_tour(data_dict)
         
         if success:
-            return jsonify({'success': True, 'message': 'Tạo bài viết thành công', 'data': result_data})
-        return jsonify({'success': False, 'error': message}), 500
+            return {'success': True, 'message': 'Tạo bài viết thành công', 'data': result_data}
+        return {'success': False, 'message': 'Tạo bài viết thất bại', 'data': message}
 
 
     def edit_tour(self, tour_id: int, data: dict) -> tuple[bool, str]:
@@ -126,8 +126,16 @@ class UserModel:
         # Gọi Service xử lý Update (Sẽ tự quét file và execute Command)
         success, message = TourAdminService.update_tour(tour_id, data)
         if success:
-            return jsonify({'success': True, 'message': message})
-        return jsonify({'success': False, 'error': message}), 500
+            return {'success': True, 'message': 'Cập nhật bài viết thành công'}
+        return {'success': False, 'message': 'Cập nhật bài viết thất bại'}
+
+    def delete_tour(self, tour_id: int) -> tuple[bool, str]:
+        """Xóa bài viết"""
+        
+        success, message = TourAdminService.delete_tour(tour_id)
+        if success:
+            return {'success': True, 'message': 'Xóa bài viết thành công'}
+        return {'success': False, 'message': 'Xóa bài viết thất bại'}
 
 
     # ==========================================
@@ -207,7 +215,9 @@ class TourModel:
         self.db = db_session
     
     def create(self, title: str, content: str, location_id: int, 
-               author_id: int, duration_days: int = 1, price_per_person: float = 0.0,
+               author_id: int, duration_days: int = 1, 
+               price_per_adult: float = 0.0, 
+               price_per_child: float = 0.0,
                summary: str = None, thumbnail: str = None, images: str = None,
                slug: str = None, status: db.TourStatus = db.TourStatus.DRAFT) -> db.Tour:
         if slug is None:
@@ -223,7 +233,8 @@ class TourModel:
             location_id=location_id,
             author_id=author_id,
             duration_days=duration_days,
-            price_per_person=price_per_person,
+            price_per_adult=price_per_adult,
+            price_per_child=price_per_child,
             status=status
         )
         self.db.add(tour)
@@ -460,3 +471,6 @@ class LocationModel:
     def get_by_id(self, location_id: int) -> db.Location:
         """Get location follow ID"""
         return RelatedService.get_location_by_id(location_id)
+
+    def get_all(self):
+        return self.db.query(db.Location).filter(db.Location.is_deleted == False).all()

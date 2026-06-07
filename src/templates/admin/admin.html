@@ -3,7 +3,6 @@
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/style_admin.css') }}">
 <script src="{{ url_for('static', filename='js/menu-manager.js') }}"></script>
-<script src="{{ url_for('static', filename='js/menu-admin.js') }}"></script>
 <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
 {% endblock %}
 {% block template %}
@@ -57,6 +56,9 @@
             <a href="#" data-section="rejected">
                 <i class="fas fa-times-circle"></i> Bài từ chối
             </a>
+        </li>
+        <li class="nav-divider">
+            <span>QUẢN LÝ ĐỊA ĐIỂM</span>
         </li>
         <li>
             <a href="#" data-section="location">
@@ -227,7 +229,7 @@
                         <small class="text-muted">Bài viết sẽ được lưu với trạng thái đã chọn và đánh dấu là từ
                             API</small>
                     </div>
-                    <div class="mb-3">
+                    <!-- <div class="mb-3">
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="saveAPIIsHot">
                             <label class="form-check-label" for="saveAPIIsHot">
@@ -240,6 +242,17 @@
                                 <i class="fas fa-star text-warning"></i> Tin nổi bật
                             </label>
                         </div>
+                    </div> -->
+                    <div class="mb-3" style="position: relative;">
+                        <label class="form-label">Giá người lớn</label>
+                        <input type="text" class="form-control" id="price_per_adult" placeholder="Nhập giá: 500000">
+                        <small class="text-muted">Nhập giá theo định dạng: 500000</small>
+                    </div>
+
+                    <div class="mb-3" style="position: relative;">
+                        <label class="form-label">Giá trẻ em</label>
+                        <input type="text" class="form-control" id="price_per_child" placeholder="Nhập giá: 500000">
+                        <small class="text-muted">Nhập giá theo định dạng: 500000</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -567,7 +580,7 @@
                 if (response.success) {
                     const location = response.location;
                     $('#locationModalLabel').html('<i class="fas fa-location-edit me-2"></i>Chỉnh sửa địa điểm');
-                    $('#locationId').val(location.id);
+                    $('#locationId').val(location.location_id);
                     $('#name').val(location.name);
                     $('#search_key').val(location.search_key);
                     $('#city').val(location.city);

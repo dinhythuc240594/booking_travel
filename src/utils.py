@@ -70,7 +70,7 @@ DOMESTIC = [
 ]
 
 CATEGORY_NAME = [
-    { "id": "all", "name": "Tất cả" },
+    # { "id": "all", "name": "Tất cả" },
     { "id": "beach", "name": "Biển đảo" },
     { "id": "mountain", "name": "Núi rừng" },
     { "id": "resort", "name": "Nghỉ dưỡng" },

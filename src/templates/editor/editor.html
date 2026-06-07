@@ -248,6 +248,10 @@
                                 <label class="form-label">Nội dung</label>
                                 <textarea id="editArticleContent" class="form-control"></textarea>
                             </div>
+                            <div class="mb-3">
+                                <label class="form-label">Slug</label>
+                                <input type="text" class="form-control" id="editArticleSlug" readonly disabled>
+                            </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
@@ -255,6 +259,15 @@
                                 <select class="form-select" id="editArticleCategory">
                                     {% for category in categories %}
                                     <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Địa điểm *</label>
+                                <select class="form-select" id="editArticleLocation" required>
+                                    <option value="">Chọn địa điểm</option>
+                                    {% for location in locations %}
+                                    <option value="{{ location.location_id }}">{{ location.name }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
@@ -276,7 +289,21 @@
                                     placeholder="Mô tả ngắn gọn về bài viết..."></textarea>
                             </div>
 
-                            <div class="mb-3">
+                            <div class="mb-3" style="position: relative;">
+                                <label class="form-label">Giá người lớn</label>
+                                <input type="text" class="form-control" id="editArticlePricePerAdult"
+                                    placeholder="Nhập giá: 500000">
+                                <small class="text-muted">Nhập giá theo định dạng: 500000</small>
+                            </div>
+
+                            <div class="mb-3" style="position: relative;">
+                                <label class="form-label">Giá trẻ em</label>
+                                <input type="text" class="form-control" id="editArticlePricePerChild"
+                                    placeholder="Nhập giá: 500000">
+                                <small class="text-muted">Nhập giá theo định dạng: 500000</small>
+                            </div>
+
+                            <!-- <div class="mb-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="editArticleIsHot">
                                     <label class="form-check-label" for="editArticleIsHot">
@@ -289,7 +316,7 @@
                                         <i class="fas fa-star text-warning"></i> Tin nổi bật
                                     </label>
                                 </div>
-                            </div>
+                            </div> -->
 
                             <!-- <div class="mb-3" style="position: relative;">
                                     <label class="form-label">Tags</label>

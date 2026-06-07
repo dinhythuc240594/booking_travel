@@ -205,6 +205,17 @@ class ApiEditTour(BaseAdminView):
         return self.api_edit_tour(tour_id)
 
 
+class ApiDeleteTour(BaseAdminView):
+
+    def post(self, tour_id):
+        return self.api_delete_tour(tour_id)
+
+
+class ApiCategoryTour(BaseAdminView):
+
+    def get(self):
+        return self.api_get_category()
+
 class ApiUploadImage(BaseAdminView):
 
     def post(self):
@@ -287,6 +298,8 @@ admin_bp.add_url_rule('/api/tour/external-articles', 'api_api_tour', ApiApiTour.
 admin_bp.add_url_rule('/api/tour/article/<int:tour_id>', 'api_tour_detail', ApiTourDetail.as_view('api_tour_detail'))
 admin_bp.add_url_rule('/api/tour/article/create', 'api_create_tour', ApiCreateTour.as_view('api_create_tour'))
 admin_bp.add_url_rule('/api/tour/article/<int:tour_id>/edit', 'api_edit_tour', ApiEditTour.as_view('api_edit_tour'))
+admin_bp.add_url_rule('/api/tour/article/<int:tour_id>/delete', 'api_delete_tour', ApiDeleteTour.as_view('api_delete_tour'))
+admin_bp.add_url_rule('/api/tour/categories', 'api_category_tour', ApiCategoryTour.as_view('api_category_tour'))
 admin_bp.add_url_rule('/api/chart-data', 'api_chart_data', ApiChartData.as_view('api_chart_data'))
 admin_bp.add_url_rule('/api/upload-image', 'api_upload_image', ApiUploadImage.as_view('api_upload_image'))
 admin_bp.add_url_rule('/api/locations', 'api_locations', ApiLocation.as_view('api_locations'))

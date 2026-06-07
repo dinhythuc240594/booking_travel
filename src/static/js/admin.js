@@ -136,27 +136,27 @@ $(document).ready(function () {
         previewArticle(articleId, articleType);
     });
 
-    // Edit international article
-    $(document).on('click', '.btn-edit[data-type="international"]', function () {
-        const articleId = $(this).data('id');
-        editInternationalArticle(articleId);
-    });
+    // // Edit international article
+    // $(document).on('click', '.btn-edit[data-type="international"]', function () {
+    //     const articleId = $(this).data('id');
+    //     editInternationalArticle(articleId);
+    // });
 
-    // Delete international article
-    $(document).on('click', '.btn-delete[data-type="international"]', function () {
-        const articleId = $(this).data('id');
-        if (confirm('Bạn có chắc muốn xóa bài viết này?')) {
-            deleteInternationalArticle(articleId);
-        }
-    });
+    // // Delete international article
+    // $(document).on('click', '.btn-delete[data-type="international"]', function () {
+    //     const articleId = $(this).data('id');
+    //     if (confirm('Bạn có chắc muốn xóa bài viết này?')) {
+    //         deleteInternationalArticle(articleId);
+    //     }
+    // });
 
-    // Submit international draft for approval
-    $(document).on('click', '.btn-submit[data-type="international"]', function () {
-        const articleId = $(this).data('id');
-        if (confirm('Bạn có chắc muốn gửi bài viết này để duyệt?')) {
-            submitInternationalDraft(articleId);
-        }
-    });
+    // // Submit international draft for approval
+    // $(document).on('click', '.btn-submit[data-type="international"]', function () {
+    //     const articleId = $(this).data('id');
+    //     if (confirm('Bạn có chắc muốn gửi bài viết này để duyệt?')) {
+    //         submitInternationalDraft(articleId);
+    //     }
+    // });
 
     // Modal approve/reject
     $('#approveBtn').click(function () {
@@ -191,22 +191,22 @@ $(document).ready(function () {
         resetTagForm();
     });
 
-    $(document).on('click', '.btn-edit-tag', function () {
-        const tagId = $(this).data('id');
-        const tagName = $(this).data('name');
-        const tagSlug = $(this).data('slug');
-        fillTagForm(tagId, tagName, tagSlug);
-    });
+    // $(document).on('click', '.btn-edit-tag', function () {
+    //     const tagId = $(this).data('id');
+    //     const tagName = $(this).data('name');
+    //     const tagSlug = $(this).data('slug');
+    //     fillTagForm(tagId, tagName, tagSlug);
+    // });
 
-    $(document).on('click', '.btn-delete-tag', function () {
-        const tagId = $(this).data('id');
-        const tagName = $(this).data('name');
-        if (confirm(`Bạn có chắc muốn xóa hashtag "${tagName}"?`)) {
-            deleteTag(tagId);
-        }
-    });
+    // $(document).on('click', '.btn-delete-tag', function () {
+    //     const tagId = $(this).data('id');
+    //     const tagName = $(this).data('name');
+    //     if (confirm(`Bạn có chắc muốn xóa hashtag "${tagName}"?`)) {
+    //         deleteTag(tagId);
+    //     }
+    // });
 
-    loadHandlerAPI();
+    // loadHandlerAPI();
 
 });
 
@@ -217,11 +217,7 @@ function updatePageTitle(section) {
         'pending': 'Bài viết chờ duyệt',
         'approved': 'Bài viết đã duyệt',
         'rejected': 'Bài viết bị từ chối',
-        'api': 'Bài viết từ API',
         'location': 'Quản lý địa điểm',
-        'tags-manager': 'Quản lý Hashtag',
-        'menu-manager': 'Quản lý Menu',
-        'en-menu-manager': 'Menu Categories EN',
         'users': 'Quản lý người dùng',
         'statistics': 'Thống kê'
     };
@@ -389,15 +385,15 @@ async function loadLocations() {
             locations.forEach(location => {
                 html += `
                 <tr>
-                    <td>${location.id}</td>
+                    <td>${location.location_id}</td>
                     <td>${escapeHtml(location.name)}</td>
                     <td>${escapeHtml(location.city)}</td>
                     <td><img src="${escapeHtml(location.image_url)}" width="100px" height="100px"></td>
                     <td>
-                        <button class="edit-location btn btn-sm btn-primary" data-id="${location.id}" title="Sửa">
+                        <button class="edit-location btn btn-sm btn-primary" data-id="${location.location_id}" title="Sửa">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="delete-location btn btn-sm btn-danger" data-id="${location.id}" title="Xóa">
+                        <button class="delete-location btn btn-sm btn-danger" data-id="${location.location_id}" title="Xóa">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -709,7 +705,7 @@ async function loadPendingArticles() {
                         <td><span class="badge bg-primary">${article.category}</span></td>
                         <td>${article.date}</td>
                         <td>
-                            <button class="btn btn-sm btn-info btn-action btn-preview" data-bs-target="#previewArticleModal" data-id="${article.id}" title="Xem trước">
+                            <button class="btn btn-sm btn-info btn-action btn-preview" data-bs-target="#previewArticleModal" data-id="${article.tour_id}" title="Xem trước">
                                 <i class="fas fa-eye"></i>
                             </button>
                             <button class="btn btn-sm btn-success btn-action btn-approve" data-id="${article.tour_id}" title="Duyệt">
@@ -1009,7 +1005,7 @@ async function approveArticle(articleId, articleType) {
             // Xác định route dựa trên loại bài viết
             const route = articleType === 'international'
                 ? `/admin/international/${articleId}/approve`
-                : `/admin/news/${articleId}/approve`;
+                : `/admin/api/tour/article/${articleId}/approve`;
 
             const response = await fetch(route, {
                 method: 'POST',
@@ -1110,7 +1106,7 @@ async function rejectArticle(articleId, reason, articleType) {
         // Xác định route dựa trên loại bài viết
         const route = articleType === 'international'
             ? `/admin/international/${articleId}/reject`
-            : `/admin/news/${articleId}/reject`;
+            : `/admin/api/tour/article/${articleId}/reject`;
 
         const response = await fetch(route, {
             method: 'POST',
@@ -1510,7 +1506,7 @@ function displayRssArticles(articles) {
                         ${article.thumbnail ? `<img src="${article.thumbnail}" class="img-fluid rounded mb-2" style="max-height: 150px; object-fit: cover; width: 100%;">` : ''}
                         <div class="d-flex justify-content-between align-items-center">
                             <small class="text-muted">${article.published_at || 'N/A'}</small>
-                            <button class="btn btn-sm btn-primary save-rss-article" data-index="${index}" data-article-id="${article.id}">
+                            <button class="btn btn-sm btn-primary save-rss-article" data-index="${index}" data-article-id="${article.tour_id}">
                                 <i class="fas fa-save"></i> Lưu
                             </button>
                         </div>
@@ -1655,7 +1651,7 @@ function displayApiArticles(articles) {
                                 <i class="fas fa-globe"></i> ${article.source || 'N/A'}<br>
                                 <i class="fas fa-calendar"></i> ${updateDateTime(article.published_at) || 'N/A'}
                             </small>
-                            <button class="btn btn-sm btn-primary save-api-article" data-index="${index}" data-article-id="${article.id}">
+                            <button class="btn btn-sm btn-primary save-api-article" data-index="${index}" data-article-id="${article.tour_id}">
                                 <i class="fas fa-save"></i> Lưu
                             </button>
                         </div>
@@ -1678,174 +1674,174 @@ $(document).on('click', '.save-api-article', function () {
 });
 
 
-async function loadHandlerAPI() {
-    // Save external article button handler
-    $('#saveAPIArticleBtn').off('click').on('click', async function () {
-        const articleData = JSON.parse($('#saveAPIArticleData').val());
-        const categoryId = $('#saveAPICategory').val();
-        const status = $('#saveAPIStatus').val();
-        const region = $('#saveAPIArticleData').data('region') || 'domestic'; // Lấy region từ data attribute
-        const isHot = $('#saveAPIIsHot').is(':checked');
-        const isFeatured = $('#saveAPIIsFeatured').is(':checked');
+// async function loadHandlerAPI() {
+//     // Save external article button handler
+//     $('#saveAPIArticleBtn').off('click').on('click', async function () {
+//         const articleData = JSON.parse($('#saveAPIArticleData').val());
+//         const categoryId = $('#saveAPICategory').val();
+//         const status = $('#saveAPIStatus').val();
+//         const region = $('#saveAPIArticleData').data('region') || 'domestic'; // Lấy region từ data attribute
+//         const isHot = $('#saveAPIIsHot').is(':checked');
+//         const isFeatured = $('#saveAPIIsFeatured').is(':checked');
 
-        console.log('Saving article with data:', {
-            article: articleData,
-            category_id: categoryId,
-            status: status,
-            region: region
-        });
+//         console.log('Saving article with data:', {
+//             article: articleData,
+//             category_id: categoryId,
+//             status: status,
+//             region: region
+//         });
 
-        if (!categoryId) {
-            alert('Vui lòng chọn danh mục!');
-            return;
-        }
+//         if (!categoryId) {
+//             alert('Vui lòng chọn danh mục!');
+//             return;
+//         }
 
-        const btn = $(this);
-        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang lưu...');
+//         const btn = $(this);
+//         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang lưu...');
 
-        try {
-            const requestData = {
-                article: articleData,
-                category_id: parseInt(categoryId),
-                status: status,
-                region: region,  // Gửi region để backend biết lưu vào bảng nào
-                is_hot: isHot,
-                is_featured: isFeatured
-            };
+//         try {
+//             const requestData = {
+//                 article: articleData,
+//                 category_id: parseInt(categoryId),
+//                 status: status,
+//                 region: region,  // Gửi region để backend biết lưu vào bảng nào
+//                 is_hot: isHot,
+//                 is_featured: isFeatured
+//             };
 
-            console.log('Request payload:', requestData);
+//             console.log('Request payload:', requestData);
 
-            const response = await fetch('/admin/api/save-api-article', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestData)
-            });
+//             const response = await fetch('/admin/api/save-api-article', {
+//                 method: 'POST',
+//                 headers: {
+//                     'Content-Type': 'application/json'
+//                 },
+//                 body: JSON.stringify(requestData)
+//             });
 
-            console.log('Response status:', response.status);
+//             console.log('Response status:', response.status);
 
-            const result = await response.json();
-            console.log('Response data:', result);
+//             const result = await response.json();
+//             console.log('Response data:', result);
 
-            if (result.success) {
-                showToast('Thành công', result.message || 'Đã lưu bài viết', 'success');
+//             if (result.success) {
+//                 showToast('Thành công', result.message || 'Đã lưu bài viết', 'success');
 
-                // Close modal
-                bootstrap.Modal.getInstance(document.getElementById('saveAPIArticleModal')).hide();
+//                 // Close modal
+//                 bootstrap.Modal.getInstance(document.getElementById('saveAPIArticleModal')).hide();
 
-                // Chỉ xóa card của bài viết vừa lưu (tìm bằng article ID)
-                const articleId = result.article_id || articleData.id;
-                if (articleId) {
-                    // Tìm và xóa card chứa bài viết với ID này
-                    $(`.save-api-article[data-article-id="${articleId}"], .save-rss-article[data-article-id="${articleId}"]`)
-                        .closest('.col-md-6').fadeOut(function () {
-                            $(this).remove();
+//                 // Chỉ xóa card của bài viết vừa lưu (tìm bằng article ID)
+//                 const articleId = result.article_id || articleData.id;
+//                 if (articleId) {
+//                     // Tìm và xóa card chứa bài viết với ID này
+//                     $(`.save-api-article[data-article-id="${articleId}"], .save-rss-article[data-article-id="${articleId}"]`)
+//                         .closest('.col-md-6').fadeOut(function () {
+//                             $(this).remove();
 
-                            // Cập nhật số lượng bài còn lại
-                            const remainingCount = $('.save-api-article, .save-rss-article').length;
-                            if (remainingCount === 0) {
-                                $('#apiArticlesList, #rssArticlesList').html(
-                                    '<p class="text-muted text-center">Không còn bài viết nào. Hãy tải thêm bài mới.</p>'
-                                );
-                            }
-                        });
-                }
+//                             // Cập nhật số lượng bài còn lại
+//                             const remainingCount = $('.save-api-article, .save-rss-article').length;
+//                             if (remainingCount === 0) {
+//                                 $('#apiArticlesList, #rssArticlesList').html(
+//                                     '<p class="text-muted text-center">Không còn bài viết nào. Hãy tải thêm bài mới.</p>'
+//                                 );
+//                             }
+//                         });
+//                 }
 
-                // Reload statistics
-                loadStatistics();
-            } else {
-                console.error('Save failed:', result.error);
-                showToast('Lỗi', result.error || 'Không thể lưu bài viết', 'warning');
-            }
-        } catch (error) {
-            console.error('Exception when saving article:', error);
-            showToast('Lỗi', 'Có lỗi xảy ra: ' + error.message, 'warning');
-        } finally {
-            btn.prop('disabled', false).html('<i class="fas fa-save"></i> Lưu bài viết');
-        }
-    });
+//                 // Reload statistics
+//                 loadStatistics();
+//             } else {
+//                 console.error('Save failed:', result.error);
+//                 showToast('Lỗi', result.error || 'Không thể lưu bài viết', 'warning');
+//             }
+//         } catch (error) {
+//             console.error('Exception when saving article:', error);
+//             showToast('Lỗi', 'Có lỗi xảy ra: ' + error.message, 'warning');
+//         } finally {
+//             btn.prop('disabled', false).html('<i class="fas fa-save"></i> Lưu bài viết');
+//         }
+//     });
 
-    // Handle region change
-    $('#apiRegion').change(function () {
-        const region = $(this).val();
-        loadApiCategories(region);
-    });
+//     // Handle region change
+//     $('#apiRegion').change(function () {
+//         const region = $(this).val();
+//         loadApiCategories(region);
+//     });
 
-    // Fetch API News Button
-    $('#fetchApiBtn').click(function () {
-        const limit = $('#apiLimit').val() || 20;
+//     // Fetch API News Button
+//     $('#fetchApiBtn').click(function () {
+//         const limit = $('#apiLimit').val() || 20;
 
-        // Kiểm tra tab nào đang active
-        const activeTab = $('#apiModeTabs .nav-link.active').attr('id');
-        let requestData = {
-            source_type: 'api',
-            limit: parseInt(limit)
-            // api_key không cần gửi nữa vì server sẽ lấy từ settings
-        };
+//         // Kiểm tra tab nào đang active
+//         const activeTab = $('#apiModeTabs .nav-link.active').attr('id');
+//         let requestData = {
+//             source_type: 'api',
+//             limit: parseInt(limit)
+//             // api_key không cần gửi nữa vì server sẽ lấy từ settings
+//         };
 
-        if (activeTab === 'category-tab') {
-            // Mode: Theo khu vực & danh mục
-            const region = $('#apiRegion').val();
-            const categoryId = $('#apiCategorySelect').val();
+//         if (activeTab === 'category-tab') {
+//             // Mode: Theo khu vực & danh mục
+//             const region = $('#apiRegion').val();
+//             const categoryId = $('#apiCategorySelect').val();
 
-            requestData.mode = 'category';
-            requestData.region = region;
-            requestData.category_id = categoryId;
+//             requestData.mode = 'category';
+//             requestData.region = region;
+//             requestData.category_id = categoryId;
 
-            // Lưu region để dùng khi save article
-            window.currentApiRegion = region;
+//             // Lưu region để dùng khi save article
+//             window.currentApiRegion = region;
 
-        } else if (activeTab === 'urls-tab') {
-            // Mode: Theo danh sách URL
-            const apiUrlsText = $('#apiUrls').val().trim();
+//         } else if (activeTab === 'urls-tab') {
+//             // Mode: Theo danh sách URL
+//             const apiUrlsText = $('#apiUrls').val().trim();
 
-            if (!apiUrlsText) {
-                alert('Vui lòng nhập ít nhất một URL bài viết');
-                return;
-            }
+//             if (!apiUrlsText) {
+//                 alert('Vui lòng nhập ít nhất một URL bài viết');
+//                 return;
+//             }
 
-            // Parse URLs từ textarea (mỗi URL một dòng)
-            const urls = apiUrlsText.split('\n')
-                .map(url => url.trim())
-                .filter(url => url.length > 0 && (url.startsWith('http://') || url.startsWith('https://')));
+//             // Parse URLs từ textarea (mỗi URL một dòng)
+//             const urls = apiUrlsText.split('\n')
+//                 .map(url => url.trim())
+//                 .filter(url => url.length > 0 && (url.startsWith('http://') || url.startsWith('https://')));
 
-            if (urls.length === 0) {
-                alert('Không tìm thấy URL hợp lệ. Vui lòng nhập URL bắt đầu bằng http:// hoặc https://');
-                return;
-            }
+//             if (urls.length === 0) {
+//                 alert('Không tìm thấy URL hợp lệ. Vui lòng nhập URL bắt đầu bằng http:// hoặc https://');
+//                 return;
+//             }
 
-            requestData.mode = 'urls';
-            requestData.urls = urls;
+//             requestData.mode = 'urls';
+//             requestData.urls = urls;
 
-            // URLs mode mặc định là domestic, có thể lấy từ một select khác nếu cần
-            window.currentApiRegion = 'domestic';
-        }
+//             // URLs mode mặc định là domestic, có thể lấy từ một select khác nếu cần
+//             window.currentApiRegion = 'domestic';
+//         }
 
-        const btn = $(this);
-        btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
+//         const btn = $(this);
+//         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
 
-        $.ajax({
-            url: '/admin/api/fetch-api-news',
-            method: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(requestData),
-            success: function (response) {
-                if (response.success) {
-                    displayApiArticles(response.data);
-                    showToast('Thành công', `Đã tải ${response.count} bài viết từ API`, 'success');
-                    window.apiArticlesData = response.data;
-                } else {
-                    showToast('Lỗi', response.message || 'Không thể tải bài viết', 'warning');
-                }
-            },
-            error: function (xhr) {
-                const errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.message || 'Lỗi kết nối server';
-                showToast('Lỗi', errorMsg, 'warning');
-            },
-            complete: function () {
-                btn.prop('disabled', false).html('<i class="fas fa-download"></i> Tải bài từ API');
-            }
-        });
-    });
-}
+//         $.ajax({
+//             url: '/admin/api/fetch-api-news',
+//             method: 'POST',
+//             contentType: 'application/json',
+//             data: JSON.stringify(requestData),
+//             success: function (response) {
+//                 if (response.success) {
+//                     displayApiArticles(response.data);
+//                     showToast('Thành công', `Đã tải ${response.count} bài viết từ API`, 'success');
+//                     window.apiArticlesData = response.data;
+//                 } else {
+//                     showToast('Lỗi', response.message || 'Không thể tải bài viết', 'warning');
+//                 }
+//             },
+//             error: function (xhr) {
+//                 const errorMsg = xhr.responseJSON?.error || xhr.responseJSON?.message || 'Lỗi kết nối server';
+//                 showToast('Lỗi', errorMsg, 'warning');
+//             },
+//             complete: function () {
+//                 btn.prop('disabled', false).html('<i class="fas fa-download"></i> Tải bài từ API');
+//             }
+//         });
+//     });
+// }

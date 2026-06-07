@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Đăng nhập - BookingTravel Admin</title>
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         body {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,76 +21,76 @@
             justify-content: center;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         .login-container {
             background: #fff;
             border-radius: 15px;
-            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
             overflow: hidden;
             max-width: 900px;
             width: 100%;
         }
-        
+
         .login-left {
             background: linear-gradient(135deg, #c00 0%, #a00 100%);
             color: #fff;
             padding: 60px 40px;
         }
-        
+
         .login-left h1 {
             font-size: 36px;
             font-weight: bold;
             margin-bottom: 20px;
         }
-        
+
         .login-left p {
             font-size: 16px;
             opacity: 0.9;
         }
-        
+
         .login-right {
             padding: 60px 40px;
         }
-        
+
         .login-title {
             font-size: 28px;
             font-weight: bold;
             margin-bottom: 30px;
             color: #333;
         }
-        
+
         .form-group {
             margin-bottom: 25px;
         }
-        
+
         .form-label {
             font-weight: 600;
             color: #555;
             margin-bottom: 8px;
         }
-        
+
         .form-control {
             padding: 12px 15px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             transition: all 0.3s;
         }
-        
+
         .form-control:focus {
             border-color: #c00;
-            box-shadow: 0 0 0 0.2rem rgba(192,0,0,0.1);
+            box-shadow: 0 0 0 0.2rem rgba(192, 0, 0, 0.1);
         }
-        
+
         .input-group-text {
             background-color: #f8f9fa;
             border: 2px solid #e0e0e0;
             border-right: none;
         }
-        
+
         .input-group .form-control {
             border-left: none;
         }
-        
+
         .btn-login {
             width: 100%;
             padding: 12px;
@@ -100,25 +101,25 @@
             border-radius: 8px;
             transition: all 0.3s;
         }
-        
+
         .btn-login:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 20px rgba(192,0,0,0.4);
+            box-shadow: 0 5px 20px rgba(192, 0, 0, 0.4);
         }
-        
+
         .demo-accounts {
             background-color: #f8f9fa;
             border-radius: 8px;
             padding: 20px;
             margin-top: 30px;
         }
-        
+
         .demo-accounts h6 {
             font-weight: bold;
             color: #333;
             margin-bottom: 15px;
         }
-        
+
         .demo-account {
             background: #fff;
             padding: 10px 15px;
@@ -127,21 +128,22 @@
             cursor: pointer;
             transition: all 0.3s;
         }
-        
+
         .demo-account:hover {
             transform: translateX(5px);
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
-        
+
         .demo-account strong {
             color: #c00;
         }
-        
+
         .demo-account small {
             color: #666;
         }
     </style>
 </head>
+
 <body>
     <div class="login-container">
         <div class="row g-0">
@@ -160,21 +162,22 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-md-7 login-right">
                 <h2 class="login-title">Đăng nhập hệ thống</h2>
-                
+
                 {% with messages = get_flashed_messages(with_categories=true) %}
-                    {% if messages %}
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
+                {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show"
+                    role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+                {% endif %}
                 {% endwith %}
-                
+
                 <form method="POST" action="{{ url_for('admin.login') }}">
                     <div class="form-group">
                         <label class="form-label">Tên đăng nhập</label>
@@ -182,36 +185,38 @@
                             <span class="input-group-text">
                                 <i class="fas fa-user"></i>
                             </span>
-                            <input type="text" class="form-control" name="username" id="username" placeholder="Nhập tên đăng nhập" required>
+                            <input type="text" class="form-control" name="username" id="username"
+                                placeholder="Nhập tên đăng nhập" required>
                         </div>
                     </div>
-                    
+
                     <div class="form-group">
                         <label class="form-label">Mật khẩu</label>
                         <div class="input-group">
                             <span class="input-group-text">
                                 <i class="fas fa-lock"></i>
                             </span>
-                            <input type="password" class="form-control" name="password" id="password" placeholder="Nhập mật khẩu" required>
+                            <input type="password" class="form-control" name="password" id="password"
+                                placeholder="Nhập mật khẩu" required>
                             <span class="input-group-text password-toggle" id="togglePassword">
                                 <i class="fas fa-eye"></i>
                             </span>
                         </div>
                     </div>
-                    
+
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" id="remember" name="remember">
                         <label class="form-check-label" for="remember">
                             Ghi nhớ đăng nhập
                         </label>
                     </div>
-                    
+
                     <button type="submit" class="btn btn-login">
                         <i class="fas fa-sign-in-alt me-2"></i> Đăng nhập
                     </button>
                 </form>
-                
-                <div class="demo-accounts">
+
+                <!-- <div class="demo-accounts">
                     <h6><i class="fas fa-info-circle"></i> Tài khoản demo:</h6>
                     <div class="demo-account" data-username="admin" data-password="admin123">
                         <strong>Admin:</strong> admin / admin123<br>
@@ -221,30 +226,30 @@
                         <strong>Biên tập viên:</strong> editor / editor123<br>
                         <small>Quyền: Thêm, sửa, ẩn/hiện bài viết</small>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
     </div>
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        $(document).ready(function() {
+        $(document).ready(function () {
             // Click demo account to auto-fill
-            $('.demo-account').click(function() {
+            $('.demo-account').click(function () {
                 const username = $(this).data('username');
                 const password = $(this).data('password');
                 $('#username').val(username);
                 $('#password').val(password);
             });
 
-            $('#togglePassword').click(function() {
+            $('#togglePassword').click(function () {
                 const passwordInput = $('#password');
                 const icon = $(this).find('i');
-                
+
                 if (passwordInput.attr('type') === 'password') {
                     passwordInput.attr('type', 'text');
                     icon.removeClass('fa-eye');
@@ -258,4 +263,5 @@
         });
     </script>
 </body>
+
 </html>

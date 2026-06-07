@@ -48,7 +48,7 @@ class TourBookingItem(AbstractBookingItem):
         self.persons = persons
 
     def get_total_price(self) -> float:
-        return float(self.tour.price_per_person) * self.persons
+        return (float(self.tour.price_per_adult) * self.persons) + (float(self.tour.price_per_child) * self.persons)
 
     def show_details(self, indent: str = "") -> str:
         return f"{indent}- 🚌 Tour: {self.tour.name} ({self.persons} người) - ${self.get_total_price()}"

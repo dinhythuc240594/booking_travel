@@ -47,7 +47,7 @@ class BookingService:
                     user_id=user_id, 
                     booking_type=BookingTypeEnum.tour, 
                     reference_id=tour.tour_id, 
-                    total_price=float(tour.price_per_person) * persons
+                    total_price= (float(tour.price_per_adult) * persons) + (float(tour.price_per_child) * persons)
                 )
                 commands.append(tour_cmd)
                 commands.append(ProcessPaymentCommand(tour_cmd, tour_cmd.total_price, payment_method))
