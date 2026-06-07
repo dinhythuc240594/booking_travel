@@ -15,7 +15,7 @@ $(document).ready(function () {
 
     // Load initial data cho dashboard admin
     // (editor dashboard sẽ dùng editor.js riêng)
-    loadPendingArticles();
+    // loadPendingArticles();
     // loadAPIArticles(); // Không tự động load API articles
     loadStatistics();
     // loadHotArticles();
@@ -723,11 +723,11 @@ async function loadPendingArticles() {
                 html = '<tr><td colspan="6" class="text-center text-muted">Không có bài viết nào chờ duyệt</td></tr>';
             }
 
-            $('#pendingArticlesTable').html(html);
+            $('#pendingtourTable').html(html);
         }
     } catch (error) {
         console.error('Lỗi tải bài viết chờ duyệt:', error);
-        $('#pendingArticlesTable').html('<tr><td colspan="6" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>');
+        $('#pendingtourTable').html('<tr><td colspan="6" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>');
     }
 }
 

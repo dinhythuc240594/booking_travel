@@ -67,10 +67,11 @@ $(document).ready(function () {
         // Update page title
         updatePageTitle(section);
 
-        // Lazy load dữ liệu cho các tab khi được mở lần đầu
-        if (!loadedSections.has(section) && sectionLoaders[section]) {
-            sectionLoaders[section]();
-        }
+        // // Lazy load dữ liệu cho các tab khi được mở lần đầu
+        // if (!loadedSections.has(section) && sectionLoaders[section]) {
+        //     sectionLoaders[section]();
+        // }
+        loadSectionData(section);
     });
 
     // Header create button

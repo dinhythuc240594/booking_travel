@@ -950,6 +950,24 @@ class AdminController:
         data = self.user_model.delete_tour(tour_id)
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
+    def api_approve_atour(self, tour_id: int):
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
+
+        data = self.user_model.approve_tour(tour_id, user_id)
+        return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
+
+    def api_reject_atour(self, tour_id: int):
+        user_id = session.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
+            
+        data = request.form or request.json
+        reason = data.get('reason', '')
+        data = self.user_model.reject_tour(tour_id, user_id, reason)
+        return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
+
     def api_get_category(self):
         categories = CATEGORY_NAME
         return jsonify({'success': True, 'data': categories})

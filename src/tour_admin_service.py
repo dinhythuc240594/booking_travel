@@ -13,7 +13,7 @@ from database import (
     TourStatus
 )
 from command.component import DBTransactionInvoker
-from command.tour import CreateTourCommand, UpdateTourCommand, SoftDeleteTourCommand
+from command.tour import CreateTourCommand, UpdateTourCommand, SoftDeleteTourCommand, ApproveTourCommand, RejectTourCommand
 from command.user import ToggleUserStatusCommand
 
 class TourAdminService:
@@ -135,6 +135,32 @@ class TourAdminService:
         try:
             invoker.execute_transaction(session, [command])
             return True, "Xóa tour thành công"
+        except Exception as e:
+            return False, str(e)
+        finally:
+            session.close()
+
+    @staticmethod
+    def api_approved_atour(tour_id: int, user_id: int) -> tuple[bool, str]:
+        session = get_session()
+        invoker = DBTransactionInvoker()
+        command = ApproveTourCommand(tour_id, user_id)
+        try:
+            invoker.execute_transaction(session, [command])
+            return True, "Duyệt tour thành công"
+        except Exception as e:
+            return False, str(e)
+        finally:
+            session.close()
+
+    @staticmethod
+    def api_rejected_atour(tour_id: int, user_id: int, reason: str) -> tuple[bool, str]:
+        session = get_session()
+        invoker = DBTransactionInvoker()
+        command = RejectTourCommand(tour_id, user_id, reason)
+        try:
+            invoker.execute_transaction(session, [command])
+            return True, "Từ chối tour thành công"
         except Exception as e:
             return False, str(e)
         finally:

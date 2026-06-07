@@ -137,6 +137,22 @@ class UserModel:
             return {'success': True, 'message': 'Xóa bài viết thành công'}
         return {'success': False, 'message': 'Xóa bài viết thất bại'}
 
+    def approve_tour(self, tour_id: int, user_id: int) -> tuple[bool, str]:
+        """Duyệt bài viết"""
+        
+        success, message = TourAdminService.api_approved_atour(tour_id, user_id)
+        if success:
+            return {'success': True, 'message': 'Duyệt bài viết thành công'}
+        return {'success': False, 'message': 'Duyệt bài viết thất bại'}
+
+    def reject_tour(self, tour_id: int, user_id: int, reason: str = None) -> tuple[bool, str]:
+        """Từ chối bài viết"""
+        
+        success, message = TourAdminService.api_rejected_atour(tour_id, user_id, reason)
+        if success:
+            return {'success': True, 'message': 'Từ chối bài viết thành công'}
+        return {'success': False, 'message': 'Từ chối bài viết thất bại'}
+
 
     # ==========================================
     # CÁC API QUẢN LÝ USER (Đã dọn dẹp)
