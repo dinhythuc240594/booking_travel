@@ -1,5 +1,13 @@
-from database import get_session, Bookings, Savedtour, Viewedtour
+
+from database import (
+    get_session, 
+    Bookings, 
+    Savedtour, 
+    Viewedtour,
+    Location
+    )
 from sqlalchemy.orm import joinedload
+
 
 class RelatedService:
 
@@ -46,5 +54,44 @@ class RelatedService:
             session.commit()
         except Exception as e:
             session.rollback()
+        finally:
+            session.close()
+
+    @staticmethod
+    def create_location_bulk(locations: list) -> bool:
+        """Tạo nhiều location cùng lúc"""
+        session = get_session()
+        try:
+            for location in locations:
+
+                # Mapping đúng cấu trúc bảng location
+                location_data = {
+                    'name': location.get('name'),
+                    'search_key': location.get('searchKey'),
+                    'city': location.get('city'),
+                    'country': location.get('country'),
+                    'description': location.get('description'),
+                    'slug': location.get('slug'), 
+                    'image_url': location.get('image_url'),
+                }
+
+                location_obj = Location(**location_data)
+                session.add(location_obj)
+                
+            session.commit()
+            return True
+        except Exception as e:
+            print(e)
+            session.rollback()
+            return False
+        finally:
+            session.close()
+
+    @staticmethod
+    def get_location_by_id(location_id):
+        """Lấy thông tin người dùng theo ID"""
+        session = get_session()
+        try:
+            return session.query(Location).filter(Location.location_id == location_id).first()
         finally:
             session.close()

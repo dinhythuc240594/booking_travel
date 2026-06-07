@@ -108,10 +108,28 @@ class ApiMyTour(BaseAdminView):
         return self.api_my_tour()
 
 
-# class ApiLocation(BaseAdminView):
+class ApiLocation(BaseAdminView):
 
-#     def get(self):
-#         return self.api_location()
+    def get(self):
+        return self.api_location()
+
+
+class ApiCreateLocation(BaseAdminView):
+
+    def post(self):
+        return self.api_create_location()
+
+
+class ApiUpdateLocation(BaseAdminView):
+
+    def post(self):
+        return self.api_update_location()
+
+
+class ApiDeleteLocation(BaseAdminView):
+
+    def post(self):
+        return self.api_delete_location()
 
 
 class ApiCurrentUser(BaseAdminView):
@@ -204,8 +222,12 @@ class ApiCreateUser(BaseAdminView):
 class ApiUpdateUser(BaseAdminView):
 
     def post(self, user_id):
-        return self.api_update_user(user_id) # Hỗ trợ POST dự phòng
+        return self.api_update_user(user_id)
 
+class ApiGetUser(BaseAdminView):
+
+    def get(self, user_id):
+        return self.api_get_user(user_id)
 
 class ApiToggleUserStatus(BaseAdminView):
 
@@ -260,11 +282,16 @@ admin_bp.add_url_rule('/api/tour/article/create', 'api_create_tour', ApiCreateTo
 admin_bp.add_url_rule('/api/tour/article/<int:tour_id>/edit', 'api_edit_tour', ApiEditTour.as_view('api_edit_tour'))
 admin_bp.add_url_rule('/api/chart-data', 'api_chart_data', ApiChartData.as_view('api_chart_data'))
 admin_bp.add_url_rule('/api/upload-image', 'api_upload_image', ApiUploadImage.as_view('api_upload_image'))
+admin_bp.add_url_rule('/api/locations', 'api_locations', ApiLocation.as_view('api_locations'))
+admin_bp.add_url_rule('/api/locations/create', 'api_create_location', ApiCreateLocation.as_view('api_create_location'))
+admin_bp.add_url_rule('/api/locations/update', 'api_update_location', ApiUpdateLocation.as_view('api_update_location'))
+admin_bp.add_url_rule('/api/locations/delete', 'api_delete_location', ApiDeleteLocation.as_view('api_delete_location'))
 
 # API Users & Settings
 admin_bp.add_url_rule('/api/users', 'api_users_list', ApiUsersList.as_view('api_users_list'))
 admin_bp.add_url_rule('/api/users/create', 'api_create_user', ApiCreateUser.as_view('api_create_user'))
 admin_bp.add_url_rule('/api/users/update/<int:user_id>', 'api_update_user', ApiUpdateUser.as_view('api_update_user'))
+admin_bp.add_url_rule('/api/users/<int:user_id>', 'api_get_user', ApiGetUser.as_view('api_get_user'))
 admin_bp.add_url_rule('/api/users/<int:user_id>/toggle-status', 'api_toggle_user_status', ApiToggleUserStatus.as_view('api_toggle_user_status'))
 admin_bp.add_url_rule('/api/settings', 'api_settings', ApiSettings.as_view('api_settings'))
 admin_bp.add_url_rule('/api/settings/test-email', 'api_test_email', ApiTestEmail.as_view('api_test_email'))

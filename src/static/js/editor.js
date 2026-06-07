@@ -112,7 +112,7 @@ $(document).ready(function () {
             reader.readAsDataURL(file);
 
             // Upload image immediately
-            uploadArticleImage(file).then(function (url) {
+            uploadArticleImage(file, 'tour', $('#editArticleId').val()).then(function (url) {
                 if (url) {
                     $('#imagePreview .upload-progress').html('<div class="alert alert-success mt-2"><i class="fas fa-check"></i> Upload thành công</div>');
                 } else {
@@ -218,7 +218,7 @@ $(document).ready(function () {
             reader.readAsDataURL(file);
 
             // Upload image immediately
-            uploadArticleImage(file, $('#editArticleId').val()).then(function (url) {
+            uploadArticleImage(file, 'tour', $('#editArticleId').val()).then(function (url) {
                 if (url) {
                     $('#editArticleImageUrl').val(url);
                     $('#editArticleImagePreview').attr('src', url);
@@ -795,38 +795,6 @@ function updateInfoText(pagination, infoElementId) {
     const start = (page - 1) * perPage + 1;
     const end = Math.min(page * perPage, total);
     infoEl.text(`Hiển thị ${start}-${end} trên tổng ${total} bài viết`);
-}
-
-// Upload article image
-async function uploadArticleImage(file, newsId = null) {
-    const formData = new FormData();
-    formData.append('image', file);
-    if (newsId) {
-        formData.append('news_id', newsId);
-    }
-
-    try {
-        const response = await fetch('/admin/api/upload-image', {
-            method: 'POST',
-            body: formData
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            // Update thumbnail input with URL
-            $('#articleImageUrl').val(result.url);
-            showToast('Thành công', 'Upload ảnh thành công', 'success');
-            return result.url;
-        } else {
-            showToast('Lỗi', result.error || 'Upload ảnh thất bại', 'warning');
-            return null;
-        }
-    } catch (error) {
-        console.error('Lỗi upload ảnh:', error);
-        showToast('Lỗi', 'Có lỗi xảy ra khi upload ảnh', 'warning');
-        return null;
-    }
 }
 
 // Upload image to editor (for Summernote)

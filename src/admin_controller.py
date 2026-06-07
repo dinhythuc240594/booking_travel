@@ -7,7 +7,7 @@ import re
 import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from utils import validate_email, validate_password, generate_slug, verify_password, hash_password
+from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, DOMESTIC
 from email_utils import send_email
 from database import (
     Bookings,
@@ -26,6 +26,7 @@ from models import (
     UserModel,
     BookingModel,
     SettingModel,
+    LocationModel
 )
 
 class AdminController:
@@ -38,6 +39,7 @@ class AdminController:
         self.user_model = UserModel(self.db_session)
         self.booking_model = BookingModel(self.db_session)
         self.setting_model = SettingModel(self.db_session)
+        self.location_model = LocationModel(self.db_session)
     
     def login(self):
         """
@@ -53,9 +55,11 @@ class AdminController:
                 return redirect(url_for('admin.editor_dashboard'))
         
         if request.method == 'POST':
-            username = request.form.get('username')
-            password = request.form.get('password')
-            remember = request.form.get('remember') == 'on'
+
+            data = request.json if request.is_json else request.form
+            username = data.get('username')
+            password = data.get('password')
+            remember = data.get('remember') == 'on'
             
             # Kiểm tra tài khoản bị khóa trước khi xác thực
             if self.user_model.is_locked_user(username):
@@ -112,6 +116,9 @@ class AdminController:
         # Tour mới nhất
         latest_tours = self.tour_model.get_all(limit=10)
         
+        if 'user_id' not in session:
+            return redirect(url_for('admin.login'))
+
         user = self.user_model.get_by_id(session['user_id'])
 
         return render_template('admin/admin.html',
@@ -185,11 +192,13 @@ class AdminController:
         Route: POST /admin/tour/create
         """
         if request.method == 'POST':
-            title = request.form.get('title')
-            content = request.form.get('content')
-            summary = request.form.get('summary')
-            thumbnail = request.form.get('thumbnail')
-            status = request.form.get('status', TourStatus.DRAFT.value)
+
+            data = request.json if request.is_json else request.form
+            title = data.get('title')
+            content = data.get('content')
+            summary = data.get('summary')
+            thumbnail = data.get('thumbnail')
+            status = data.get('status', TourStatus.DRAFT.value)
             
             user_id = session.get('user_id')
             
@@ -230,11 +239,13 @@ class AdminController:
             return redirect(url_for('admin.tours_list'))
         
         if request.method == 'POST':
-            title = request.form.get('title')
-            content = request.form.get('content')
-            summary = request.form.get('summary')
-            thumbnail = request.form.get('thumbnail')
-            status = request.form.get('status')
+
+            data = request.json if request.is_json else request.form
+            title = data.get('title')
+            content = data.get('content')
+            summary = data.get('summary')
+            thumbnail = data.get('thumbnail')
+            status = data.get('status')
             
             try:
                 tour_status = TourStatus(status) if status else tour.status
@@ -285,10 +296,8 @@ class AdminController:
         user_id = session.get('user_id')
         
         # Lấy lý do từ chối từ request body
-        if request.is_json:
-            reason = request.json.get('reason', '').strip()
-        else:
-            reason = request.form.get('reason', '').strip()
+        data = request.json if request.is_json else request.form
+        reason = data.get('reason', '').strip()
         
         if not reason:
             if request.is_json or request.headers.get('Content-Type') == 'application/json':
@@ -925,6 +934,24 @@ class AdminController:
         success, message = self.user_model.edit_tour(tour_id, data)
         return jsonify({'success': success, 'message': message})
 
+    def api_get_user(self, user_id: int):
+        user = self.user_model.get_by_id(user_id)
+        if not user:
+            return jsonify({'success': False, 'error': 'Người dùng không tồn tại'}), 404
+        return jsonify({
+            'success': True,
+            'data': {
+                'user_id': user.user_id,
+                'username': user.username,
+                'email': user.email,
+                'full_name': user.full_name,
+                'role': user.role.value,
+                'phone_number': user.phone_number,
+                'is_active': user.is_active,
+                'created_at': user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
+            }
+        })
+
     def api_toggle_user_status(self, user_id: int):
         success, message = self.user_model.user_toggle_status(user_id)
         return jsonify({'success': success, 'message': message})
@@ -947,14 +974,18 @@ class AdminController:
             return jsonify({'success': False, 'error': 'File không hợp lệ. Chỉ chấp nhận: png, jpg, jpeg, gif, webp'}), 400
         
         # Lấy news_id từ request (nếu có) để lưu vào thư mục tương ứng
-        news_id = request.form.get('news_id')
-        
+        data = request.json if request.is_json else request.form
+        type_data = data.get('type_data')
+        id = data.get('id')
+
         # Tạo thư mục lưu ảnh
-        if news_id:
-            upload_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', f'news_{news_id}')
+        if type_data == 'tour':
+            upload_folder = os.path.join('src', 'static', 'uploads', 'tour', 'vn', f'tour_{id}')
+        elif type_data == 'location':
+            upload_folder = os.path.join('src', 'static', 'uploads', 'location', 'vn', f'location_{id}')
         else:
-            # Nếu chưa có news_id, lưu vào thư mục temp
-            upload_folder = os.path.join('src', 'static', 'uploads', 'news', 'vn', 'temp')
+            # Nếu chưa có tour_id, lưu vào thư mục temp
+            upload_folder = os.path.join('src', 'static', 'uploads', 'tour', 'vn', 'temp')
         
         os.makedirs(upload_folder, exist_ok=True)
         
@@ -968,7 +999,12 @@ class AdminController:
         file.save(filepath)
         
         # Tạo URL trả về (relative to static folder)
-        image_url = f"static/uploads/news/vn/{'news_' + str(news_id) if news_id else 'temp'}/{filename}"
+        if type_data == 'tour':
+            image_url = f"static/uploads/tour/vn/{'tour_' + str(id) if id else 'temp'}/{filename}"
+        elif type_data == 'location':
+            image_url = f"static/uploads/location/vn/{'location_' + str(id) if id else 'temp'}/{filename}"
+        else:
+            image_url = f"static/uploads/tour/vn/{'temp'}/{filename}"
         
         return jsonify({
             'success': True,
@@ -1002,7 +1038,8 @@ class AdminController:
         ).first()
 
         if request.method == 'POST':
-            action = request.form.get('action')
+            data = request.json if request.is_json else request.form
+            action = data.get('action')
             if action == 'update_avatar':
                 if 'avatar' not in request.files:
                     return jsonify({'success': False, 'message': 'Không có file được chọn'}), 400
@@ -1042,9 +1079,10 @@ class AdminController:
                     return jsonify({'success': False, 'message': 'File không hợp lệ. Chỉ chấp nhận: png, jpg, jpeg, gif, webp'}), 400
             
             elif action == 'update_info':
-                full_name = request.form.get('full_name', '').strip()
-                email = request.form.get('email', '').strip()
-                phone = request.form.get('phone', '').strip()
+                data = request.json if request.is_json else request.form
+                full_name = data.get('full_name', '').strip()
+                email = data.get('email', '').strip()
+                phone = data.get('phone', '').strip()
                 
                 if email and email != user.email:
                     existing_user = self.user_model.get_by_email(email)
@@ -1063,9 +1101,10 @@ class AdminController:
                 return redirect(url_for('admin.profile'))
             
             elif action == 'change_password':
-                current_password = request.form.get('current_password')
-                new_password = request.form.get('new_password')
-                confirm_password = request.form.get('confirm_password')
+                data = request.json if request.is_json else request.form
+                current_password = data.get('current_password')
+                new_password = data.get('new_password')
+                confirm_password = data.get('confirm_password')
                 
                 if not verify_password(user.password_hash, current_password):
                     flash('Mật khẩu hiện tại không đúng', 'error')
@@ -1208,7 +1247,7 @@ class AdminController:
             return jsonify({
                 'success': True,
                 'message': 'Tạo tài khoản thành công',
-                'user': {
+                'data': {
                     'user_id': user.user_id,
                     'username': user.username,
                     'email': user.email,
@@ -1237,12 +1276,12 @@ class AdminController:
             if request.method == 'GET':
                 return jsonify({
                     'success': True,
-                    'user': {
+                    'data': {
                         'user_id': user.user_id,
                         'username': user.username,
                         'email': user.email,
                         'full_name': user.full_name,
-                        'phone': user.phone_number,
+                        'phone_number': user.phone_number,
                         'role': user.role.value if user.role else 'user',
                         'is_active': user.is_active
                     }
@@ -1282,38 +1321,135 @@ class AdminController:
             self.db_session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
     
-    # def api_location(self):
-    #     """API lấy danh sách địa điểm"""
-    #     try:
-    #         location_type = request.args.get('type', '')
-    #         query = self.db_session.query(Location)
+    def api_create_location(self):
+        """API tạo danh sách địa điểm"""
+        try:
+            if 'user_id' not in session:
+                return jsonify({'success': False, 'error': 'Unauthorized'}), 401
             
-    #         if location_type:
-    #             query = query.filter(Location.location_type == location_type)
+            current_user = self.user_model.get_by_id(session['user_id'])
+            if not current_user or current_user.role != UserRole.ADMIN:
+                return jsonify({'success': False, 'error': 'Permission denied'}), 403
             
-    #         locations = query.all()
-    #         locations_data = {}
-    #         domestic = []
-    #         for location in locations:
-    #             location.name = location.name.strip()
-    #             location.location_type = location.location_type.strip()
-    #             location.searchKey = location.name.replace(",", " ")
-    #             domestic.append(location)
+            data = request.json if request.is_json else request.form
+            name = data.get('name', '').strip()
+            search_key = data.get('search_key', '').strip()
+            city = data.get('city', '').strip()
+            country = data.get('country', '').strip()
+            description = data.get('description', '').strip()
+            image_url = data.get('image_url', '').strip()
+            
+            success = self.location_model.create_location_bulk(
+                [{   
+                'name':name,
+                'search_key':search_key,
+                'city':city,
+                'country':country,
+                'description':description,
+                'image_url':image_url
+                }]
+            )
 
-    #         if not domestic:
-    #             domestic = DOMESTIC
+            return jsonify({
+                'success': success,
+                'message': "Tạo danh sách địa điểm thành công" if success else "Tạo danh sách địa điểm thất bại",
+            })
+        except Exception as e:
+            self.db_session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
 
-    #         locations_data = {
-    #             "domestic": domestic,
-    #         }
+    def api_update_location(self):
+        """API cập nhật danh sách địa điểm"""
+        try:
+            if 'user_id' not in session:
+                return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+            
+            current_user = self.user_model.get_by_id(session['user_id'])
+            if not current_user or current_user.role != UserRole.ADMIN:
+                return jsonify({'success': False, 'error': 'Permission denied'}), 403
+            
+            data = request.json if request.is_json else request.form
+            name = data.get('name', '').strip()
+            search_key = data.get('search_key', '').strip()
+            city = data.get('city', '').strip()
+            country = data.get('country', '').strip()
+            description = data.get('description', '').strip()
+            image_url = data.get('image_url', '').strip()
+            location_id = data.get('location_id')
+            
+            location = self.location_model.get_by_id(location_id)
+            if not location:
+                return jsonify({'success': False, 'error': 'Không tìm thấy địa điểm'}), 404
+            success = self.location_model.update_location(
+                {
+                    'id':location_id,
+                    'name':name,
+                    'search_key':search_key,
+                    'city':city,
+                    'country':country,
+                    'description':description,
+                    'image_url':image_url
+                }
+            )
+            
+            return jsonify({
+                'success': success,
+                'message': "Cập nhật danh sách địa điểm thành công" if success else "Cập nhật danh sách địa điểm thất bại",
+            })
+        except Exception as e:
+            self.db_session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
 
-    #         return jsonify({
-    #             'success': True,
-    #             'locations': locations_data
-    #         })
-    #     except Exception as e:
-    #         self.db_session.rollback()
-    #         return jsonify({'success': False, 'error': str(e)}), 500
+    def api_delete_location(self):
+        try:
+            if 'user_id' not in session:
+                return jsonify({'success': False, 'error': 'Unauthorized'}), 401
+            
+            current_user = self.user_model.get_by_id(session['user_id'])
+            if not current_user or current_user.role != UserRole.ADMIN:
+                return jsonify({'success': False, 'error': 'Permission denied'}), 403
+            
+            data = request.json if request.is_json else request.form
+            location_id = data.get('location_id')
+            location = self.location_model.get_by_id(location_id)
+            if not location:
+                return jsonify({'success': False, 'error': 'Không tìm thấy địa điểm'}), 404
+            success = self.location_model.delete_location(location_id)
+            
+            return jsonify({
+                'success': success,
+                'message': "Xóa danh sách địa điểm thành công" if success else "Xóa danh sách địa điểm thất bại",
+            })
+        except Exception as e:
+            self.db_session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    def api_location(self):
+        """API lấy danh sách địa điểm"""
+        try:
+            query = self.db_session.query(Location)
+            locations = query.all()
+            locations_data = []
+            for location in locations:
+                locations_data.append({
+                    'id': location.location_id,
+                    'name': location.name,
+                    'search_key': location.search_key,
+                    'city': location.city,
+                    'country': location.country,
+                    'description': location.description,
+                    'image_url': location.image_url
+                })
+
+            print(locations_data)
+
+            return jsonify({
+                'success': True,
+                'locations': locations_data
+            })
+        except Exception as e:
+            self.db_session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
 
     # Settings Management Methods
     def api_get_settings(self):

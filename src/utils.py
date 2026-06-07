@@ -4,13 +4,69 @@ import re
 import database as db
 
 DOMESTIC = [
-    { "name": "Sa Pa, Lào Cai", "searchKey": "Sa Pa" },
-    { "name": "Vịnh Hạ Long, Quảng Ninh", "searchKey": "Hạ Long" },
-    { "name": "Đảo Phú Quốc, Kiên Giang", "searchKey": "Phú Quốc" },
-    { "name": "Hội An, Quảng Nam", "searchKey": "Hội An" },
-    { "name": "Đồng Văn, Hà Giang", "searchKey": "Hà Giang" },
-    { "name": "Đà Lạt, Lâm Đồng", "searchKey": "Đà Lạt" },
-    { "name": "Nha Trang, Khánh Hòa", "searchKey": "Nha Trang" },
+    { 
+        "name": "Sa Pa, Lào Cai", 
+        "searchKey": "Sa Pa", 
+        "city": "Lào Cai", 
+        "country": "Vietnam", 
+        "slug": "sa-pa", 
+        "image_url": "https://ik.imagekit.io/tvlk/image/img/loc/9/6/969b605806ddf4eb06b5c6d4a59e31a3.jpg?tr=dpr-2,w-1200",
+        "description": "Khám phá cao nguyên đá với những thửa ruộng bậc thang tuyệt đẹp và văn hóa độc đáo của các dân tộc thiểu số."
+    },
+    { 
+        "name": "Vịnh Hạ Long, Quảng Ninh", 
+        "searchKey": "Hạ Long", 
+        "city": "Quảng Ninh", 
+        "country": "Vietnam", 
+        "slug": "ha-long",
+        "image_url": "https://ik.imagekit.io/tvlk/image/img/loc/9/6/969b605806ddf4eb06b5c6d4a59e31a3.jpg?tr=dpr-2,w-1200",
+        "description": "Khám phá cao nguyên đá với những thửa ruộng bậc thang tuyệt đẹp và văn hóa độc đáo của các dân tộc thiểu số."
+    },
+    { 
+        "name": "Đảo Phú Quốc, Kiên Giang", 
+        "searchKey": "Phú Quốc", 
+        "city": "Kiên Giang", 
+        "country": "Vietnam", 
+        "slug": "phu-quoc",
+        "image_url": "https://ik.imagekit.io/tvlk/image/img/loc/9/6/969b605806ddf4eb06b5c6d4a59e31a3.jpg?tr=dpr-2,w-1200",
+        "description": "Khám phá cao nguyên đá với những thửa ruộng bậc thang tuyệt đẹp và văn hóa độc đáo của các dân tộc thiểu số."
+    },
+    { 
+        "name": "Hội An, Quảng Nam", 
+        "searchKey": "Hội An", 
+        "city": "Quảng Nam", 
+        "country": "Vietnam", 
+        "slug": "hoi-an",
+        "image_url": "https://ik.imagekit.io/tvlk/image/img/loc/9/6/969b605806ddf4eb06b5c6d4a59e31a3.jpg?tr=dpr-2,w-1200",
+        "description": "Khám phá cao nguyên đá với những thửa ruộng bậc thang tuyệt đẹp và văn hóa độc đáo của các dân tộc thiểu số."
+    },
+    { 
+        "name": "Đồng Văn, Hà Giang", 
+        "searchKey": "Hà Giang", 
+        "city": "Hà Giang", 
+        "country": "Vietnam", 
+        "slug": "dong-van",
+        "image_url": "https://ik.imagekit.io/tvlk/image/img/loc/9/6/969b605806ddf4eb06b5c6d4a59e31a3.jpg?tr=dpr-2,w-1200",
+        "description": "Khám phá cao nguyên đá với những thửa ruộng bậc thang tuyệt đẹp và văn hóa độc đáo của các dân tộc thiểu số."
+    },
+    { 
+        "name": "Đà Lạt, Lâm Đồng", 
+        "searchKey": "Đà Lạt", 
+        "city": "Lâm Đồng", 
+        "country": "Vietnam", 
+        "slug": "da-lat",
+        "image_url": "https://ik.imagekit.io/tvlk/image/img/loc/9/6/969b605806ddf4eb06b5c6d4a59e31a3.jpg?tr=dpr-2,w-1200",
+        "description": "Khám phá cao nguyên đá với những thửa ruộng bậc thang tuyệt đẹp và văn hóa độc đáo của các dân tộc thiểu số."
+    },
+    {
+        "name": "Nha Trang, Khánh Hòa", 
+        "searchKey": "Nha Trang", 
+        "city": "Khánh Hòa", 
+        "country": "Vietnam", 
+        "slug": "nha-trang",
+        "image_url": "https://ik.imagekit.io/tvlk/image/img/loc/9/6/969b605806ddf4eb06b5c6d4a59e31a3.jpg?tr=dpr-2,w-1200",
+        "description": "Khám phá cao nguyên đá với những thửa ruộng bậc thang tuyệt đẹp và văn hóa độc đáo của các dân tộc thiểu số."
+    },
 ]
 
 CATEGORY_NAME = [

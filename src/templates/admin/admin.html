@@ -54,6 +54,11 @@
             </a>
         </li>
         <li>
+            <a href="#" data-section="location">
+                <i class="fas fa-map-marker-alt"></i> Quản lý địa điểm
+            </a>
+        </li>
+        <li>
             <a href="#" data-section="rejected">
                 <i class="fas fa-times-circle"></i> Bài từ chối
             </a>
@@ -115,6 +120,8 @@
     {% include 'admin/pednding-section.html' %}
 
     {% include 'admin/approved-section.html' %}
+
+    {% include 'admin/location-section.html' %}
 
     {% include 'admin/rejected-section.html' %}
 
@@ -308,10 +315,10 @@
                         <td>${statusBadge}</td>
                         <td>${user.created_at}</td>
                         <td>
-                            <button class="btn btn-sm btn-primary edit-user" data-id="${user.id}" title="Chỉnh sửa">
+                            <button class="btn btn-sm btn-primary edit-user" data-id="${user.user_id}" title="Chỉnh sửa">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn btn-sm ${user.is_active ? 'btn-warning' : 'btn-success'} toggle-user-status" data-id="${user.id}" title="${user.is_active ? 'Khóa' : 'Mở khóa'}">
+                            <button class="btn btn-sm ${user.is_active ? 'btn-warning' : 'btn-success'} toggle-user-status" data-id="${user.user_id}" title="${user.is_active ? 'Khóa' : 'Mở khóa'}">
                                 <i class="fas fa-${user.is_active ? 'lock' : 'unlock'}"></i>
                             </button>
                         </td>
@@ -368,13 +375,13 @@
             method: 'GET',
             success: function (response) {
                 if (response.success) {
-                    const user = response.user;
+                    const user = response.data;
                     $('#userModalLabel').html('<i class="fas fa-user-edit me-2"></i>Chỉnh sửa người dùng');
-                    $('#userId').val(user.id);
+                    $('#userId').val(user.user_id);
                     $('#username').val(user.username).prop('disabled', true);
                     $('#email').val(user.email);
                     $('#fullName').val(user.full_name || '');
-                    $('#phone').val(user.phone || '');
+                    $('#phone').val(user.phone_number || '');
                     $('#role').val(user.role);
                     $('#passwordRequired').hide();
                     $('#passwordHint').show();
@@ -489,6 +496,127 @@
             }
         }, 100);
     });
+</script>
+
+<script>
+
+    // location
+
+    // Event handlers
+    $(document).on('click', '#addLocationBtn', function () {
+        $('#locationModalLabel').html('<i class="fas fa-location-plus me-2"></i>Thêm địa điểm mới');
+        $('#locationForm')[0].reset();
+        $('#locationId').val('');
+        $('#locationImagePreview').attr('src', '{{ url_for("static", filename="images/default-image.jpg") }}');
+        $('#locationModal').modal('show');
+    });
+
+    $(document).on('click', '#saveLocationBtn', function () {
+        const form = $('#locationForm')[0];
+        if (!form.checkValidity()) {
+            form.classList.add('was-validated');
+            return;
+        }
+
+        const data = {
+            name: $('#name').val(),
+            search_key: $('#search_key').val(),
+            city: $('#city').val(),
+            country: $('#country').val(),
+            slug: $('#slug').val(),
+            description: $('#description').val(),
+            image_url: $('#image_url').val()
+        };
+
+        const locationId = $('#locationId').val();
+        const url = locationId ? `/admin/api/locations/update/${locationId}` : `/admin/api/locations/create`;
+        const method = locationId ? 'PUT' : 'POST';
+
+        $.ajax({
+            url: url,
+            method: method,
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (response) {
+                if (response.success) {
+                    $('#locationModal').modal('hide');
+                    loadLocations(currentLocationPage);
+                    alert(response.message || 'Thành công');
+                } else {
+                    alert(response.error || 'Có lỗi xảy ra');
+                }
+            },
+            error: function (xhr) {
+                const error = xhr.responseJSON?.error || 'Có lỗi xảy ra';
+                alert(error);
+            }
+        });
+    });
+
+    $(document).on('click', '.edit-location', function () {
+        const locationId = $(this).data('id');
+        $.ajax({
+            url: `/admin/api/locations/${locationId}`,
+            method: 'GET',
+            success: function (response) {
+                if (response.success) {
+                    const location = response.location;
+                    $('#locationModalLabel').html('<i class="fas fa-location-edit me-2"></i>Chỉnh sửa địa điểm');
+                    $('#locationId').val(location.id);
+                    $('#name').val(location.name);
+                    $('#search_key').val(location.search_key);
+                    $('#city').val(location.city);
+                    $('#country').val(location.country);
+                    $('#slug').val(location.slug);
+                    $('#description').val(location.description);
+                    $('#locationModal').modal('show');
+                }
+            }
+        });
+    });
+
+    $(document).on('click', '.delete-location', function () {
+        const locationId = $(this).data('id');
+        if (!confirm('Bạn có chắc chắn muốn xóa địa điểm này?')) return;
+        $.ajax({
+            url: `/admin/api/locations/${locationId}`,
+            method: 'DELETE',
+            success: function (response) {
+                if (response.success) {
+                    loadLocations();
+                    alert(response.message);
+                }
+            }
+        });
+    });
+
+    $('#city').on('change', function () {
+        const name = $(this).val();
+        const slug = slugify(name);
+        $('#slug').val(slug);
+    });
+
+    // Image preview and upload
+    $('#locationImage').change(function () {
+        const file = this.files[0];
+        if (file) {
+            // show
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                $('#locationImagePreview').attr('src', e.target.result);
+            };
+            reader.readAsDataURL(file);
+
+            uploadArticleImage(file, 'location', $('#locationId').val()).then(function (url) {
+                if (url) {
+                    $('#locationImagePreview .upload-progress').html('<div class="alert alert-success mt-2"><i class="fas fa-check"></i> Upload thành công</div>');
+                } else {
+                    $('#locationImagePreview .upload-progress').html('<div class="alert alert-danger mt-2"><i class="fas fa-times"></i> Upload thất bại</div>');
+                }
+            });
+        }
+    });
+
 </script>
 
 <script>

@@ -1,0 +1,93 @@
+<div class="content-section" id="location">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-map-marker-alt me-2"></i>Quản lý địa điểm
+            </h5>
+            <button class="btn btn-primary" id="addLocationBtn">
+                <i class="fas fa-plus me-2"></i>Thêm địa điểm
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th width="5%">#</th>
+                            <th width="40%">Tên</th>
+                            <th width="12%">Thành Phố</th>
+                            <th width="10%">Hình ảnh</th>
+                            <th width="10%">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Data will be loaded by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit/delete location Modal -->
+<div class="modal fade" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="locationModalLabel">
+                    <i class="fas fa-location-plus me-2"></i>Thêm địa điểm mới
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="locationForm">
+                    <input type="hidden" id="id" name="id">
+                    <div class="mb-3">
+                        <label class="form-label">Tên địa điểm <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Từ khóa tìm kiếm <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="search_key" name="search_key" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Thành phố <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="city" name="city" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="mb-3" style="display: none;">
+                        <input type="text" class="form-control" id="country" name="country" value="Vietnam" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Slug <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="slug" name="slug" required>
+                        <div class="invalid-feedback"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ảnh đại diện</label>
+                        <div id="imagePreview" class="mt-2">
+                            <img src="{{ url_for('static', filename='images/default-image.jpg') }}"
+                                id="locationImagePreview" alt="Ảnh đại diện" class="img-fluid"
+                                style="width: 100%; height: 100%; object-fit: cover;">
+                            <small class="text-muted">Ảnh sẽ được upload tự động khi chọn file</small>
+                        </div>
+                        <input type="file" class="form-control" id="locationImage" accept="image/*">
+                        <input type="hidden" id="imageUrl">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mô tả ngắn</label>
+                        <input type="text" class="form-control" id="description" name="description">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="saveLocationBtn">
+                    <i class="fas fa-save me-2"></i>Lưu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

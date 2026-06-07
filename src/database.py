@@ -273,6 +273,8 @@ class Location(Base):
     __tablename__ = 'locations'
     
     location_id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False)
+    search_key = Column(String(100), nullable=False)
     city = Column(String(100), nullable=False)
     country = Column(String(100), nullable=False)
     description = Column(Text)

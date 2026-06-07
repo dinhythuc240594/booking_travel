@@ -214,10 +214,11 @@ $(document).ready(function () {
 function updatePageTitle(section) {
     const titles = {
         'dashboard': 'Dashboard',
-        'pending': 'Pending Articles',
+        'pending': 'Bài viết chờ duyệt',
         'approved': 'Bài viết đã duyệt',
         'rejected': 'Bài viết bị từ chối',
         'api': 'Bài viết từ API',
+        'location': 'Quản lý địa điểm',
         'tags-manager': 'Quản lý Hashtag',
         'menu-manager': 'Quản lý Menu',
         'en-menu-manager': 'Menu Categories EN',
@@ -238,6 +239,9 @@ async function loadSectionData(section) {
             break;
         case 'rejected':
             loadRejectedArticles();
+            break;
+        case 'location':
+            loadLocations();
             break;
         // case 'api':
         //     loadAPIArticles();
@@ -365,6 +369,50 @@ async function loadRejectedArticles() {
         }
     } catch (error) {
         console.error('Lỗi tải bài viết bị từ chối:', error);
+    }
+}
+
+async function loadLocations() {
+    try {
+        const response = await fetch(`/admin/api/locations`, {
+            method: 'GET',
+            headers: {
+                // 'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            const locations = result.locations;
+            let html = '';
+            locations.forEach(location => {
+                html += `
+                <tr>
+                    <td>${location.id}</td>
+                    <td>${escapeHtml(location.name)}</td>
+                    <td>${escapeHtml(location.city)}</td>
+                    <td><img src="${escapeHtml(location.image_url)}" width="100px" height="100px"></td>
+                    <td>
+                        <button class="edit-location btn btn-sm btn-primary" data-id="${location.id}" title="Sửa">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="delete-location btn btn-sm btn-danger" data-id="${location.id}" title="Xóa">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            });
+
+            if (locations.length === 0) {
+                html = '<tr><td colspan="5" class="text-center text-muted">Không có địa điểm nào</td></tr>';
+            }
+
+            $('#location').find('tbody').html(html);
+        }
+    } catch (error) {
+        console.error('Lỗi tải địa điểm:', error);
     }
 }
 
@@ -664,10 +712,10 @@ async function loadPendingArticles() {
                             <button class="btn btn-sm btn-info btn-action btn-preview" data-bs-target="#previewArticleModal" data-id="${article.id}" title="Xem trước">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button class="btn btn-sm btn-success btn-action btn-approve" data-id="${article.id}" title="Duyệt">
+                            <button class="btn btn-sm btn-success btn-action btn-approve" data-id="${article.tour_id}" title="Duyệt">
                                 <i class="fas fa-check"></i>
                             </button>
-                            <button class="btn btn-sm btn-danger btn-action btn-reject" data-id="${article.id}" title="Từ chối">
+                            <button class="btn btn-sm btn-danger btn-action btn-reject" data-id="${article.tour_id}" title="Từ chối">
                                 <i class="fas fa-times"></i>
                             </button>
                         </td>

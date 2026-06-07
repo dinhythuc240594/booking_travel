@@ -415,3 +415,43 @@ class SettingModel:
         return SettingService.bulk_update(data_dict)
 
 
+class LocationModel:
+
+    """Model quản lý location"""
+    
+    def __init__(self, db_session):
+        self.db = db_session
+    
+    def create_location_bulk(self, locations: list) -> bool:
+        """Tạo nhiều location cùng lúc"""
+        return RelatedService.create_location_bulk(locations)
+
+    def update_location(self, location: dict) -> db.Location:
+        """Cập nhật thông tin location"""
+        if not location:
+            return None
+        location = self.db.query(db.Location).filter(db.Location.location_id == location['location_id']).first()
+        if not location:
+            return None
+        for key, value in location.items():
+            if hasattr(location, key):
+                setattr(location, key, value)
+        location.updated_at = datetime.datetime.utcnow()
+        self.db.commit()
+        self.db.refresh(location)
+        return location
+
+    def delete_location(self, location: dict) -> db.Location:
+        """Xóa thông tin location"""
+        if not location:
+            return None
+        location = self.db.query(db.Location).filter(db.Location.location_id == location['location_id']).first()
+        if not location:
+            return None
+        self.db.delete(location)
+        self.db.commit()
+        return True
+
+    def get_by_id(self, user_id: int) -> db.User:
+        """Get user follow ID"""
+        return RelatedService.get_location_by_id(user_id)

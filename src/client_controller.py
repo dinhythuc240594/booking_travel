@@ -60,8 +60,9 @@ class Controller():
 
     def handle_login(self):
 
-        username = request.form.get('username')
-        password = request.form.get('password')
+        data = request.json if request.is_json else request.form
+        username = data.get('username')
+        password = data.get('password')
 
         if self.user_model.is_locked_user(username):
             flash('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên', 'error')
@@ -247,7 +248,9 @@ class Controller():
         Page forgot password - Request reset
         Route: POST /forgot-password
         """
-        email = request.form.get('email', '').strip().lower()
+
+        data = request.json if request.is_json else request.form
+        email = data.get('email', '').strip().lower()
         
         # Validation
         if not email:
