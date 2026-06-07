@@ -1,4 +1,7 @@
 
+
+import os
+import shutil
 from database import (
     get_session, 
     Bookings, 
@@ -67,18 +70,36 @@ class RelatedService:
                 # Mapping đúng cấu trúc bảng location
                 location_data = {
                     'name': location.get('name'),
-                    'search_key': location.get('searchKey'),
+                    'search_key': location.get('search_key'),
                     'city': location.get('city'),
                     'country': location.get('country'),
                     'description': location.get('description'),
-                    'slug': location.get('slug'), 
+                    'slug': location.get('slug'),
                     'image_url': location.get('image_url'),
                 }
 
-                location_obj = Location(**location_data)
-                session.add(location_obj)
-                
-            session.commit()
+                location = Location(**location_data)
+                session.add(location)
+                session.commit()
+                session.refresh(location)
+
+                if location.location_id:
+                    temp_folder = os.path.join('src', 'static', 'uploads', 'locations', 'vn', 'temp')
+                    location_folder = os.path.join('src', 'static', 'uploads', 'locations', 'vn', f'location_{location.location_id}')
+                    
+                    if os.path.exists(temp_folder):
+                        os.makedirs(location_folder, exist_ok=True)
+                        # Di chuyển các file từ temp sang location folder
+                        for filename in os.listdir(temp_folder):
+                            src_path = os.path.join(temp_folder, filename)
+                            dst_path = os.path.join(location_folder, filename)
+                            if os.path.isfile(src_path):
+                                shutil.move(src_path, dst_path)
+                                if location.image_url and 'temp' in location.image_url:
+                                    image_url = location.image_url.replace('temp', f'location_{location.location_id}')
+                                    location.image_url = image_url
+                        session.commit()
+
             return True
         except Exception as e:
             print(e)

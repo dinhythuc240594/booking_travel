@@ -41,7 +41,7 @@
             </div>
             <div class="modal-body">
                 <form id="locationForm">
-                    <input type="hidden" id="id" name="id">
+                    <input type="hidden" id="locationId" name="locationId">
                     <div class="mb-3">
                         <label class="form-label">Tên địa điểm <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="name" name="name" required>
@@ -66,7 +66,6 @@
                         <div class="invalid-feedback"></div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Ảnh đại diện</label>
                         <div id="imagePreview" class="mt-2">
                             <img src="{{ url_for('static', filename='images/default-image.jpg') }}"
                                 id="locationImagePreview" alt="Ảnh đại diện" class="img-fluid"
@@ -74,7 +73,7 @@
                             <small class="text-muted">Ảnh sẽ được upload tự động khi chọn file</small>
                         </div>
                         <input type="file" class="form-control" id="locationImage" accept="image/*">
-                        <input type="hidden" id="imageUrl">
+                        <input type="hidden" id="image_url">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Mô tả ngắn</label>

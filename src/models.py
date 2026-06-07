@@ -136,10 +136,10 @@ class UserModel:
 
     def user_toggle_status(self, user_id: int):
         # Sử dụng Command Pattern
-        success, message = TourAdminService.user_toggle_status(user_id)
-        if success:
-            return jsonify({'success': True, 'message': message})
-        return jsonify({'success': False, 'error': message}), 500
+        data = TourAdminService.user_toggle_status(user_id)
+        if data['success'] == True:
+            return True, "Cập nhật thành công"
+        return False, "Không thể cập nhật"
 
 
 class BookingModel:
@@ -429,29 +429,34 @@ class LocationModel:
     def update_location(self, location: dict) -> db.Location:
         """Cập nhật thông tin location"""
         if not location:
-            return None
-        location = self.db.query(db.Location).filter(db.Location.location_id == location['location_id']).first()
-        if not location:
-            return None
-        for key, value in location.items():
-            if hasattr(location, key):
-                setattr(location, key, value)
-        location.updated_at = datetime.datetime.utcnow()
+            return False
+        location_id = location.get('location_id')
+        if not location_id:
+            return False
+        location_obj = self.db.query(db.Location).filter(db.Location.location_id == location_id).first()
+        if not location_obj:
+            return False
+        
+        for attr in location:
+            if hasattr(location_obj, attr):
+                setattr(location_obj, attr, location[attr])
+                
+        location_obj.updated_at = datetime.datetime.utcnow()
         self.db.commit()
-        self.db.refresh(location)
-        return location
+        self.db.refresh(location_obj)
+        return True
 
-    def delete_location(self, location: dict) -> db.Location:
+    def delete_location(self, location_id: int) -> bool:
         """Xóa thông tin location"""
+        if not location_id:
+            return False
+        location = self.db.query(db.Location).filter(db.Location.location_id == location_id).first()
         if not location:
-            return None
-        location = self.db.query(db.Location).filter(db.Location.location_id == location['location_id']).first()
-        if not location:
-            return None
+            return False
         self.db.delete(location)
         self.db.commit()
         return True
 
-    def get_by_id(self, user_id: int) -> db.User:
-        """Get user follow ID"""
-        return RelatedService.get_location_by_id(user_id)
+    def get_by_id(self, location_id: int) -> db.Location:
+        """Get location follow ID"""
+        return RelatedService.get_location_by_id(location_id)

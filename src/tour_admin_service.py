@@ -119,8 +119,8 @@ class TourAdminService:
         finally:
             session.close()
 
-
-    def user_toggle_status(self, user_id: int):
+    @staticmethod
+    def user_toggle_status(user_id: int):
 
         # Sử dụng Command Pattern
         session_db = get_session()
@@ -129,8 +129,8 @@ class TourAdminService:
         
         try:
             invoker.execute_transaction(session_db, [command])
-            return jsonify({'success': True, 'message': 'Thay đổi trạng thái user thành công'})
+            return {'success': True, 'message': 'Thay đổi trạng thái user thành công'}
         except Exception as e:
-            return jsonify({'success': False, 'error': str(e)}), 500
+            return {'success': False, 'error': str(e)}
         finally:
             session_db.close()

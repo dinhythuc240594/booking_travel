@@ -611,86 +611,86 @@ function renderTagsTable(tags) {
     }
 }
 
-function fillTagForm(id, name, slug) {
-    $('#tagId').val(id);
-    $('#tagName').val(name);
-    $('#tagSlug').val(slug || '');
-}
+// function fillTagForm(id, name, slug) {
+//     $('#tagId').val(id);
+//     $('#tagName').val(name);
+//     $('#tagSlug').val(slug || '');
+// }
 
-function resetTagForm() {
-    $('#tagId').val('');
-    $('#tagName').val('');
-    $('#tagSlug').val('');
-}
+// function resetTagForm() {
+//     $('#tagId').val('');
+//     $('#tagName').val('');
+//     $('#tagSlug').val('');
+// }
 
-async function saveTag() {
-    const id = $('#tagId').val();
-    const nameRaw = $('#tagName').val().trim();
-    const slugRaw = $('#tagSlug').val().trim();
+// async function saveTag() {
+//     const id = $('#tagId').val();
+//     const nameRaw = $('#tagName').val().trim();
+//     const slugRaw = $('#tagSlug').val().trim();
 
-    if (!nameRaw) {
-        alert('Vui lòng nhập tên hashtag');
-        return;
-    }
+//     if (!nameRaw) {
+//         alert('Vui lòng nhập tên hashtag');
+//         return;
+//     }
 
-    // Chuẩn hóa: bỏ dấu # nếu có ở đầu
-    const name = nameRaw.startsWith('#') ? nameRaw.substring(1) : nameRaw;
-    const payload = {
-        name: name,
-        slug: slugRaw || null
-    };
+//     // Chuẩn hóa: bỏ dấu # nếu có ở đầu
+//     const name = nameRaw.startsWith('#') ? nameRaw.substring(1) : nameRaw;
+//     const payload = {
+//         name: name,
+//         slug: slugRaw || null
+//     };
 
-    try {
-        let url = '/admin/api/tags';
-        let method = 'POST';
+//     try {
+//         let url = '/admin/api/tags';
+//         let method = 'POST';
 
-        if (id) {
-            url = `/admin/api/tags/${id}`;
-            method = 'PUT';
-        }
+//         if (id) {
+//             url = `/admin/api/tags/${id}`;
+//             method = 'PUT';
+//         }
 
-        const response = await fetch(url, {
-            method,
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
+//         const response = await fetch(url, {
+//             method,
+//             headers: {
+//                 'Content-Type': 'application/json'
+//             },
+//             body: JSON.stringify(payload)
+//         });
 
-        const result = await response.json();
+//         const result = await response.json();
 
-        if (response.ok && result.success) {
-            showToast('Thành công', id ? 'Đã cập nhật hashtag' : 'Đã tạo hashtag mới', 'success');
-            resetTagForm();
-            loadTags($('#tagSearchInput').val().trim());
-        } else {
-            showToast('Lỗi', result.error || 'Không thể lưu hashtag', 'warning');
-        }
-    } catch (error) {
-        console.error('Lỗi lưu hashtag:', error);
-        showToast('Lỗi', 'Có lỗi xảy ra khi lưu hashtag', 'warning');
-    }
-}
+//         if (response.ok && result.success) {
+//             showToast('Thành công', id ? 'Đã cập nhật hashtag' : 'Đã tạo hashtag mới', 'success');
+//             resetTagForm();
+//             loadTags($('#tagSearchInput').val().trim());
+//         } else {
+//             showToast('Lỗi', result.error || 'Không thể lưu hashtag', 'warning');
+//         }
+//     } catch (error) {
+//         console.error('Lỗi lưu hashtag:', error);
+//         showToast('Lỗi', 'Có lỗi xảy ra khi lưu hashtag', 'warning');
+//     }
+// }
 
-async function deleteTag(id) {
-    try {
-        const response = await fetch(`/admin/api/tags/${id}`, {
-            method: 'DELETE'
-        });
+// async function deleteTag(id) {
+//     try {
+//         const response = await fetch(`/admin/api/tags/${id}`, {
+//             method: 'DELETE'
+//         });
 
-        const result = await response.json();
+//         const result = await response.json();
 
-        if (response.ok && result.success) {
-            showToast('Thành công', 'Đã xóa hashtag', 'success');
-            loadTags($('#tagSearchInput').val().trim());
-        } else {
-            showToast('Lỗi', result.error || 'Không thể xóa hashtag', 'warning');
-        }
-    } catch (error) {
-        console.error('Lỗi xóa hashtag:', error);
-        showToast('Lỗi', 'Có lỗi xảy ra khi xóa hashtag', 'warning');
-    }
-}
+//         if (response.ok && result.success) {
+//             showToast('Thành công', 'Đã xóa hashtag', 'success');
+//             loadTags($('#tagSearchInput').val().trim());
+//         } else {
+//             showToast('Lỗi', result.error || 'Không thể xóa hashtag', 'warning');
+//         }
+//     } catch (error) {
+//         console.error('Lỗi xóa hashtag:', error);
+//         showToast('Lỗi', 'Có lỗi xảy ra khi xóa hashtag', 'warning');
+//     }
+// }
 
 // Load pending articles
 async function loadPendingArticles() {

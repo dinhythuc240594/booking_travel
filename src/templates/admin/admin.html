@@ -54,13 +54,13 @@
             </a>
         </li>
         <li>
-            <a href="#" data-section="location">
-                <i class="fas fa-map-marker-alt"></i> Quản lý địa điểm
+            <a href="#" data-section="rejected">
+                <i class="fas fa-times-circle"></i> Bài từ chối
             </a>
         </li>
         <li>
-            <a href="#" data-section="rejected">
-                <i class="fas fa-times-circle"></i> Bài từ chối
+            <a href="#" data-section="location">
+                <i class="fas fa-map-marker-alt"></i> Quản lý địa điểm
             </a>
         </li>
         <li class="nav-divider">
@@ -414,7 +414,7 @@
 
         const userId = $('#userId').val();
         const url = userId ? `/admin/api/users/update/${userId}` : `/admin/api/users/create`;
-        const method = userId ? 'PUT' : 'POST';
+        const method = 'POST';
 
         $.ajax({
             url: url,
@@ -501,7 +501,7 @@
 <script>
 
     // location
-
+    let currentLocationPage = 1;
     // Event handlers
     $(document).on('click', '#addLocationBtn', function () {
         $('#locationModalLabel').html('<i class="fas fa-location-plus me-2"></i>Thêm địa điểm mới');
@@ -523,14 +523,17 @@
             search_key: $('#search_key').val(),
             city: $('#city').val(),
             country: $('#country').val(),
-            slug: $('#slug').val(),
             description: $('#description').val(),
             image_url: $('#image_url').val()
         };
 
+        if (!$('#slug').is(':disabled')) {
+            data.slug = $('#slug').val();
+        }
+
         const locationId = $('#locationId').val();
         const url = locationId ? `/admin/api/locations/update/${locationId}` : `/admin/api/locations/create`;
-        const method = locationId ? 'PUT' : 'POST';
+        const method = 'POST';
 
         $.ajax({
             url: url,
@@ -555,6 +558,8 @@
 
     $(document).on('click', '.edit-location', function () {
         const locationId = $(this).data('id');
+        $('#slug').prop('readonly', true);
+        $('#slug').prop('disabled', true);
         $.ajax({
             url: `/admin/api/locations/${locationId}`,
             method: 'GET',
@@ -569,6 +574,8 @@
                     $('#country').val(location.country);
                     $('#slug').val(location.slug);
                     $('#description').val(location.description);
+                    $('#image_url').val(location.image_url);
+                    $('#locationImagePreview').attr('src', location.image_url);
                     $('#locationModal').modal('show');
                 }
             }
@@ -579,8 +586,8 @@
         const locationId = $(this).data('id');
         if (!confirm('Bạn có chắc chắn muốn xóa địa điểm này?')) return;
         $.ajax({
-            url: `/admin/api/locations/${locationId}`,
-            method: 'DELETE',
+            url: `/admin/api/locations/delete/${locationId}`,
+            method: 'POST',
             success: function (response) {
                 if (response.success) {
                     loadLocations();
@@ -591,8 +598,10 @@
     });
 
     $('#city').on('change', function () {
-        const name = $(this).val();
-        const slug = slugify(name);
+        const city = $(this).val();
+        const name = $('#name').val();
+        const name_slug = city + ' ' + name;
+        const slug = slugify(name_slug);
         $('#slug').val(slug);
     });
 
@@ -609,6 +618,7 @@
 
             uploadArticleImage(file, 'location', $('#locationId').val()).then(function (url) {
                 if (url) {
+                    $('#image_url').val(url)
                     $('#locationImagePreview .upload-progress').html('<div class="alert alert-success mt-2"><i class="fas fa-check"></i> Upload thành công</div>');
                 } else {
                     $('#locationImagePreview .upload-progress').html('<div class="alert alert-danger mt-2"><i class="fas fa-times"></i> Upload thất bại</div>');

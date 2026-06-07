@@ -122,14 +122,20 @@ class ApiCreateLocation(BaseAdminView):
 
 class ApiUpdateLocation(BaseAdminView):
 
-    def post(self):
-        return self.api_update_location()
+    def post(self, location_id):
+        return self.api_update_location(location_id)
 
 
 class ApiDeleteLocation(BaseAdminView):
 
-    def post(self):
-        return self.api_delete_location()
+    def post(self, location_id):
+        return self.api_delete_location(location_id)
+
+
+class APIGetLocation(BaseAdminView):
+
+    def get(self, location_id):
+        return self.api_get_location(location_id)
 
 
 class ApiCurrentUser(BaseAdminView):
@@ -224,6 +230,7 @@ class ApiUpdateUser(BaseAdminView):
     def post(self, user_id):
         return self.api_update_user(user_id)
 
+
 class ApiGetUser(BaseAdminView):
 
     def get(self, user_id):
@@ -284,8 +291,9 @@ admin_bp.add_url_rule('/api/chart-data', 'api_chart_data', ApiChartData.as_view(
 admin_bp.add_url_rule('/api/upload-image', 'api_upload_image', ApiUploadImage.as_view('api_upload_image'))
 admin_bp.add_url_rule('/api/locations', 'api_locations', ApiLocation.as_view('api_locations'))
 admin_bp.add_url_rule('/api/locations/create', 'api_create_location', ApiCreateLocation.as_view('api_create_location'))
-admin_bp.add_url_rule('/api/locations/update', 'api_update_location', ApiUpdateLocation.as_view('api_update_location'))
-admin_bp.add_url_rule('/api/locations/delete', 'api_delete_location', ApiDeleteLocation.as_view('api_delete_location'))
+admin_bp.add_url_rule('/api/locations/update/<int:location_id>', 'api_update_location', ApiUpdateLocation.as_view('api_update_location'))
+admin_bp.add_url_rule('/api/locations/delete/<int:location_id>', 'api_delete_location', ApiDeleteLocation.as_view('api_delete_location'))
+admin_bp.add_url_rule('/api/locations/<int:location_id>', 'api_get_location', APIGetLocation.as_view('api_get_location'))
 
 # API Users & Settings
 admin_bp.add_url_rule('/api/users', 'api_users_list', ApiUsersList.as_view('api_users_list'))

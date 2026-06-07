@@ -733,98 +733,98 @@ async function openMenuModal(mode, menuId, parentId = null) {
 }
 
 // Save menu
-async function saveMenu() {
-    const apiBase = getApiBase();
-    const formIdSelector = getSelector('formId');
-    const formParentSelector = getSelector('formParent');
-    const formNameSelector = getSelector('formName');
-    const formSlugSelector = getSelector('formSlug');
-    const formIconSelector = getSelector('formIcon');
-    const formOrderSelector = getSelector('formOrder');
-    const formVisibleSelector = getSelector('formVisible');
-    const modalSelector = getSelector('modal');
+// async function saveMenu() {
+//     const apiBase = getApiBase();
+//     const formIdSelector = getSelector('formId');
+//     const formParentSelector = getSelector('formParent');
+//     const formNameSelector = getSelector('formName');
+//     const formSlugSelector = getSelector('formSlug');
+//     const formIconSelector = getSelector('formIcon');
+//     const formOrderSelector = getSelector('formOrder');
+//     const formVisibleSelector = getSelector('formVisible');
+//     const modalSelector = getSelector('modal');
 
-    const menuId = $(formIdSelector).val();
-    const parentId = $(formParentSelector).val() ? parseInt($(formParentSelector).val()) : null;
+//     const menuId = $(formIdSelector).val();
+//     const parentId = $(formParentSelector).val() ? parseInt($(formParentSelector).val()) : null;
 
-    // Kiểm tra level nếu có parent_id
-    if (parentId) {
-        try {
-            const response = await fetch(apiBase);
-            const result = await response.json();
+//     // Kiểm tra level nếu có parent_id
+//     if (parentId) {
+//         try {
+//             const response = await fetch(apiBase);
+//             const result = await response.json();
 
-            if (result.success && result.data) {
-                const parentMenu = result.data.find(m => m.id === parentId);
-                if (parentMenu) {
-                    const parentLevel = parentMenu.level || 1;
-                    if (parentLevel >= 4) {
-                        showToast('Lỗi', 'Không thể tạo menu quá 4 cấp. Menu cha đã đạt cấp tối đa.', 'warning');
-                        return;
-                    }
-                }
-            }
-        } catch (error) {
-            console.error('Lỗi kiểm tra level:', error);
-        }
-    }
+//             if (result.success && result.data) {
+//                 const parentMenu = result.data.find(m => m.id === parentId);
+//                 if (parentMenu) {
+//                     const parentLevel = parentMenu.level || 1;
+//                     if (parentLevel >= 4) {
+//                         showToast('Lỗi', 'Không thể tạo menu quá 4 cấp. Menu cha đã đạt cấp tối đa.', 'warning');
+//                         return;
+//                     }
+//                 }
+//             }
+//         } catch (error) {
+//             console.error('Lỗi kiểm tra level:', error);
+//         }
+//     }
 
-    const menuData = {
-        name: $(formNameSelector).val().trim(),
-        slug: $(formSlugSelector).val().trim(),
-        parent_id: parentId,
-        icon: $(formIconSelector).val().trim() || null,
-        order: parseInt($(formOrderSelector).val()) || 1,
-        visible: $(formVisibleSelector).is(':checked')
-    };
+//     const menuData = {
+//         name: $(formNameSelector).val().trim(),
+//         slug: $(formSlugSelector).val().trim(),
+//         parent_id: parentId,
+//         icon: $(formIconSelector).val().trim() || null,
+//         order: parseInt($(formOrderSelector).val()) || 1,
+//         visible: $(formVisibleSelector).is(':checked')
+//     };
 
-    if (!menuData.name) {
-        alert('Vui lòng nhập tên menu!');
-        return;
-    }
+//     if (!menuData.name) {
+//         alert('Vui lòng nhập tên menu!');
+//         return;
+//     }
 
-    if (!menuData.slug) {
-        menuData.slug = slugify(menuData.name);
-    }
+//     if (!menuData.slug) {
+//         menuData.slug = slugify(menuData.name);
+//     }
 
-    try {
-        let response;
-        if (menuId) {
-            // Update existing menu
-            response = await fetch(`${apiBase}/${menuId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(menuData)
-            });
-        } else {
-            // Add new menu
-            response = await fetch(apiBase, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(menuData)
-            });
-        }
+//     try {
+//         let response;
+//         if (menuId) {
+//             // Update existing menu
+//             response = await fetch(`${apiBase}/${menuId}`, {
+//                 method: 'PUT',
+//                 headers: {
+//                     'Content-Type': 'application/json'
+//                 },
+//                 body: JSON.stringify(menuData)
+//             });
+//         } else {
+//             // Add new menu
+//             response = await fetch(apiBase, {
+//                 method: 'POST',
+//                 headers: {
+//                     'Content-Type': 'application/json'
+//                 },
+//                 body: JSON.stringify(menuData)
+//             });
+//         }
 
-        const result = await response.json();
+//         const result = await response.json();
 
-        if (result.success) {
-            showToast('Thành công', result.message || (menuId ? 'Đã cập nhật menu' : 'Đã thêm menu mới'), 'success');
-            const modalElement = document.querySelector(modalSelector);
-            bootstrap.Modal.getInstance(modalElement).hide();
-            loadMenuTable();
-            loadMenuTree();
-            loadParentMenuOptions();
-        } else {
-            showToast('Lỗi', result.error || 'Không thể lưu menu', 'warning');
-        }
-    } catch (error) {
-        console.error('Lỗi lưu menu:', error);
-        showToast('Lỗi', 'Có lỗi xảy ra khi lưu menu', 'warning');
-    }
-}
+//         if (result.success) {
+//             showToast('Thành công', result.message || (menuId ? 'Đã cập nhật menu' : 'Đã thêm menu mới'), 'success');
+//             const modalElement = document.querySelector(modalSelector);
+//             bootstrap.Modal.getInstance(modalElement).hide();
+//             loadMenuTable();
+//             loadMenuTree();
+//             loadParentMenuOptions();
+//         } else {
+//             showToast('Lỗi', result.error || 'Không thể lưu menu', 'warning');
+//         }
+//     } catch (error) {
+//         console.error('Lỗi lưu menu:', error);
+//         showToast('Lỗi', 'Có lỗi xảy ra khi lưu menu', 'warning');
+//     }
+// }
 
 // Slugify function
 function slugify(text) {
@@ -942,73 +942,73 @@ async function previewMenu() {
     }
 }
 
-// Update menu visibility
-async function updateMenuVisibility(menuId, visible) {
-    try {
-        const apiBase = getApiBase();
-        const response = await fetch(`${apiBase}/${menuId}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ visible: visible })
-        });
+// // Update menu visibility
+// async function updateMenuVisibility(menuId, visible) {
+//     try {
+//         const apiBase = getApiBase();
+//         const response = await fetch(`${apiBase}/${menuId}`, {
+//             method: 'PUT',
+//             headers: {
+//                 'Content-Type': 'application/json'
+//             },
+//             body: JSON.stringify({ visible: visible })
+//         });
 
-        const result = await response.json();
+//         const result = await response.json();
 
-        if (result.success) {
-            showToast('Thành công', 'Đã cập nhật trạng thái hiển thị', 'success');
-            loadMenuTable();
-            loadMenuTree();
-        } else {
-            showToast('Lỗi', result.error || 'Không thể cập nhật', 'warning');
-        }
-    } catch (error) {
-        console.error('Lỗi cập nhật visibility:', error);
-        showToast('Lỗi', 'Có lỗi xảy ra', 'warning');
-    }
-}
+//         if (result.success) {
+//             showToast('Thành công', 'Đã cập nhật trạng thái hiển thị', 'success');
+//             loadMenuTable();
+//             loadMenuTree();
+//         } else {
+//             showToast('Lỗi', result.error || 'Không thể cập nhật', 'warning');
+//         }
+//     } catch (error) {
+//         console.error('Lỗi cập nhật visibility:', error);
+//         showToast('Lỗi', 'Có lỗi xảy ra', 'warning');
+//     }
+// }
 
-// Reset menu to default
-async function resetMenuToDefault() {
-    try {
-        const apiBase = getApiBase();
-        // Xóa tất cả menu items
-        const response = await fetch(apiBase);
-        const result = await response.json();
+// // Reset menu to default
+// async function resetMenuToDefault() {
+//     try {
+//         const apiBase = getApiBase();
+//         // Xóa tất cả menu items
+//         const response = await fetch(apiBase);
+//         const result = await response.json();
 
-        if (result.success && result.data) {
-            // Xóa từng menu item
-            for (const menu of result.data) {
-                await fetch(`${apiBase}/${menu.id}`, {
-                    method: 'DELETE'
-                });
-            }
+//         if (result.success && result.data) {
+//             // Xóa từng menu item
+//             for (const menu of result.data) {
+//                 await fetch(`${apiBase}/${menu.id}`, {
+//                     method: 'DELETE'
+//                 });
+//             }
 
-            // Init default menu items
-            const initResponse = await fetch(`${apiBase}/init-default`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+//             // Init default menu items
+//             const initResponse = await fetch(`${apiBase}/init-default`, {
+//                 method: 'POST',
+//                 headers: {
+//                     'Content-Type': 'application/json'
+//                 }
+//             });
 
-            const initResult = await initResponse.json();
+//             const initResult = await initResponse.json();
 
-            if (initResult.success) {
-                showToast('Thành công', 'Đã reset menu về mặc định', 'success');
-                loadMenuTable();
-                loadMenuTree();
-                loadParentMenuOptions();
-            } else {
-                showToast('Lỗi', initResult.error || 'Không thể reset menu', 'warning');
-            }
-        }
-    } catch (error) {
-        console.error('Lỗi reset menu:', error);
-        showToast('Lỗi', 'Có lỗi xảy ra khi reset menu', 'warning');
-    }
-}
+//             if (initResult.success) {
+//                 showToast('Thành công', 'Đã reset menu về mặc định', 'success');
+//                 loadMenuTable();
+//                 loadMenuTree();
+//                 loadParentMenuOptions();
+//             } else {
+//                 showToast('Lỗi', initResult.error || 'Không thể reset menu', 'warning');
+//             }
+//         }
+//     } catch (error) {
+//         console.error('Lỗi reset menu:', error);
+//         showToast('Lỗi', 'Có lỗi xảy ra khi reset menu', 'warning');
+//     }
+// }
 
 // Show toast notification
 function showToast(title, message, type) {

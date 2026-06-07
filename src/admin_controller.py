@@ -976,16 +976,9 @@ class AdminController:
         # Lấy news_id từ request (nếu có) để lưu vào thư mục tương ứng
         data = request.json if request.is_json else request.form
         type_data = data.get('type_data')
-        id = data.get('id')
 
-        # Tạo thư mục lưu ảnh
-        if type_data == 'tour':
-            upload_folder = os.path.join('src', 'static', 'uploads', 'tour', 'vn', f'tour_{id}')
-        elif type_data == 'location':
-            upload_folder = os.path.join('src', 'static', 'uploads', 'location', 'vn', f'location_{id}')
-        else:
-            # Nếu chưa có tour_id, lưu vào thư mục temp
-            upload_folder = os.path.join('src', 'static', 'uploads', 'tour', 'vn', 'temp')
+        # Nếu chưa có tour_id, lưu vào thư mục temp
+        upload_folder = os.path.join('src', 'static', 'uploads', type_data, 'vn', 'temp')
         
         os.makedirs(upload_folder, exist_ok=True)
         
@@ -999,12 +992,7 @@ class AdminController:
         file.save(filepath)
         
         # Tạo URL trả về (relative to static folder)
-        if type_data == 'tour':
-            image_url = f"static/uploads/tour/vn/{'tour_' + str(id) if id else 'temp'}/{filename}"
-        elif type_data == 'location':
-            image_url = f"static/uploads/location/vn/{'location_' + str(id) if id else 'temp'}/{filename}"
-        else:
-            image_url = f"static/uploads/tour/vn/{'temp'}/{filename}"
+        image_url = f"static/uploads/{type_data}/vn/{'temp'}/{filename}"
         
         return jsonify({
             'success': True,
@@ -1338,6 +1326,7 @@ class AdminController:
             country = data.get('country', '').strip()
             description = data.get('description', '').strip()
             image_url = data.get('image_url', '').strip()
+            slug = data.get('slug', '')
             
             success = self.location_model.create_location_bulk(
                 [{   
@@ -1346,7 +1335,8 @@ class AdminController:
                 'city':city,
                 'country':country,
                 'description':description,
-                'image_url':image_url
+                'image_url':image_url,
+                'slug':slug
                 }]
             )
 
@@ -1358,7 +1348,7 @@ class AdminController:
             self.db_session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
 
-    def api_update_location(self):
+    def api_update_location(self, location_id):
         """API cập nhật danh sách địa điểm"""
         try:
             if 'user_id' not in session:
@@ -1375,14 +1365,13 @@ class AdminController:
             country = data.get('country', '').strip()
             description = data.get('description', '').strip()
             image_url = data.get('image_url', '').strip()
-            location_id = data.get('location_id')
-            
+            # location_id = data.get('location_id', '')
             location = self.location_model.get_by_id(location_id)
             if not location:
                 return jsonify({'success': False, 'error': 'Không tìm thấy địa điểm'}), 404
             success = self.location_model.update_location(
                 {
-                    'id':location_id,
+                    'location_id':location_id,
                     'name':name,
                     'search_key':search_key,
                     'city':city,
@@ -1400,7 +1389,7 @@ class AdminController:
             self.db_session.rollback()
             return jsonify({'success': False, 'error': str(e)}), 500
 
-    def api_delete_location(self):
+    def api_delete_location(self, location_id):
         try:
             if 'user_id' not in session:
                 return jsonify({'success': False, 'error': 'Unauthorized'}), 401
@@ -1410,7 +1399,7 @@ class AdminController:
                 return jsonify({'success': False, 'error': 'Permission denied'}), 403
             
             data = request.json if request.is_json else request.form
-            location_id = data.get('location_id')
+            # location_id = data.get('location_id')
             location = self.location_model.get_by_id(location_id)
             if not location:
                 return jsonify({'success': False, 'error': 'Không tìm thấy địa điểm'}), 404
@@ -1446,6 +1435,28 @@ class AdminController:
             return jsonify({
                 'success': True,
                 'locations': locations_data
+            })
+        except Exception as e:
+            self.db_session.rollback()
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    def api_get_location(self, location_id):
+        try:
+            location = self.location_model.get_by_id(location_id)
+            if not location:
+                return jsonify({'success': False, 'error': 'Không tìm thấy địa điểm'}), 404
+            return jsonify({
+                'success': True,
+                'location': {
+                    'id': location.location_id,
+                    'name': location.name,
+                    'search_key': location.search_key,
+                    'city': location.city,
+                    'country': location.country,
+                    'description': location.description,
+                    'image_url': location.image_url,
+                    'slug': location.slug
+                }
             })
         except Exception as e:
             self.db_session.rollback()
