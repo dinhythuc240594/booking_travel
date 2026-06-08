@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 interface LocationOption {
   name: string;
-  searchKey: string;
+  search_key: string;
 }
 
 export default function TourSearch() {
@@ -191,7 +191,7 @@ export default function TourSearch() {
                         key={i}
                         type="button"
                         onClick={() => {
-                          setDestination(dest.searchKey);
+                          setDestination(dest.search_key);
                           setIsDestDropdownOpen(false);
                         }}
                         className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors text-left cursor-pointer"

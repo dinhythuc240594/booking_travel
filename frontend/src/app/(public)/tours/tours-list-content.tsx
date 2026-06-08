@@ -124,7 +124,7 @@ export default function ToursListContent() {
     if (searchQuery.trim()) {
       const term = searchQuery.toLowerCase();
       const inTitle = tour.title.toLowerCase().includes(term);
-      const inLocation = tour.location.toLowerCase().includes(term);
+      const inLocation = tour.location_name?.toLowerCase()?.includes(term) || false;
       if (!inTitle && !inLocation) return false;
     }
 

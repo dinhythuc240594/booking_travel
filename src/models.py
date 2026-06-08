@@ -521,6 +521,7 @@ class LocationModel:
             "updated_at": location.updated_at,
             "toursCount": self.count_location_by_name_popular(location.location_id),
             "image_url": location.image_url,
+            "search_key": location.search_key,
         }
 
     def count_location_by_name_popular(self, location_id: int) -> int:
