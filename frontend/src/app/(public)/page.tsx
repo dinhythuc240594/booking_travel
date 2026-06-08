@@ -164,7 +164,7 @@ export default function PublicPage() {
           {listTours.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {listTours.map((tour) => (
-                <div key={tour.id} className="animate-fade-in duration-500">
+                <div key={tour.tour_id} className="animate-fade-in duration-500">
                   <TourCard tour={tour} />
                 </div>
               ))}
