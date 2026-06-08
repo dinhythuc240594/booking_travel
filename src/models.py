@@ -271,6 +271,10 @@ class TourModel:
         ).first()
     
     def get_by_category_name(self, category_name: str) -> db.Tour:
+        if category_name == 'all':
+            return self.db.query(db.Tour).filter(
+                db.Tour.is_deleted == False
+            ).all()
         return self.db.query(db.Tour).filter(
             db.Tour.category_name == category_name,
             db.Tour.is_deleted == False
@@ -488,5 +492,43 @@ class LocationModel:
         """Get location follow ID"""
         return RelatedService.get_location_by_id(location_id)
 
-    def get_all(self):
-        return self.db.query(db.Location).filter(db.Location.is_deleted == False).all()
+    def get_location(self, is_popular=False, limit=25, offset=0) -> list[db.Location]:
+        """Get all location"""
+        query = self.db.query(db.Location).filter(db.Location.is_deleted == False)
+        if is_popular:
+            query = query.filter(db.Location.is_popular == True)
+        query = query.order_by(desc(db.Location.created_at))
+        if limit:
+            query = query.limit(limit).offset(offset)
+        return query.all()
+
+    def get_location_by_name(self, name: str) -> db.Location:
+        """Get location follow name"""
+        if not name:
+            return None
+        name_like = f"%{name}%"
+        return self.db.query(db.Location).filter(db.Location.name.like(name_like)).first()
+
+    def _location_to_dict(self, location: db.Location) -> dict:
+        """Convert Location object to dictionary"""
+        return {
+            "location_id": location.location_id,
+            "name": location.name,
+            "city": location.city,
+            "country": location.country,
+            "is_deleted": location.is_deleted,
+            "created_at": location.created_at,
+            "updated_at": location.updated_at,
+            "toursCount": self.count_location_by_name_popular(location.location_id),
+            "image_url": location.image_url,
+        }
+
+    def count_location_by_name_popular(self, location_id: int) -> int:
+        """Get count location follow name and is popular"""
+        count_tour = self.db.query(db.Tour).filter(
+            db.Tour.location_id == location_id,
+            db.Tour.status == db.TourStatus.PUBLISHED
+        ).count()
+        return count_tour
+
+    

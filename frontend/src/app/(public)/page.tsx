@@ -34,7 +34,7 @@ export default function PublicPage() {
         const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/tours?category=${activeCategory}`);
         if (res.ok) {
           const data = await res.json();
-          setListTours(data);
+          setListTours(data.tours);
         }
       } catch (err) {
         console.error("Lỗi khi tải danh sách địa danh:", err);

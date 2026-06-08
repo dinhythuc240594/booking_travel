@@ -21,6 +21,7 @@ from models import (
     TourModel,
     UserModel,
     BookingModel,
+    LocationModel
 )
 
 PER_PAGE = 25
@@ -39,6 +40,7 @@ class Controller():
         self.booking_model = BookingModel(self.db_session)
         self.tour_model = TourModel(self.db_session)
         self.user_model = UserModel(self.db_session)
+        self.location_model = LocationModel(self.db_session)
 
     def list_tour(self, limit = 25, offset = 0):
         """
@@ -426,51 +428,25 @@ class Controller():
     def locations(self):
         """API lấy danh sách địa điểm"""
         try:
-            location_type = request.args.get('type', 'all')
-            is_popular = request.args.get('is_popular', False)
-            query = self.db_session.query(Location)
             
-            if location_type != 'all':
-                query = query.filter(Location.location_type == location_type)
-            
-            if is_popular == 'true':
-                query = query.filter(Location.is_popular == True)
-            
-            locations = query.all()
-            locations_data = {}
-            domestic = []
-            for location in locations:
-                location.name = location.name.strip()
-                location.location_type = location.location_type.strip()
-                location.searchKey = location.name.replace(",", " ")
-                location.image = location.image_url
-                domestic.append(location)
+            is_popular = request.args.get('is_popular', "false")    
+            locations = self.location_model.get_location(is_popular=is_popular)
+            locations = [self.location_model._location_to_dict(location) for location in locations]
 
-            if not domestic:
-                domestic = DOMESTIC
+            if not locations:
+                locations = DOMESTIC
 
             if is_popular:
-                for location in domestic:
-                    count_tour = self.db_session.query(Tour).filter(
-                        Tour.location_id == location.location_id,
-                        Tour.status == TourStatus.PUBLISHED
-                    ).count()
-                    location.toursCount = count_tour
+                locations.sort(key=lambda x : x["toursCount"], reverse=True)
+                locations = locations[:6]
 
-                domestic.sort(key=lambda x : x.toursCount, reverse=True) 
-                domestic = domestic[:6]
-
-                for location in domestic:
-                    if location.toursCount > 10:
-                        location.className = "md:col-span-1 md:row-span-2 h-[340px] md:h-[420px]"
+                for location in locations:
+                    if location["toursCount"] > 10:
+                        location["className"] = "md:col-span-1 md:row-span-2 h-[340px] md:h-[420px]"
                     else:
-                        location.className = "md:col-span-1 md:row-span-1 h-[200px]"
+                        location["className"] = "md:col-span-1 md:row-span-1 h-[200px]"
 
-            locations_data = {
-                "domestic": domestic,
-            }
-
-            return locations_data
+            return locations
         except Exception as e:
             self.db_session.rollback()
             print(f"error: " + str(e))
