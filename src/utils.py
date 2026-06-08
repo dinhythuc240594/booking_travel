@@ -78,6 +78,13 @@ CATEGORY_NAME = [
     # { "id": "international", "name": "Quốc tế" },
 ]
 
+CATEGORY_NAME_DICT = {
+    "beach": "Biển đảo",
+    "mountain": "Núi rừng",
+    "resort": "Nghỉ dưỡng",
+    "culture": "Văn hóa",
+}
+
 # hash password before save into db
 def hash_password(password: str) -> str:
     return generate_password_hash(password)

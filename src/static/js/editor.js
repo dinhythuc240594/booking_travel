@@ -35,14 +35,6 @@ $(document).ready(function () {
         }
     });
 
-    const sectionLoaders = {
-        'my-articles': () => loadMyArticles(1, $('#filterStatus').val(), $('#searchMyArticles').val().trim()),
-        'drafts': () => loadDrafts(),
-        'pending': () => loadPendingArticlesEditor(),
-        'rejected': () => loadRejectedArticles(),
-        'published': () => loadPublishedArticles(),
-    };
-
     // Load notifications khi mở dropdown
     $('#notificationDropdown').on('click', function () {
         loadNotifications(false); // Không hiển thị toast khi click vào dropdown
@@ -296,6 +288,30 @@ function initEditorStats() {
     }, 30000);
 }
 
+// Load data for specific section
+async function loadSectionData(section) {
+    switch (section) {
+        case 'my-articles':
+            loadMyArticles(1, $('#filterStatus').val(), $('#searchMyArticles').val().trim());
+            break;
+        case 'drafts':
+            loadDrafts();
+            break;
+        case 'pending':
+            loadPendingArticlesEditor();
+            break;
+        case 'rejected':
+            loadRejectedArticles();
+            break;
+        case 'published':
+            loadPublishedArticles();
+            break;
+        case 'dashboard':
+            refreshEditorStats();
+            break;
+    }
+}
+
 async function requestMyArticles({ page = 1, perPage = 10, status = null, search = null } = {}) {
     const params = new URLSearchParams();
     params.append('page', page);
@@ -546,7 +562,7 @@ async function loadMyArticles(page = 1, status = null, search = null) {
             title: item.title,
             // Ưu tiên tên danh mục lấy từ bảng categories (category_name / category_title...),
             // fallback về slug hoặc chuỗi rỗng nếu không có
-            category: item.category_name || item.category_title || item.category || '',
+            category_name: item.category_name || item.category_title || item.category || '',
             status: item.status, // ví dụ: 'draft' | 'pending' | 'published'
             visible: item.visible !== undefined ? item.visible : true,
             // Chuyển ngày về string hiển thị
@@ -616,7 +632,7 @@ async function fetchMyArticlesForSection(status, page, search, tableId, paginati
         const articles = (result.data || []).map(item => ({
             tour_id: item.tour_id,
             title: item.title,
-            category: item.category_name || (item.category && item.category.name) || '',
+            category_name: item.category_name || (item.category && item.category.name) || '',
             status: item.status,
             visible: item.visible !== undefined ? item.visible : true,
             date: item.created_at || item.published_at || ''
@@ -678,7 +694,7 @@ function displayArticles(articles, tableBodyId) {
         html += '<tr>';
         // html += '<td>' + (index + 1) + '</td>';
         html += '<td><strong>' + article.title + '</strong></td>';
-        html += '<td><span class="badge bg-primary">' + article.category + '</span></td>';
+        html += '<td><span class="badge bg-primary">' + article.category_name + '</span></td>';
         if (tableBodyId != 'draftsTable' && tableBodyId != 'publishedTable') {
             html += '<td>' + statusBadge + '</td>';
         } else {

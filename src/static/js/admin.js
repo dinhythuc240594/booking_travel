@@ -284,7 +284,7 @@ async function loadApprovedArticles() {
                         <td>${index + 1}</td>
                         <td><strong>${article.title}</strong></td>
                         <td>${article.author}</td>
-                        <td><span class="badge bg-primary">${article.category}</span></td>
+                        <td><span class="badge bg-primary">${article.category_name}</span></td>
                         <td>${article.date}</td>
                         <td><span class="badge bg-success">${article.views} lượt xem</span></td>
                         <td>
@@ -332,7 +332,7 @@ async function loadRejectedArticles() {
                             ${typeBadge}
                         </td>
                         <td>${escapeHtml(article.author)}</td>
-                        <td><span class="badge bg-primary">${escapeHtml(article.category)}</span></td>
+                        <td><span class="badge bg-primary">${escapeHtml(article.category_name)}</span></td>
                         <td>${article.date}</td>
                         <td>
                             <small>${escapeHtml(rejectedBy)}</small><br>
@@ -702,7 +702,7 @@ async function loadPendingArticles() {
                         <td>${index + 1}</td>
                         <td><strong>${article.title}</strong></td>
                         <td>${article.author}</td>
-                        <td><span class="badge bg-primary">${article.category}</span></td>
+                        <td><span class="badge bg-primary">${article.category_name}</span></td>
                         <td>${article.date}</td>
                         <td>
                             <button class="btn btn-sm btn-info btn-action btn-preview" data-bs-target="#previewArticleModal" data-id="${article.tour_id}" title="Xem trước">

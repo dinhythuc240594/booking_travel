@@ -8,7 +8,7 @@ import re
 import os
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME
+from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME, CATEGORY_NAME_DICT
 from email_utils import send_email
 from database import (
     Bookings,
@@ -636,6 +636,7 @@ class AdminController:
             'view_count': getattr(tour, "view_count", 0),
             'created_at': tour.created_at.isoformat() if getattr(tour, "created_at", None) else None,
             'published_at': tour.published_at.isoformat() if getattr(tour, "published_at", None) else None,
+            'category_name': CATEGORY_NAME_DICT.get(getattr(tour, "category_name", None), 'N/A')
         }
     
     def api_statistics(self):
@@ -724,7 +725,7 @@ class AdminController:
     def api_pending_tour(self):
         """API lấy danh sách bài viết chờ duyệt"""
         tour = self.tour_model.get_all(status=TourStatus.PENDING, limit=100)
-        
+
         return jsonify({
             'success': True,
             'data': [{
@@ -732,6 +733,7 @@ class AdminController:
                 'title': tour.title,
                 'author': tour.author.username if tour.author else 'N/A',
                 'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
+                'category_name': CATEGORY_NAME_DICT[tour.category_name] if tour.category_name else 'N/A',
                 'status': tour.status.value
             } for tour in tour]
         })
