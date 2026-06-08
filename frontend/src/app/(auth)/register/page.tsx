@@ -118,69 +118,6 @@ function RegisterContent() {
       setError(data?.message || "Email hoặc mật khẩu không chính xác.");
       setLoading(false);
     }
-
-    // setTimeout(() => {
-    //   // Đọc danh sách custom users đã lưu
-    //   let customUsers = [];
-    //   try {
-    //     customUsers = JSON.parse(localStorage.getItem("vitravel-custom-users") || "[]");
-    //   } catch (err) {
-    //     console.error("Lỗi đọc custom users từ localStorage:", err);
-    //   }
-
-
-    //   const mockUsers = [{}];
-    //   // Kiểm tra trùng email
-    //   const emailExists = [...mockUsers, ...customUsers].some(
-    //     (u) => u.email.toLowerCase() === email.trim().toLowerCase()
-    //   );
-
-    //   if (emailExists) {
-    //     setError("Email này đã được sử dụng cho tài khoản khác.");
-    //     setLoading(false);
-    //     return;
-    //   }
-
-    //   // Tạo user mới
-    //   const newUserId = "u-" + Math.floor(100000 + Math.random() * 900000);
-    //   const newUser = {
-    //     id: newUserId,
-    //     email: email.trim().toLowerCase(),
-    //     name: name.trim(),
-    //     role: UserRole.CUSTOMER,
-    //     phoneNumber: phoneNumber.trim(),
-    //     createdAt: new Date().toISOString(),
-    //     updatedAt: new Date().toISOString(),
-    //     password: password, // Lưu để thực hiện login giả lập
-    //   };
-
-    //   // Lưu lại vào localStorage
-    //   try {
-    //     localStorage.setItem("vitravel-custom-users", JSON.stringify([...customUsers, newUser]));
-    //   } catch (err) {
-    //     console.error("Lỗi ghi custom users vào localStorage:", err);
-    //   }
-
-    //   // Tách password ra khỏi đối tượng trước khi đăng nhập lưu vào Zustand store
-    //   const userWithoutPassword = {
-    //     id: newUser.id,
-    //     email: newUser.email,
-    //     name: newUser.name,
-    //     role: newUser.role,
-    //     phoneNumber: newUser.phoneNumber,
-    //     createdAt: newUser.createdAt,
-    //     updatedAt: newUser.updatedAt,
-    //   };
-
-    //   // Thực hiện đăng nhập trực tiếp
-    //   login(userWithoutPassword, "mock-jwt-token-xyz");
-    //   setSuccess(true);
-    //   setLoading(false);
-
-    //   setTimeout(() => {
-    //     router.push(redirectUrl);
-    //   }, 1200);
-    // }, 900);
   };
 
   return (

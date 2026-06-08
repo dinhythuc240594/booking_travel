@@ -81,6 +81,7 @@ export default function TourSearch() {
     // Đóng toàn bộ dropdowns
     setIsDestDropdownOpen(false);
     setIsGuestPickerOpen(false);
+    //// KHÔNG CẦN SET process.env.NEXT_PUBLIC_WEB_BASE_URL với router ////
     router.push(`/tours?${params.toString()}`);
   };
 

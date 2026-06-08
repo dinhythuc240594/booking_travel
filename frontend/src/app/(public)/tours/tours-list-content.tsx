@@ -94,11 +94,35 @@ export default function ToursListContent() {
       if (children) params.append("children", children.toString());
       const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/search?${params.toString()}`);
       const json = await res.json();
-      const data = json.tours;
-      setTours(data);
+      const data = json.tours || [];
+      const normalized = data.map((t: any) => {
+        const durationDays = t.duration_days || 1;
+        const durationStr = `${durationDays} ngày ${Math.max(0, durationDays - 1)} đêm`;
+        return {
+          ...t,
+          id: String(t.tour_id || t.id),
+          title: t.title || "",
+          slug: t.slug || "",
+          description: t.content || t.summary || "",
+          price: Number(t.price_per_adult || t.price || 0),
+          discountPrice: t.discountPrice || undefined,
+          duration: t.duration ? t.duration : durationStr,
+          location: t.location_name || t.location || "Việt Nam",
+          featuredImage: t.thumbnail || t.featuredImage || "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80",
+          images: Array.isArray(t.images) && t.images.length > 0 ? t.images : [t.thumbnail || t.featuredImage],
+          rating: t.rating || 4.8,
+          reviewsCount: t.reviewsCount || 12,
+          category: t.category_name || t.category || "culture",
+          maxGroupSize: t.maxGroupSize || 20,
+          startDates: t.startDates || ["2026-06-12", "2026-06-19", "2026-06-26"],
+          highlights: t.highlights || []
+        };
+      });
+      setTours(normalized);
     }
     search();
   }, [searchQuery, date, guests, adults, children]);
+
 
   // Hàm Reset bộ lọc
   const handleResetFilters = () => {

@@ -133,6 +133,15 @@ class Bookings(BaseClientView):
     def get(self):
         return self.bookings()
 
+    def post(self):
+        return self.create_booking()
+
+
+class CancelBooking(BaseClientView):
+    
+    def post(self, booking_id):
+        return self.cancel_booking_route(booking_id)
+
 
 class Location(BaseClientView):
 
@@ -153,6 +162,7 @@ client_bp.add_url_rule('/tours/<tours_slug>', 'tours_detail', ToursDetail.as_vie
 client_bp.add_url_rule('/locations', 'locations', Location.as_view('locations'))
 # client_bp.add_url_rule('/catagory', 'tours_category', TourCategory.as_view('tours_category'))
 client_bp.add_url_rule('/bookings', 'bookings', Bookings.as_view('bookings'))
+client_bp.add_url_rule('/bookings/cancel/<int:booking_id>', 'cancel_booking', CancelBooking.as_view('cancel_booking'))
 
 client_bp.add_url_rule('/signin', 'signin', Login.as_view('signin'))
 client_bp.add_url_rule('/signup', 'signup', Register.as_view('signup'))

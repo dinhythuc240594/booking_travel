@@ -24,40 +24,95 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
   const [children, setChildren] = useState(0);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [recentBookingId, setRecentBookingId] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const pricePerAdult = tour.discountPrice || tour.price;
   const pricePerChild = Math.round(pricePerAdult * 0.7); // Trẻ em 70% giá người lớn
   const totalPrice = adults * pricePerAdult + children * pricePerChild;
 
-  const handleBooking = (e: React.FormEvent) => {
+  const handleBooking = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isAuthenticated || !user) {
-      // Nếu chưa đăng nhập, chuyển sang trang login và chuyển hướng ngược lại sau khi đăng nhập
-      router.push(`${process.env.NEXT_PUBLIC_WEB_BASE_URL}/login?redirect=/tours/${tour.slug}`);
+      //// Nếu chưa đăng nhập, chuyển sang trang login và chuyển hướng ngược lại sau khi đăng nhập ////
+      //// KHÔNG CẦN SET process.env.NEXT_PUBLIC_WEB_BASE_URL với router ////
+      router.push(`/login?redirect=/tours/${tour.slug}`);
       return;
     }
 
-    const bookingId = `book-${Math.random().toString(36).substring(2, 11)}`;
-    const newBooking: Booking = {
-      id: bookingId,
-      tourId: tour.id,
-      tourTitle: tour.title,
-      tourImage: tour.featuredImage,
-      userId: user.id,
-      userName: user.name,
-      departureDate,
-      adults,
-      children,
-      totalPrice,
-      status: BookingStatus.PENDING,
-      paymentStatus: PaymentStatus.PENDING,
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      setIsSubmitting(true);
+      const bookingData = {
+        tourId: tour.id,
+        userId: user.id,
+        departureDate,
+        adults,
+        children,
+        totalPrice,
+        paymentMethod: "credit_card"
+      };
 
-    addBooking(newBooking);
-    setRecentBookingId(bookingId);
-    setIsSuccessModalOpen(true);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(bookingData)
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to save booking to database");
+      }
+
+      const responseData = await res.json();
+      const savedBooking = responseData.booking;
+
+      const newBooking: Booking = {
+        id: String(savedBooking.id),
+        tourId: tour.id,
+        tourTitle: tour.title,
+        tourImage: tour.featuredImage,
+        userId: user.id,
+        userName: user.name,
+        departureDate,
+        adults,
+        children,
+        totalPrice,
+        status: BookingStatus.PENDING,
+        paymentStatus: PaymentStatus.PENDING,
+        createdAt: new Date().toISOString(),
+      };
+
+      addBooking(newBooking);
+      setRecentBookingId(String(savedBooking.id));
+      setIsSuccessModalOpen(true);
+    } catch (error) {
+      console.error("Booking error:", error);
+
+      // Fallback: If backend is not available, save to local Zustand store as dummy
+      const bookingId = `book-${Math.random().toString(36).substring(2, 11)}`;
+      const newBooking: Booking = {
+        id: bookingId,
+        tourId: tour.id,
+        tourTitle: tour.title,
+        tourImage: tour.featuredImage,
+        userId: user.id,
+        userName: user.name,
+        departureDate,
+        adults,
+        children,
+        totalPrice,
+        status: BookingStatus.PENDING,
+        paymentStatus: PaymentStatus.PENDING,
+        createdAt: new Date().toISOString(),
+      };
+
+      addBooking(newBooking);
+      setRecentBookingId(bookingId);
+      setIsSuccessModalOpen(true);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const formatCurrency = (amount: number) => {
@@ -195,11 +250,13 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
         {/* Nút Submit */}
         <Button
           type="submit"
-          className="w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-6 text-sm shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all cursor-pointer border-0 flex items-center justify-center gap-2"
+          disabled={isSubmitting}
+          className="w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-6 text-sm shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all cursor-pointer border-0 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <CreditCard className="w-4.5 h-4.5" />
-          {isAuthenticated ? "Đặt Tour Ngay" : "Đăng nhập để đặt tour"}
+          {isSubmitting ? "Đang xử lý..." : isAuthenticated ? "Đặt Tour Ngay" : "Đăng nhập để đặt tour"}
         </Button>
+
       </form>
 
       {/* ================= MODAL ĐẶT TOUR THÀNH CÔNG ================= */}
@@ -257,7 +314,8 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
               <button
                 onClick={() => {
                   setIsSuccessModalOpen(false);
-                  router.push(`${process.env.NEXT_PUBLIC_WEB_BASE_URL}/bookings`); // Hoặc /profile
+                  //// KHÔNG CẦN SET process.env.NEXT_PUBLIC_WEB_BASE_URL với router ////
+                  router.push(`/bookings`); // Hoặc /profile
                 }}
                 className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-1 cursor-pointer border-0"
               >

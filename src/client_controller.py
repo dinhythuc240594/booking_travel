@@ -393,12 +393,20 @@ class Controller():
                 except ValueError:
                     status = None
             
-            tour_list = self.tour_model.get_public_tours(
-                limit=per_page,
-                offset=offset
-            )
+            if search:
+                tour_list = self.tour_model.search(
+                    keyword=search,
+                    limit=per_page,
+                    offset=offset
+                )
+            else:
+                tour_list = self.tour_model.get_public_tours(
+                    limit=per_page,
+                    offset=offset
+                )
             tours_json = [self.tour_model._tour_to_dict(tour, adult, children) for tour in tour_list]
             return tours_json
+
         finally:
             self.db_session.close()
 
@@ -451,3 +459,124 @@ class Controller():
             self.db_session.rollback()
             print(f"error: " + str(e))
             return []
+
+    def create_booking(self):
+        """
+        Tạo booking mới cho Tour
+        Route: POST /bookings
+        """
+        try:
+            import database as db
+            from flask import jsonify, request, session
+            from datetime import datetime, timedelta
+
+            if not request.is_json:
+                return jsonify({
+                    'status': 400,
+                    'message': 'Yêu cầu không đúng định dạng JSON'
+                }), 400
+
+            data = request.get_json()
+            
+            # Lấy user_id từ session hoặc request body
+            user_id = session.get('user_id') or data.get('userId')
+            if not user_id:
+                return jsonify({
+                    'status': 401,
+                    'message': 'Yêu cầu đăng nhập để đặt tour'
+                }), 401
+
+            tour_id = data.get('tourId')
+            departure_date_str = data.get('departureDate')
+            adults = int(data.get('adults', 1))
+            children = int(data.get('children', 0))
+            total_price = float(data.get('totalPrice', 0))
+
+            if not tour_id:
+                return jsonify({
+                    'status': 400,
+                    'message': 'Thiếu mã tour'
+                }), 400
+
+            # Tìm tour
+            tour = self.db_session.query(db.Tour).get(tour_id)
+            if not tour:
+                return jsonify({
+                    'status': 404,
+                    'message': 'Không tìm thấy tour trong hệ thống'
+                }), 404
+
+            # Chuyển đổi ngày đi
+            try:
+                departure_date = datetime.strptime(departure_date_str, '%Y-%m-%d')
+            except Exception:
+                departure_date = datetime.now() + timedelta(days=7)
+
+            # Tạo đối tượng Booking mới
+            new_booking = db.Bookings(
+                user_id=user_id,
+                booking_type=db.BookingTypeEnum.TOUR,
+                reference_id=tour_id,
+                check_in_date=departure_date,
+                check_out_date=departure_date + timedelta(days=tour.duration_days),
+                total_price=total_price,
+                booking_status=db.BookingStatusEnum.pending
+            )
+
+            self.db_session.add(new_booking)
+            self.db_session.commit()
+            
+            # Tạo bản ghi thanh toán giả lập
+            payment_method_str = data.get('paymentMethod', 'credit_card')
+            payment_method = db.PaymentMethodEnum.from_string(payment_method_str) or db.PaymentMethodEnum.credit_card
+            
+            new_payment = db.Payment(
+                booking_id=new_booking.booking_id,
+                amount=total_price,
+                payment_method=payment_method,
+                payment_status=db.PaymentStatusEnum.successful,
+                payment_date=datetime.now()
+            )
+            self.db_session.add(new_payment)
+            self.db_session.commit()
+
+            return jsonify({
+                'status': 200,
+                'message': 'Đặt tour thành công',
+                'booking': self.booking_model._booking_to_dict(new_booking)
+            }), 200
+
+        except Exception as e:
+            self.db_session.rollback()
+            print(f"Error in create_booking: {str(e)}")
+            return jsonify({
+                'status': 500,
+                'message': f'Lỗi hệ thống khi đặt tour: {str(e)}'
+            }), 500
+        finally:
+            self.db_session.close()
+
+    def cancel_booking_route(self, booking_id):
+        """
+        Hủy đặt chỗ của người dùng
+        Route: POST /bookings/cancel/<booking_id>
+        """
+        try:
+            from flask import jsonify
+            success = self.booking_model.cancel_booking(booking_id)
+            if success:
+                return jsonify({
+                    'status': 200,
+                    'message': 'Hủy đặt chỗ thành công'
+                }), 200
+            else:
+                return jsonify({
+                    'status': 400,
+                    'message': 'Không thể hủy đặt chỗ này'
+                }), 400
+        except Exception as e:
+            return jsonify({
+                'status': 500,
+                'message': f'Lỗi hệ thống: {str(e)}'
+            }), 500
+

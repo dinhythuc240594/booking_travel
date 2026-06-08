@@ -25,6 +25,8 @@ export default function BookingsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [confirmCancelBooking, setConfirmCancelBooking] = useState<Booking | null>(null);
+  const [dbBookings, setDbBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const { user, isAuthenticated } = useAuthStore();
   const { bookings, cancelBooking } = useBookingStore();
@@ -36,7 +38,7 @@ export default function BookingsPage() {
     return () => clearTimeout(timer);
   }, []);
 
-  if (!isMounted) {
+  if (!isMounted || (isAuthenticated && user && loading)) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-50 flex flex-col font-sans">
         <Header />
@@ -83,8 +85,50 @@ export default function BookingsPage() {
     );
   }
 
-  // Lọc các booking của user hiện tại
-  const myBookings = bookings.filter((b) => b.userId === user.id);
+  // Lấy dữ liệu đặt chỗ từ API backend
+  const fetchBookings = async () => {
+    if (!isAuthenticated || !user) {
+      setLoading(false);
+      return;
+    }
+    try {
+      setLoading(true);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookings`);
+      if (!res.ok) throw new Error("Failed to fetch bookings from server");
+      const data = await res.json();
+      
+      const mapped: Booking[] = data.map((b: any) => ({
+        id: String(b.id),
+        tourId: String(b.tourId || b.reference_id),
+        tourTitle: b.tourTitle || "Hành trình du lịch",
+        tourImage: b.tourImage || "",
+        userId: b.user_id,
+        userName: user.name,
+        departureDate: b.departureDate || b.check_in_date || new Date().toISOString(),
+        adults: 1,
+        children: 0,
+        totalPrice: Number(b.total_price),
+        status: b.status || b.booking_status,
+        paymentStatus: PaymentStatus.PAID,
+        createdAt: b.created_at || new Date().toISOString(),
+      }));
+      setDbBookings(mapped);
+    } catch (err) {
+      console.warn("Backend bookings fetch failed, falling back to local storage:", err);
+      setDbBookings(bookings.filter((b) => b.userId === user.id));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isMounted) {
+      fetchBookings();
+    }
+  }, [isMounted, isAuthenticated, user, bookings]);
+
+  // Dùng dbBookings thay cho myBookings
+  const myBookings = dbBookings;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -98,17 +142,33 @@ export default function BookingsPage() {
     setConfirmCancelBooking(booking);
   };
 
-  const handleConfirmCancel = () => {
+  const handleConfirmCancel = async () => {
     if (confirmCancelBooking) {
       setCancellingId(confirmCancelBooking.id);
-      // Giả lập chút hiệu ứng chờ cho mượt mà
-      setTimeout(() => {
+      
+      try {
+        const isDbBooking = !isNaN(Number(confirmCancelBooking.id));
+        if (isDbBooking) {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookings/cancel/${confirmCancelBooking.id}`, {
+            method: "POST"
+          });
+          if (!res.ok) {
+            throw new Error("Failed to cancel on server");
+          }
+        }
+        
         cancelBooking(confirmCancelBooking.id);
+        await fetchBookings();
+      } catch (error) {
+        console.error("Cancel booking error:", error);
+        cancelBooking(confirmCancelBooking.id);
+      } finally {
         setCancellingId(null);
         setConfirmCancelBooking(null);
-      }, 600);
+      }
     }
   };
+
 
   const getStatusBadge = (status: BookingStatus) => {
     switch (status) {

@@ -209,19 +209,34 @@ class BookingModel:
         return BookingService.cancel_booking(booking_id)
 
     def _booking_to_dict(self, booking: db.Bookings):
+        # Lấy thông tin tour để hiển thị đẹp ở frontend
+        tour_title = None
+        tour_image = None
+        if booking.booking_type == db.BookingTypeEnum.TOUR:
+            tour = self.db.query(db.Tour).get(booking.reference_id)
+            if tour:
+                tour_title = tour.title
+                tour_image = tour.thumbnail
+
         booking_dict = {
-            'id': booking.id,
+            'id': booking.booking_id,
             'user_id': booking.user_id,
-            'tour_id': booking.tour_id,
-            'hotel_id': booking.hotel_id,
-            'nights': booking.nights,
-            'persons': booking.persons,
-            'payment_method': booking.payment_method,
-            'status': booking.status,
-            'created_at': booking.created_at,
-            'updated_at': booking.updated_at
+            'booking_type': booking.booking_type.value if booking.booking_type else None,
+            'reference_id': booking.reference_id,
+            'check_in_date': booking.check_in_date.strftime('%Y-%m-%d') if booking.check_in_date else None,
+            'check_out_date': booking.check_out_date.strftime('%Y-%m-%d') if booking.check_out_date else None,
+            'total_price': float(booking.total_price) if booking.total_price else 0.0,
+            'booking_status': booking.booking_status.value if booking.booking_status else None,
+            'created_at': booking.created_at.strftime('%Y-%m-%d %H:%M:%S') if booking.created_at else None,
+            
+            # Map sang các trường React frontend tương thích
+            'tourId': booking.reference_id if booking.booking_type == db.BookingTypeEnum.TOUR else None,
+            'tourTitle': tour_title,
+            'tourImage': tour_image,
+            'departureDate': booking.check_in_date.strftime('%Y-%m-%d') if booking.check_in_date else None,
+            'status': booking.booking_status.value if booking.booking_status else None,
         }
-        return booking_dict 
+        return booking_dict
         
 
 class TourModel:
@@ -344,9 +359,15 @@ class TourModel:
     
     def search(self, keyword: str, limit: int = None, offset: int = 0) -> list[db.Tour]:
         like_pattern = f"%{keyword}%"
-        query = self.db.query(db.Tour).filter(
+        query = self.db.query(db.Tour).join(db.Location, isouter=True).filter(
+            db.Tour.status == db.TourStatus.PUBLISHED,
             db.Tour.is_deleted == False,
-            or_(db.Tour.title.ilike(like_pattern), db.Tour.summary.ilike(like_pattern))
+            or_(
+                db.Tour.title.ilike(like_pattern),
+                db.Tour.summary.ilike(like_pattern),
+                db.Location.name.ilike(like_pattern),
+                db.Location.city.ilike(like_pattern)
+            )
         ).order_by(desc(db.Tour.created_at))
         if limit:
             query = query.limit(limit).offset(offset)
