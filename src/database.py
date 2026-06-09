@@ -497,14 +497,15 @@ _engine = None
 _SessionLocal = None
 
 def get_database_url():
-    """get URL connect database in config"""
-    from flask import current_app
-    try:
-        return current_app.config.get('DATABASE_URL', ecf.DATABASE_URL)
-    except RuntimeError:
-        # if haven't Flask app context, using value default
-        import os
-        return os.environ.get('DATABASE_URL', ecf.DATABASE_URL)
+    return ecf.DATABASE_URL
+    # """get URL connect database in config"""
+    # from flask import current_app
+    # try:
+    #     return current_app.config.get('DATABASE_URL', ecf.DATABASE_URL)
+    # except RuntimeError:
+    #     # if haven't Flask app context, using value default
+    #     import os
+    #     return os.environ.get('DATABASE_URL', ecf.DATABASE_URL)
 
 def create_engine_instance():
     """create engine connect database"""

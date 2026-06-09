@@ -553,4 +553,11 @@ class LocationModel:
         ).count()
         return count_tour
 
+    def get_all(self, limit: int = None, offset: int = 0) -> list[db.Location]:
+        """Get all location"""
+        query = self.db.query(db.Location).filter(db.Location.is_deleted == False)
+        query = query.order_by(desc(db.Location.created_at))
+        if limit:
+            query = query.limit(limit).offset(offset)
+        return query.all()
     
