@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Search, MapPin, Calendar, Users, Plus, Minus, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface LocationOption {
   name: string;
@@ -70,6 +71,7 @@ export default function TourSearch() {
     const params = new URLSearchParams();
     if (destination.trim()) params.append("search", destination.trim());
     if (date) params.append("date", date);
+    if (locationType) params.append("type", locationType);
 
     const totalGuests = adults + children;
     if (totalGuests > 1) {
@@ -95,9 +97,9 @@ export default function TourSearch() {
 
   return (
     <div className="w-full max-w-4xl mx-auto">
-      {/* Switch chọn Trong nước / Nước ngoài */}
+      {/* Switch chọn Trong nước / Nước ngoài
       <div className="flex gap-2 mb-3 ml-2 justify-center md:justify-start">
-        {/* <button
+        <button
           type="button"
           onClick={() => {
             setLocationType("domestic");
@@ -126,8 +128,9 @@ export default function TourSearch() {
           )}
         >
           Nước ngoài
-        </button> */}
+        </button>
       </div>
+      */}
 
       {/* Form tìm kiếm */}
       <form

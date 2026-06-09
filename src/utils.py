@@ -6,7 +6,7 @@ import database as db
 DOMESTIC = [
     { 
         "name": "Sa Pa, Lào Cai", 
-        "searchKey": "Sa Pa", 
+        "search_key": "Sa Pa", 
         "city": "Lào Cai", 
         "country": "Vietnam", 
         "slug": "sa-pa", 
@@ -15,7 +15,7 @@ DOMESTIC = [
     },
     { 
         "name": "Vịnh Hạ Long, Quảng Ninh", 
-        "searchKey": "Hạ Long", 
+        "search_key": "Hạ Long", 
         "city": "Quảng Ninh", 
         "country": "Vietnam", 
         "slug": "ha-long",
@@ -24,7 +24,7 @@ DOMESTIC = [
     },
     { 
         "name": "Đảo Phú Quốc, Kiên Giang", 
-        "searchKey": "Phú Quốc", 
+        "search_key": "Phú Quốc", 
         "city": "Kiên Giang", 
         "country": "Vietnam", 
         "slug": "phu-quoc",
@@ -33,7 +33,7 @@ DOMESTIC = [
     },
     { 
         "name": "Hội An, Quảng Nam", 
-        "searchKey": "Hội An", 
+        "search_key": "Hội An", 
         "city": "Quảng Nam", 
         "country": "Vietnam", 
         "slug": "hoi-an",
@@ -42,7 +42,7 @@ DOMESTIC = [
     },
     { 
         "name": "Đồng Văn, Hà Giang", 
-        "searchKey": "Hà Giang", 
+        "search_key": "Hà Giang", 
         "city": "Hà Giang", 
         "country": "Vietnam", 
         "slug": "dong-van",
@@ -51,7 +51,7 @@ DOMESTIC = [
     },
     { 
         "name": "Đà Lạt, Lâm Đồng", 
-        "searchKey": "Đà Lạt", 
+        "search_key": "Đà Lạt", 
         "city": "Lâm Đồng", 
         "country": "Vietnam", 
         "slug": "da-lat",
@@ -60,7 +60,7 @@ DOMESTIC = [
     },
     {
         "name": "Nha Trang, Khánh Hòa", 
-        "searchKey": "Nha Trang", 
+        "search_key": "Nha Trang", 
         "city": "Khánh Hòa", 
         "country": "Vietnam", 
         "slug": "nha-trang",

@@ -11,6 +11,7 @@ export interface Tour {
   description: string;
   price: number;
   discountPrice?: number;
+  price_per_child?: number;
   duration: string; // Ví dụ: "3 ngày 2 đêm", "4 ngày 3 đêm"
   location: string; // Địa điểm: "Sapa, Lào Cai"
   featuredImage: string; // URL ảnh đại diện nổi bật

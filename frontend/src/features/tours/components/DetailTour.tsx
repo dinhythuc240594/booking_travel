@@ -16,6 +16,16 @@ import {
 } from "lucide-react";
 import { Tour } from "@/types/tour";
 
+const mapCategoryNameToId = (name: string): string => {
+  if (!name) return "culture";
+  const lower = name.toLowerCase();
+  if (lower.includes("biển") || lower.includes("đảo") || lower.includes("beach")) return "beach";
+  if (lower.includes("núi") || lower.includes("rừng") || lower.includes("khám phá") || lower.includes("mạo hiểm") || lower.includes("mountain")) return "mountain";
+  if (lower.includes("nghỉ dưỡng") || lower.includes("resort")) return "resort";
+  if (lower.includes("văn hóa") || lower.includes("lịch sử") || lower.includes("trải nghiệm") || lower.includes("culture")) return "culture";
+  return "culture"; // default fallback
+};
+
 interface DetailTourProps {
   slug: string;
 }
@@ -64,14 +74,15 @@ export default function DetailTour({ slug }: DetailTourProps) {
               slug: apiTour.slug || "",
               description: apiTour.content || apiTour.summary || "",
               price: Number(apiTour.price_per_adult) || 0,
-              discountPrice: apiTour.discountPrice || undefined,
+              discountPrice: apiTour.discount_price !== undefined && apiTour.discount_price !== null ? Number(apiTour.discount_price) : undefined,
+              price_per_child: Number(apiTour.price_per_child) || 0,
               duration: durationStr,
               location: apiTour.location_name || "Việt Nam",
               featuredImage: apiTour.thumbnail || imagesList[0],
               images: imagesList,
               rating: apiTour.rating || 4.8,
               reviewsCount: apiTour.reviewsCount || 15,
-              category: apiTour.category_name || "culture",
+              category: mapCategoryNameToId(apiTour.category_name || "culture"),
               maxGroupSize: apiTour.maxGroupSize || 20,
               startDates: startDatesList,
               highlights: apiTour.highlights || [

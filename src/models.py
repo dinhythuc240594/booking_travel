@@ -405,6 +405,23 @@ class TourModel:
             except:
                 pass
 
+        # Parse inputs to int safely
+        try:
+            adult = int(adult)
+        except:
+            adult = 1
+        try:
+            children = int(children)
+        except:
+            children = 0
+
+        price_adult = float(tour.price_per_adult) if tour.price_per_adult else 0.0
+        price_child = float(tour.price_per_child) if tour.price_per_child else 0.0
+        disc_price = float(tour.discount_price) if getattr(tour, 'discount_price', None) is not None else None
+        
+        effective_adult_price = disc_price if disc_price is not None else price_adult
+        total_price = (effective_adult_price * adult) + (price_child * children)
+
         return {
             "tour_id": tour.tour_id,
             "location_id": tour.location_id,
@@ -413,9 +430,10 @@ class TourModel:
             "summary": tour.summary,
             "content": tour.content,
             "duration_days": tour.duration_days,
-            "price_per_adult": float(tour.price_per_adult)* (adult),
-            "price_per_child": float(tour.price_per_child)* (children),
-            "total_price": float(tour.price_per_adult)* (adult) + float(tour.price_per_child)* (children),
+            "price_per_adult": price_adult,
+            "price_per_child": price_child,
+            "discount_price": disc_price,
+            "total_price": total_price,
             "thumbnail": tour.thumbnail,
             "images": images_list, # Trả về list thay vì chuỗi JSON string
             "is_hot": tour.is_hot,
@@ -428,7 +446,8 @@ class TourModel:
             
             # Nếu muốn lấy thêm thông tin từ bảng liên kết (Relationship)
             "author_name": tour.author.username if tour.author else None,
-            "location_name": tour.location.city if getattr(tour, 'location', None) else None
+            "location_name": tour.location.city if getattr(tour, 'location', None) else None,
+            "country": tour.location.country if getattr(tour, 'location', None) else "Việt Nam"
         }
 
 

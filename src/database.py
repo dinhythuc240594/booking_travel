@@ -409,6 +409,7 @@ class Tour(Base):
     category_name = Column(String(250), nullable=True)
     price_per_adult = Column(Numeric(10, 2), nullable=False, default=0.0)
     price_per_child = Column(Numeric(10, 2), nullable=False, default=0.0)
+    discount_price = Column(Numeric(10, 2), nullable=True)
 
     thumbnail = Column(String(255), nullable=True)
     images = Column(Text, nullable=True)  # JSON Array lưu ảnh
@@ -524,3 +525,15 @@ def get_session():
 def init_db():
     engine = create_engine_instance()
     Base.metadata.create_all(engine)
+    
+    # Check if discount_price column exists in tour table, and add it if missing
+    from sqlalchemy import inspect, text
+    inspector = inspect(engine)
+    try:
+        columns = [col['name'] for col in inspector.get_columns('tour')]
+        if 'discount_price' not in columns:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE tour ADD COLUMN discount_price DECIMAL(10, 2) NULL"))
+                conn.commit()
+    except Exception as e:
+        print(f"Error checking/adding discount_price column: {e}")

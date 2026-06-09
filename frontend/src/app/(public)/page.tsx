@@ -19,6 +19,16 @@ import {
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+const mapCategoryNameToId = (name: string): string => {
+  if (!name) return "culture";
+  const lower = name.toLowerCase();
+  if (lower.includes("biển") || lower.includes("đảo") || lower.includes("beach")) return "beach";
+  if (lower.includes("núi") || lower.includes("rừng") || lower.includes("khám phá") || lower.includes("mạo hiểm") || lower.includes("mountain")) return "mountain";
+  if (lower.includes("nghỉ dưỡng") || lower.includes("resort")) return "resort";
+  if (lower.includes("văn hóa") || lower.includes("lịch sử") || lower.includes("trải nghiệm") || lower.includes("culture")) return "culture";
+  return "culture"; // default fallback
+};
+
 export default function PublicPage() {
   const [activeCategory, setActiveCategory] = useState("all");
   const [listTours, setListTours] = useState<Tour[]>([]);
@@ -44,14 +54,15 @@ export default function PublicPage() {
               slug: t.slug || "",
               description: t.content || t.summary || "",
               price: Number(t.price_per_adult || t.price || 0),
-              discountPrice: t.discountPrice || undefined,
+              discountPrice: t.discount_price !== undefined && t.discount_price !== null ? Number(t.discount_price) : (t.discountPrice || undefined),
+              price_per_child: Number(t.price_per_child) || 0,
               duration: t.duration ? t.duration : durationStr,
               location: t.location_name || t.location || "Việt Nam",
               featuredImage: t.thumbnail || t.featuredImage || "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80",
               images: Array.isArray(t.images) && t.images.length > 0 ? t.images : [t.thumbnail || t.featuredImage],
               rating: t.rating || 4.8,
               reviewsCount: t.reviewsCount || 12,
-              category: t.category_name || t.category || "culture",
+              category: mapCategoryNameToId(t.category_name || t.category || "culture"),
               maxGroupSize: t.maxGroupSize || 20,
               startDates: t.startDates || ["2026-06-12", "2026-06-19", "2026-06-26"],
               highlights: t.highlights || []
@@ -235,7 +246,7 @@ export default function PublicPage() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={dest.image}
+                    src={dest.image_url || dest.image}
                     alt={dest.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"

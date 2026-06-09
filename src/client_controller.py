@@ -49,8 +49,25 @@ class Controller():
         """
         try:
             category = request.args.get('category')
-            if category:
-                tours_list = self.tour_model.get_by_category_name(category)
+            if category and category != 'all':
+                # Map category from frontend ID to database category_name values
+                category_map = {
+                    'beach': ['beach', 'Biển', 'Biển đảo'],
+                    'mountain': ['mountain', 'Núi', 'Núi rừng', 'Khám phá', 'Mạo hiểm'],
+                    'resort': ['resort', 'Nghỉ dưỡng', 'Nghỉ dưỡng 5 sao'],
+                    'culture': ['culture', 'Văn hóa', 'Văn hóa - Lịch sử', 'Trải nghiệm'],
+                }
+                
+                # Fetch matching tours
+                if category in category_map:
+                    from sqlalchemy import or_
+                    query = self.db_session.query(Tour).filter(Tour.is_deleted == False, Tour.status == TourStatus.PUBLISHED)
+                    filters = [Tour.category_name.ilike(f"%{name}%") for name in category_map[category]]
+                    query = query.filter(or_(*filters))
+                    tours_list = query.all()
+                else:
+                    tours_list = self.tour_model.get_by_category_name(category)
+                
                 tours_json = [self.tour_model._tour_to_dict(tour) for tour in tours_list]
                 return tours_json
             else:
@@ -379,8 +396,18 @@ class Controller():
             date_from = request.args.get('date_from', None)
             date_to = request.args.get('date_to', None)
             guest = request.args.get('guest', None)
-            adult = request.args.get('adult', 1)
-            children = request.args.get('children', 0)
+            
+            # Safely parse adult and children as int to prevent type crash
+            try:
+                adult = int(request.args.get('adult', request.args.get('adults', 1)))
+            except (ValueError, TypeError):
+                adult = 1
+                
+            try:
+                children = int(request.args.get('children', 0))
+            except (ValueError, TypeError):
+                children = 0
+                
             status_filter = request.args.get('status', None)
             page = request.args.get('page', 1, type=int)
             per_page = 25
@@ -436,13 +463,22 @@ class Controller():
     def locations(self):
         """API lấy danh sách địa điểm"""
         try:
-            
-            is_popular = request.args.get('is_popular', "false")    
+            location_type = request.args.get('type')
+            is_popular_str = request.args.get('is_popular', "false").lower()
+            is_popular = is_popular_str == "true"
             locations = self.location_model.get_location(is_popular=is_popular)
             locations = [self.location_model._location_to_dict(location) for location in locations]
 
             if not locations:
                 locations = DOMESTIC
+
+            # Filter by location type (domestic / international)
+            if location_type:
+                location_type = location_type.lower()
+                if location_type == 'domestic':
+                    locations = [loc for loc in locations if loc.get('country', '').lower() in ['vietnam', 'việt nam']]
+                elif location_type == 'international':
+                    locations = [loc for loc in locations if loc.get('country', '').lower() not in ['vietnam', 'việt nam']]
 
             if is_popular:
                 locations.sort(key=lambda x : x["toursCount"], reverse=True)

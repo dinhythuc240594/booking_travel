@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useTransition } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Tour } from "@/types/tour";
+import { mockTours } from "@/mocks/data/tours";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import TourCard from "@/features/tours/components/TourCard";
@@ -14,6 +15,16 @@ import {
 import { Button } from "@/components/ui/button";
 
 const ITEMS_PER_PAGE = 6;
+
+const mapCategoryNameToId = (name: string): string => {
+  if (!name) return "culture";
+  const lower = name.toLowerCase();
+  if (lower.includes("biển") || lower.includes("đảo") || lower.includes("beach")) return "beach";
+  if (lower.includes("núi") || lower.includes("rừng") || lower.includes("khám phá") || lower.includes("mạo hiểm") || lower.includes("mountain")) return "mountain";
+  if (lower.includes("nghỉ dưỡng") || lower.includes("resort")) return "resort";
+  if (lower.includes("văn hóa") || lower.includes("lịch sử") || lower.includes("trải nghiệm") || lower.includes("culture")) return "culture";
+  return "culture"; // default fallback
+};
 
 export default function ToursListContent() {
   const searchParams = useSearchParams();
@@ -86,39 +97,55 @@ export default function ToursListContent() {
 
   useEffect(() => {
     const search = async () => {
-      const params = new URLSearchParams();
-      if (searchQuery) params.append("search", searchQuery);
-      if (date) params.append("date", date);
-      if (guests) params.append("guests", guests.toString());
-      if (adults) params.append("adults", adults.toString());
-      if (children) params.append("children", children.toString());
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/search?${params.toString()}`);
-      const json = await res.json();
-      const data = json.tours || [];
-      const normalized = data.map((t: any) => {
-        const durationDays = t.duration_days || 1;
-        const durationStr = `${durationDays} ngày ${Math.max(0, durationDays - 1)} đêm`;
-        return {
-          ...t,
-          id: String(t.tour_id || t.id),
-          title: t.title || "",
-          slug: t.slug || "",
-          description: t.content || t.summary || "",
-          price: Number(t.price_per_adult || t.price || 0),
-          discountPrice: t.discountPrice || undefined,
-          duration: t.duration ? t.duration : durationStr,
-          location: t.location_name || t.location || "Việt Nam",
-          featuredImage: t.thumbnail || t.featuredImage || "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80",
-          images: Array.isArray(t.images) && t.images.length > 0 ? t.images : [t.thumbnail || t.featuredImage],
-          rating: t.rating || 4.8,
-          reviewsCount: t.reviewsCount || 12,
-          category: t.category_name || t.category || "culture",
-          maxGroupSize: t.maxGroupSize || 20,
-          startDates: t.startDates || ["2026-06-12", "2026-06-19", "2026-06-26"],
-          highlights: t.highlights || []
-        };
-      });
-      setTours(normalized);
+      try {
+        const params = new URLSearchParams();
+        if (searchQuery) params.append("search", searchQuery);
+        if (date) params.append("date", date);
+        if (guests) params.append("guests", guests.toString());
+        if (adults) params.append("adults", adults.toString());
+        if (children) params.append("children", children.toString());
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/search?${params.toString()}`);
+        if (!res.ok) throw new Error("Failed to fetch search API");
+        const json = await res.json();
+        const data = json.tours || [];
+        const normalized = data.map((t: any) => {
+          const durationDays = t.duration_days || 1;
+          const durationStr = `${durationDays} ngày ${Math.max(0, durationDays - 1)} đêm`;
+          return {
+            ...t,
+            id: String(t.tour_id || t.id),
+            title: t.title || "",
+            slug: t.slug || "",
+            description: t.content || t.summary || "",
+            price: Number(t.price_per_adult || t.price || 0),
+            discountPrice: t.discount_price !== undefined && t.discount_price !== null ? Number(t.discount_price) : (t.discountPrice || undefined),
+            price_per_child: Number(t.price_per_child) || 0,
+            duration: t.duration ? t.duration : durationStr,
+            location: t.location_name || t.location || "Việt Nam",
+            country: t.country || "Việt Nam",
+            featuredImage: t.thumbnail || t.featuredImage || "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80",
+            images: Array.isArray(t.images) && t.images.length > 0 ? t.images : [t.thumbnail || t.featuredImage],
+            rating: t.rating || 4.8,
+            reviewsCount: t.reviewsCount || 12,
+            category: mapCategoryNameToId(t.category_name || t.category || "culture"),
+            maxGroupSize: t.maxGroupSize || 20,
+            startDates: t.startDates || ["2026-06-12", "2026-06-19", "2026-06-26"],
+            highlights: t.highlights || []
+          };
+        });
+        setTours(normalized);
+      } catch (err) {
+        console.warn("API search failed, falling back to mock data:", err);
+        // Fallback to mock data matching search query
+        const filteredMock = mockTours.filter((t) => {
+          if (searchQuery.trim()) {
+            const term = searchQuery.toLowerCase();
+            return t.title.toLowerCase().includes(term) || t.location.toLowerCase().includes(term);
+          }
+          return true;
+        });
+        setTours(filteredMock);
+      }
     }
     search();
   }, [searchQuery, date, guests, adults, children]);
@@ -148,12 +175,20 @@ export default function ToursListContent() {
     if (searchQuery.trim()) {
       const term = searchQuery.toLowerCase();
       const inTitle = tour.title.toLowerCase().includes(term);
-      const inLocation = tour.location_name?.toLowerCase()?.includes(term) || false;
+      const inLocation = tour.location_name?.toLowerCase()?.includes(term) || tour.location?.toLowerCase()?.includes(term) || false;
       if (!inTitle && !inLocation) return false;
     }
 
     // 2. Lọc theo thể loại
     if (category !== "all" && tour.category !== category) return false;
+
+    // 3. Lọc theo vùng miền (domestic / international)
+    if (region !== "all") {
+      const countryStr = tour.country || (tour.location ? (tour.location.toLowerCase().includes("thái lan") || tour.location.toLowerCase().includes("anh quốc") || tour.location.toLowerCase().includes("quốc tế") ? "Thái Lan" : "Việt Nam") : "Việt Nam");
+      const isTourInt = countryStr.toLowerCase() !== "vietnam" && countryStr.toLowerCase() !== "việt nam";
+      if (region === "domestic" && isTourInt) return false;
+      if (region === "international" && !isTourInt) return false;
+    }
 
     // 4. Lọc theo giá (Lấy giá ưu đãi nếu có, ngược lại lấy giá gốc)
     const effectivePrice = tour.discountPrice || tour.price;
@@ -281,7 +316,7 @@ export default function ToursListContent() {
                 </div>
               </div>
 
-              {/* Lọc: Vùng miền */}
+              {/* Lọc: Vùng miền (Commented out because system only has domestic tours)
               <div>
                 <span className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2.5">
                   Phân vùng địa lý
@@ -289,8 +324,8 @@ export default function ToursListContent() {
                 <div className="flex flex-col gap-2">
                   {[
                     { id: "all", label: "Tất cả" },
-                    // { id: "domestic", label: "Trong nước" },
-                    // { id: "international", label: "Nước ngoài / Quốc tế" },
+                    { id: "domestic", label: "Trong nước" },
+                    { id: "international", label: "Nước ngoài / Quốc tế" },
                   ].map((item) => (
                     <label key={item.id} className="flex items-center gap-3 text-sm text-zinc-600 dark:text-zinc-300 cursor-pointer select-none">
                       <input
@@ -308,6 +343,7 @@ export default function ToursListContent() {
                   ))}
                 </div>
               </div>
+              */}
 
               {/* Lọc: Loại hình tour */}
               <div>
@@ -551,7 +587,7 @@ export default function ToursListContent() {
                 />
               </div>
 
-              {/* Lọc: Vùng miền */}
+              {/* Lọc: Vùng miền (Commented out because system only has domestic tours)
               <div>
                 <span className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2.5">
                   Phân vùng địa lý
@@ -578,6 +614,7 @@ export default function ToursListContent() {
                   ))}
                 </div>
               </div>
+              */}
 
               {/* Lọc: Thể loại */}
               <div>
