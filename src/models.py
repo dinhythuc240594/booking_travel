@@ -61,6 +61,19 @@ class UserModel:
 
         return user
     
+    def update(self, user_id: int, data: dict) -> db.User:
+        """
+        Update user
+        
+        Args:
+            user_id: User ID
+            data: Data to update
+            
+        Returns:
+            User object
+        """
+        return UserService.update_user(user_id=user_id, data_dict=data)
+
     def authenticate(self, username: str, password: str) -> db.User:
         """
         Valid user with username and password

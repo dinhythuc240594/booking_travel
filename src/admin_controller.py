@@ -1322,27 +1322,35 @@ class AdminController:
             phone = data.get('phone', '').strip()
             role_str = data.get('role', '')
             
-            # Update fields
-            if full_name is not None:
-                user.full_name = full_name if full_name else None
-            if email and email != user.email:
-                if not validate_email(email):
-                    return jsonify({'success': False, 'error': 'Email không đúng định dạng'}), 400
-                if self.user_model.get_by_email(email):
-                    return jsonify({'success': False, 'error': 'Email đã được sử dụng'}), 400
-                user.email = email
-            if phone is not None:
-                user.phone = phone if phone else None
-            if role_str:
-                role_map = {'admin': UserRole.ADMIN, 'staff': UserRole.STAFF, 'user': UserRole.CUSTOMER}
-                if role_str.lower() in role_map:
-                    user.role = role_map[role_str.lower()]
+            # # Update fields
+            # if full_name is not None:
+            #     user.full_name = full_name if full_name else None
+            # if email and email != user.email:
+            #     if not validate_email(email):
+            #         return jsonify({'success': False, 'error': 'Email không đúng định dạng'}), 400
+            #     if self.user_model.get_by_email(email):
+            #         return jsonify({'success': False, 'error': 'Email đã được sử dụng'}), 400
+            #     user.email = email
+            # if phone is not None:
+            #     user.phone = phone if phone else None
+            # if role_str:
+            #     role_map = {'admin': UserRole.ADMIN, 'staff': UserRole.STAFF, 'user': UserRole.CUSTOMER}
+            #     if role_str.lower() in role_map:
+            #         user.role = role_map[role_str.lower()]
             
-            user.updated_at = datetime.utcnow()
-            self.db_session.commit()
+            # user.updated_at = datetime.utcnow()
+            # self.db_session.commit()
+
+            success = self.user_model.update(user_id, {
+                'full_name': full_name,
+                'email': email,
+                'phone_number': phone,
+                'role': role_str,
+                'updated_at': datetime.utcnow()
+            })
             
             return jsonify({
-                'success': True,
+                'success': success,
                 'message': 'Cập nhật thông tin thành công'
             })
         except Exception as e:
