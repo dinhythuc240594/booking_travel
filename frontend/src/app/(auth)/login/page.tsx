@@ -67,14 +67,15 @@ function LoginContent() {
           email: email,
           password: password,
         }),
+        credentials: "include",
       });
       const data = await response.json();
-      setData(data);
+      return data;
     }
 
-    await fetchUser();
+    const data = await fetchUser();
 
-    if (data?.message === "success") {
+    if (data?.status) {
       login(data.user, "mock-jwt-token-xyz");
       setSuccess(true);
       setLoading(false);

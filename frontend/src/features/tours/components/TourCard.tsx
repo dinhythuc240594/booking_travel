@@ -6,13 +6,16 @@ import { MapPin, Clock, Users, Star, Heart } from "lucide-react";
 import { Tour } from "@/types/tour";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useWishlistStore } from "@/store/wishlist.store";
 
 interface TourCardProps {
   tour: Tour;
 }
 
 export default function TourCard({ tour }: TourCardProps) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  const { wishlistedIds, toggleWishlist } = useWishlistStore();
+  const tourIdStr = String(tour.id || tour.tour_id);
+  const isWishlisted = wishlistedIds.includes(tourIdStr);
 
   // Tính phần trăm giảm giá nếu có
   const discountPercent = tour.discountPrice
@@ -38,7 +41,7 @@ export default function TourCard({ tour }: TourCardProps) {
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
           loading="lazy"
         />
-        
+
         {/* Lớp gradient nhẹ phủ lên dưới cùng của ảnh */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
 
@@ -53,9 +56,9 @@ export default function TourCard({ tour }: TourCardProps) {
         <button
           onClick={(e) => {
             e.preventDefault();
-            setIsWishlisted(!isWishlisted);
+            toggleWishlist(tourIdStr);
           }}
-          className="absolute top-4 right-4 p-2 bg-white/90 dark:bg-zinc-900/90 hover:bg-white dark:hover:bg-zinc-900 rounded-full shadow-md text-zinc-600 dark:text-zinc-300 hover:text-red-500 dark:hover:text-red-500 transition-all duration-300 cursor-pointer"
+          className="absolute top-4 right-4 p-2 bg-white/90 dark:bg-zinc-900/90 hover:bg-white dark:hover:bg-zinc-900 rounded-full shadow-md text-zinc-650 dark:text-zinc-300 hover:text-red-500 dark:hover:text-red-500 transition-all duration-300 cursor-pointer"
         >
           <Heart
             className={cn(
@@ -74,7 +77,7 @@ export default function TourCard({ tour }: TourCardProps) {
             <MapPin className="w-3.5 h-3.5 text-cyan-500" />
             <span className="truncate max-w-[150px]">{tour.location}</span>
           </div>
-          <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 px-2 py-1 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400">
+          <div style={{ display: "none" }} className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 px-2 py-1 rounded-lg text-xs font-semibold text-amber-600 dark:text-amber-400">
             <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
             <span>{tour.rating}</span>
             <span className="text-zinc-400 font-normal">({tour.reviewsCount})</span>
@@ -117,7 +120,6 @@ export default function TourCard({ tour }: TourCardProps) {
             )}
             <span className="text-[10px] text-zinc-400 mt-0.5">/ khách</span>
           </div>
-          
           <Link href={`/tours/${tour.slug}`}>
             <Button size="sm" className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-medium shadow-sm hover:shadow transition-all text-xs px-4 py-2">
               Khám phá

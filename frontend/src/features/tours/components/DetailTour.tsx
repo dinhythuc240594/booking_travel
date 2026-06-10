@@ -10,8 +10,8 @@ import Footer from "@/components/common/Footer";
 import TourCard from "@/features/tours/components/TourCard";
 import TourGallery from "@/features/tours/components/TourGallery";
 import TourBookingWidget from "@/features/tours/components/TourBookingWidget";
-import { 
-  MapPin, Clock, Users, Star, Sparkles, Check, Info, 
+import {
+  MapPin, Clock, Users, Star, Sparkles, Check, Info,
   ChevronRight, Calendar, MessageSquare, ArrowLeft, Loader2
 } from "lucide-react";
 import { Tour } from "@/types/tour";
@@ -49,19 +49,19 @@ export default function DetailTour({ slug }: DetailTourProps) {
         if (!res.ok) {
           throw new Error("Tour not found in database");
         }
-        
+
         const data = await res.json();
-        
+
         if (isMounted) {
           if (data && data.tour) {
             const apiTour = data.tour;
             // Map backend fields to frontend Tour structure
             const durationDays = apiTour.duration_days || 1;
             const durationStr = `${durationDays} ngày ${Math.max(0, durationDays - 1)} đêm`;
-            
+
             // Format start dates
             let startDatesList = ["2026-06-15", "2026-06-22", "2026-06-29"];
-            
+
             // Format images array
             let imagesList = [apiTour.thumbnail || apiTour.featuredImage || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop&q=80"];
             if (Array.isArray(apiTour.images) && apiTour.images.length > 0) {
@@ -106,7 +106,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
             };
 
             setTour(normalizedTour);
-            
+
             // Filter mock reviews for this tour
             const tourReviews = mockReviews.filter((r) => r.tourId === normalizedTour.id);
             setReviews(tourReviews);
@@ -116,7 +116,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
         }
       } catch (err: any) {
         console.warn("API load failed, falling back to mock data:", err.message);
-        
+
         // Fallback to mock data matching the slug
         const mockTour = mockTours.find((t) => t.slug === slug);
         if (isMounted) {
@@ -214,7 +214,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
           ],
         };
       }
-      
+
       if (dayNum === totalDays) {
         return {
           day: dayNum,
@@ -238,7 +238,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
       };
     };
 
-    itineraryList = Array.from({ length: daysCount }, (_, i) => 
+    itineraryList = Array.from({ length: daysCount }, (_, i) =>
       generateItinerary(i + 1, daysCount)
     );
   }
@@ -249,7 +249,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
 
       {/* NỘI DUNG CHÍNH TRANG CHI TIẾT */}
       <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 w-full">
-        
+
         {/* Breadcrumb & Nút Quay lại */}
         <div className="flex items-center justify-between mb-6 select-none">
           <div className="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">
@@ -261,8 +261,8 @@ export default function DetailTour({ slug }: DetailTourProps) {
               {tour.title}
             </span>
           </div>
-          <Link 
-            href="/tours" 
+          <Link
+            href="/tours"
             className="inline-flex items-center gap-1 text-xs font-semibold text-zinc-500 hover:text-cyan-500 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" /> Quay lại danh sách
@@ -277,10 +277,10 @@ export default function DetailTour({ slug }: DetailTourProps) {
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-4">
             {tour.title}
           </h1>
-          
+
           {/* Metadata phụ */}
           <div className="flex flex-wrap items-center gap-y-3 gap-x-6 text-sm text-zinc-500 dark:text-zinc-400">
-            <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 px-2.5 py-1 rounded-xl text-amber-600 dark:text-amber-400 font-bold">
+            <div style={{ display: "none" }} className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 px-2.5 py-1 rounded-xl text-amber-600 dark:text-amber-400 font-bold">
               <Star className="w-4 h-4 fill-amber-500 text-amber-500" />
               <span>{tour.rating}</span>
               <span className="text-zinc-400 font-normal">({tour.reviewsCount} đánh giá)</span>
@@ -307,10 +307,10 @@ export default function DetailTour({ slug }: DetailTourProps) {
 
         {/* THÔNG TIN CHI TIẾT & BOOKING WIDGET */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start">
-          
+
           {/* CỘT TRÁI: THÔNG TIN CHI TIẾT TOUR */}
           <div className="col-span-1 lg:col-span-2 space-y-10">
-            
+
             {/* 1. Tổng quan mô tả */}
             <section className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl p-6 md:p-8 shadow-sm">
               <h2 className="text-xl font-bold text-zinc-950 dark:text-white mb-4">Mô tả hành trình</h2>
@@ -344,7 +344,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
                   <div key={index} className="relative">
                     {/* Vòng tròn điểm mốc của timeline */}
                     <span className="absolute -left-[31px] sm:-left-[39px] top-1 w-4 h-4 rounded-full bg-cyan-500 border-4 border-zinc-50 dark:border-zinc-900 shadow-md ring-2 ring-cyan-500/20" />
-                    
+
                     <h3 className="font-bold text-sm sm:text-base text-zinc-950 dark:text-white mb-3">
                       {item.title}
                     </h3>
@@ -369,12 +369,12 @@ export default function DetailTour({ slug }: DetailTourProps) {
                   {tour.included?.map((inc, index) => (
                     <li key={index} className="flex items-start gap-2">✓ {inc}</li>
                   )) || (
-                    <>
-                      <li className="flex items-start gap-2">✓ Phương tiện vận chuyển chất lượng cao suốt tuyến.</li>
-                      <li className="flex items-start gap-2">✓ Khách sạn/Resort nghỉ ngơi tiện nghi hiện đại.</li>
-                      <li className="flex items-start gap-2">✓ Các bữa ăn theo tiêu chuẩn trong chương trình.</li>
-                    </>
-                  )}
+                      <>
+                        <li className="flex items-start gap-2">✓ Phương tiện vận chuyển chất lượng cao suốt tuyến.</li>
+                        <li className="flex items-start gap-2">✓ Khách sạn/Resort nghỉ ngơi tiện nghi hiện đại.</li>
+                        <li className="flex items-start gap-2">✓ Các bữa ăn theo tiêu chuẩn trong chương trình.</li>
+                      </>
+                    )}
                 </ul>
               </div>
 
@@ -387,11 +387,11 @@ export default function DetailTour({ slug }: DetailTourProps) {
                   {tour.excluded?.map((exc, index) => (
                     <li key={index} className="flex items-start gap-2">✗ {exc}</li>
                   )) || (
-                    <>
-                      <li className="flex items-start gap-2">✗ Các chi phí cá nhân (điện thoại, giặt ủi, mua sắm,...).</li>
-                      <li className="flex items-start gap-2">✗ Đồ uống phát sinh tự gọi trong các bữa ăn.</li>
-                    </>
-                  )}
+                      <>
+                        <li className="flex items-start gap-2">✗ Các chi phí cá nhân (điện thoại, giặt ủi, mua sắm,...).</li>
+                        <li className="flex items-start gap-2">✗ Đồ uống phát sinh tự gọi trong các bữa ăn.</li>
+                      </>
+                    )}
                 </ul>
               </div>
             </section>
@@ -401,7 +401,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
               <h2 className="text-xl font-bold text-zinc-950 dark:text-white mb-6 flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-cyan-500" /> Nhận xét khách hàng ({reviews.length})
               </h2>
-              
+
               {reviews.length > 0 ? (
                 <div className="space-y-6 divide-y divide-zinc-100 dark:divide-zinc-850">
                   {reviews.map((rev) => (
@@ -424,7 +424,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
                         </div>
 
                         {/* Điểm sao */}
-                        <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded-lg text-amber-600 dark:text-amber-400 text-xs font-bold">
+                        <div style={{ display: "none" }} className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded-lg text-amber-600 dark:text-amber-400 text-xs font-bold">
                           <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                           <span>{rev.rating}</span>
                         </div>

@@ -11,6 +11,7 @@ export const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 // Request Interceptor: Tự động đính kèm Token xác thực

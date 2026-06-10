@@ -109,7 +109,8 @@ class Controller():
         
         if not request.is_json:
             return jsonify({
-                'status': 400,
+                'status': False,
+                'code': 400,
                 'message': 'Yêu cầu không đúng định dạng',
                 'user': {}
             })
@@ -125,7 +126,8 @@ class Controller():
         # check status locked of account before authentication
         if self.user_model.is_locked_user(email):
             return jsonify({
-                'status': 400,
+                'status': False,
+                'code': 400,
                 'message': 'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên',
                 'user': {}
             })
@@ -144,23 +146,28 @@ class Controller():
                 session.permanent = False
 
             user = {
-                "id": user.user_id,
+                # "id": user.user_id,
                 "email": user.email,
                 "name": user.full_name,
                 "role": user.role.value,
                 "phone": user.phone_number,
-                "createdAt": user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
-                "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
+                "address": user.address,
+                "gender": user.gender,
+                "dateOfBirth": user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '',
+                # "createdAt": user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
+                # "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
             }
 
             return jsonify({
-                'status': 200,
+                'status': True,
+                'code': 200,
                 'message': 'success',
                 'user': user
             })
         else:
             return jsonify({
-                'status': 401,
+                'status': False,
+                'code': 401,
                 'message': 'failed',
                 'user': {}
             })
@@ -452,13 +459,17 @@ class Controller():
     def bookings(self):
         try:
             booking_model = self.booking_model
-            booking_list = booking_model.get_by_user_id(session['user_id'])
+            user_id = session.get('user_id')
+            print(f"User ID: {user_id}")
+            if not user_id:
+                return jsonify([])
+            booking_list = booking_model.get_by_user_id(user_id)
             json_bookings = [booking_model._booking_to_dict(booking) for booking in booking_list]
-            return json_bookings
+            return jsonify(json_bookings)
         except Exception as e:
             self.db_session.rollback()
             print(f"Error in bookings: {str(e)}")
-            return {}
+            return jsonify([])
 
     def locations(self):
         """API lấy danh sách địa điểm"""

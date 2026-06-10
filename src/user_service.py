@@ -36,15 +36,17 @@ class UserService:
             session.close()
 
     @staticmethod
-    def update_user(user_id: int, **kwargs):
+    def update_user(user_id: int, data_dict):
         """Cập nhật thông tin người dùng"""
         session = get_session()
         try:
+            print(user_id)
             user = session.query(User).filter(User.user_id == user_id).first()
             if not user:
                 return False
             
-            for key, value in kwargs.items():
+            for key, value in data_dict.items():
+                print(key)
                 if hasattr(user, key):
                     setattr(user, key, value)
             

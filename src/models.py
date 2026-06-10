@@ -72,7 +72,7 @@ class UserModel:
         Returns:
             User object
         """
-        return UserService.update_user(user_id=user_id, data_dict=data)
+        return UserService.update_user(user_id, data)
 
     def authenticate(self, username: str, password: str) -> db.User:
         """

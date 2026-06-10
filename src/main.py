@@ -27,17 +27,13 @@ def create_app():
         Flask app instance
     """
     app = Flask(__name__)
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
-    CORS(app, resources={r"/*": {"origins": "*"}})
     app.config.from_object(envConfig)
+    app.secret_key = envConfig.SECRET_KEY
+    CORS(app, resources={r"/*": {"origins": ["http://localhost:3000", "http://127.0.0.1:3000"]}}, supports_credentials=True)
 
     # Set default configuration
     app.config['BABEL_DEFAULT_LOCALE'] = 'vn'
     app.config['LANGUAGES'] = ['vn', 'en'] # Supported languages
-    
-    # # Initialize Babel
-    # babel = Babel(app)
-    # babel.init_app(app, locale_selector=get_locale)
 
     # initialization database
     init_db()

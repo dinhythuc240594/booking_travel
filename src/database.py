@@ -1,6 +1,5 @@
 
-from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum, TypeDecorator, Numeric
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Boolean, ForeignKey, Enum, TypeDecorator, Numeric, Date
 from sqlalchemy.orm import DeclarativeBase, sessionmaker, relationship
 import enum
 import datetime
@@ -253,9 +252,15 @@ class User(Base):
     username = Column(String(50), nullable=False, unique=True)
     email = Column(String(100), nullable=False, unique=True)
     password_hash = Column(String(255), nullable=False)
+
+    # extra info
     full_name = Column(String(100), nullable=True)
     phone_number = Column(String(20), nullable=True)
     avatar = Column(String(255), nullable=True)
+    date_of_birth = Column(Date, nullable=True)
+    gender = Column(String(10), nullable=True)
+    address = Column(String(500), nullable=True)
+
     role = Column(UserRoleType(), default=UserRole.CUSTOMER)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.now())

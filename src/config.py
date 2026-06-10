@@ -31,7 +31,11 @@ class envConfig():
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or ''
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or ''
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER') or MAIL_USERNAME
-    MAIL_SUBJECT_PREFIX = os.environ.get('MAIL_SUBJECT_PREFIX') or '[News] '
+    MAIL_SUBJECT_PREFIX = os.environ.get('MAIL_SUBJECT_PREFIX') or '[VnTravel] '
+    BASE_URL = os.environ.get('BASE_URL') or 'http://localhost:5000'
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = True
 
 
 class DevelopmentConfig(envConfig):
