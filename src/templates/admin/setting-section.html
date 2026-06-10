@@ -10,7 +10,7 @@
                     </div>
                     <div class="card-body">
                         <!-- API Settings -->
-                        <div class="card mb-4">
+                        <!-- <div class="card mb-4">
                             <div class="card-header bg-primary text-white">
                                 <h5 class="mb-0">
                                     <i class="fas fa-key me-2"></i>Cài đặt API News
@@ -31,7 +31,7 @@
                                     Vui lòng đảm bảo token hợp lệ và có quyền truy cập.
                                 </div>
                             </div>
-                        </div>
+                        </div> -->
 
                         <!-- SMTP Settings -->
                         <div class="card mb-4">
@@ -47,8 +47,10 @@
                                             <i class="fas fa-server me-2"></i>SMTP Server
                                             <span class="text-danger">*</span>
                                         </label>
-                                        <input type="text" class="form-control" id="smtpServer" placeholder="smtp.gmail.com">
-                                        <small class="text-muted">Địa chỉ SMTP server (ví dụ: smtp.gmail.com, smtp-mail.outlook.com)</small>
+                                        <input type="text" class="form-control" id="smtpServer"
+                                            placeholder="smtp.gmail.com">
+                                        <small class="text-muted">Địa chỉ SMTP server (ví dụ: smtp.gmail.com,
+                                            smtp-mail.outlook.com)</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
                                     <div class="col-md-6 mb-3">
@@ -57,7 +59,8 @@
                                             <span class="text-danger">*</span>
                                         </label>
                                         <input type="number" class="form-control" id="smtpPort" placeholder="587">
-                                        <small class="text-muted">Port SMTP (thường là 587 cho TLS hoặc 465 cho SSL)</small>
+                                        <small class="text-muted">Port SMTP (thường là 587 cho TLS hoặc 465 cho
+                                            SSL)</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
                                 </div>
@@ -67,7 +70,8 @@
                                             <i class="fas fa-user me-2"></i>SMTP Username (Email)
                                             <span class="text-danger">*</span>
                                         </label>
-                                        <input type="email" class="form-control" id="smtpUsername" placeholder="your-email@gmail.com">
+                                        <input type="email" class="form-control" id="smtpUsername"
+                                            placeholder="your-email@gmail.com">
                                         <small class="text-muted">Email đăng nhập SMTP</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
@@ -77,12 +81,15 @@
                                             <span class="text-danger">*</span>
                                         </label>
                                         <div class="input-group">
-                                            <input type="password" class="form-control" id="smtpPassword" placeholder="App Password">
-                                            <button class="btn btn-outline-secondary" type="button" id="toggleSmtpPassword">
+                                            <input type="password" class="form-control" id="smtpPassword"
+                                                placeholder="App Password">
+                                            <button class="btn btn-outline-secondary" type="button"
+                                                id="toggleSmtpPassword">
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                         </div>
-                                        <small class="text-muted">Với Gmail, sử dụng App Password thay vì mật khẩu thường</small>
+                                        <small class="text-muted">Với Gmail, sử dụng App Password thay vì mật khẩu
+                                            thường</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
                                 </div>
@@ -91,8 +98,10 @@
                                         <label class="form-label">
                                             <i class="fas fa-envelope me-2"></i>From Email
                                         </label>
-                                        <input type="email" class="form-control" id="smtpFromEmail" placeholder="sender@example.com">
-                                        <small class="text-muted">Email người gửi (mặc định sẽ dùng SMTP Username nếu để trống)</small>
+                                        <input type="email" class="form-control" id="smtpFromEmail"
+                                            placeholder="sender@example.com">
+                                        <small class="text-muted">Email người gửi (mặc định sẽ dùng SMTP Username nếu để
+                                            trống)</small>
                                         <div class="invalid-feedback"></div>
                                     </div>
                                     <div class="col-md-6 mb-3">
@@ -108,9 +117,11 @@
                                 </div>
                                 <div class="alert alert-warning">
                                     <i class="fas fa-exclamation-triangle me-2"></i>
-                                    <strong>Lưu ý:</strong> 
+                                    <strong>Lưu ý:</strong>
                                     <ul class="mb-0 mt-2">
-                                        <li>Với Gmail: Bật 2-Step Verification và tạo App Password tại <a href="https://myaccount.google.com/apppasswords" target="_blank">myaccount.google.com/apppasswords</a></li>
+                                        <li>Với Gmail: Bật 2-Step Verification và tạo App Password tại <a
+                                                href="https://myaccount.google.com/apppasswords"
+                                                target="_blank">myaccount.google.com/apppasswords</a></li>
                                         <li>Với Outlook/Hotmail: Sử dụng mật khẩu tài khoản Microsoft</li>
                                         <li>Đảm bảo SMTP Server và Port đúng với nhà cung cấp email của bạn</li>
                                     </ul>
@@ -133,4 +144,3 @@
         </div>
     </div>
 </div>
-
