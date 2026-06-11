@@ -27,8 +27,8 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const pricePerAdult = tour.discountPrice || tour.price;
-  const pricePerChild = tour.price_per_child && tour.price_per_child > 0 
-    ? tour.price_per_child 
+  const pricePerChild = tour.price_per_child && tour.price_per_child > 0
+    ? tour.price_per_child
     : Math.round(pricePerAdult * 0.7); // Trẻ em lấy từ database nếu có, ngược lại tính 70%
   const totalPrice = adults * pricePerAdult + children * pricePerChild;
 
@@ -59,7 +59,8 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify(bookingData)
+        body: JSON.stringify(bookingData),
+        credentials: "include"
       });
 
       if (!res.ok) {

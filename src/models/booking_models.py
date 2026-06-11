@@ -26,11 +26,11 @@ class BookingModel:
         # Convert string to Enum payment method
         payment_method = db.PaymentMethodEnum.from_string(payment_method_str)
         if not payment_method:
-            payment_method = db.PaymentMethodEnum.credit_card # Default fallback
+            payment_method = db.PaymentMethodEnum.CREDIT_CARD # Default fallback
 
         success = BookingService.create_combo_booking({
                     "user_id": user_id,
-                    "booking_type": db.BookingTypeEnum.tour,
+                    "booking_type": db.BookingTypeEnum.TOUR,
                     "hotel_id": hotel_id,
                     "nights": nights,
                     "reference_id": tour_id,
@@ -39,7 +39,7 @@ class BookingModel:
                     "check_in_date": check_in_date,
                     "check_out_date": check_out_date,
                     "total_price": total_price,
-                    "booking_status": db.BookingStatusEnum.pending
+                    "booking_status": db.BookingStatusEnum.PENDING
                 })
 
         return success

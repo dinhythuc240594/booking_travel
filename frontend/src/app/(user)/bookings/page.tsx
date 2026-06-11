@@ -112,7 +112,8 @@ export default function BookingsPage() {
         const isDbBooking = !isNaN(Number(confirmCancelBooking.id));
         if (isDbBooking) {
           const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookings/cancel/${confirmCancelBooking.id}`, {
-            method: "POST"
+            method: "POST",
+            credentials: "include"
           });
           if (!res.ok) {
             throw new Error("Failed to cancel on server");

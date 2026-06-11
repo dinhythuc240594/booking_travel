@@ -28,11 +28,11 @@ class CreateBookingCommand(DatabaseCommand):
             check_in_date=self.check_in_date,
             check_out_date=self.check_out_date,
             total_price=self.total_price,
-            booking_status=BookingStatusEnum.pending
+            booking_status=BookingStatusEnum.PENDING
         )
         session.add(self.booking_record)
         session.flush()
 
     def undo(self, session) -> None:
         if self.booking_record:
-            self.booking_record.booking_status = BookingStatusEnum.cancelled
+            self.booking_record.booking_status = BookingStatusEnum.CANCELLED

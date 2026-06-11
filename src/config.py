@@ -14,9 +14,6 @@ class envConfig():
     
     # Session configuration
     PERMANENT_SESSION_LIFETIME = timedelta(hours=24)
-    SESSION_COOKIE_SECURE = False  # Set True khi deploy với HTTPS
-    SESSION_COOKIE_HTTPONLY = True
-    SESSION_COOKIE_SAMESITE = 'Lax'
     
     # Upload configuration
     UPLOAD_FOLDER = 'static/uploads'
@@ -35,7 +32,7 @@ class envConfig():
     BASE_URL = os.environ.get('BASE_URL') or 'http://localhost:5000'
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = 'Lax'
-    SESSION_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = False
 
 
 class DevelopmentConfig(envConfig):

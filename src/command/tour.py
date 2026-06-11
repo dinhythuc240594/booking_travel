@@ -34,18 +34,18 @@ class ProcessPaymentCommand(DatabaseCommand):
             booking_id=booking_id,
             amount=self.amount,
             payment_method=self.payment_method,
-            payment_status=PaymentStatusEnum.successful
+            payment_status=PaymentStatusEnum.SUCCESSFUL
         )
         session.add(self.payment_record)
         session.flush()
         
         # Cập nhật trạng thái Bookings thành confirmed
-        self.booking_command.booking_record.booking_status = BookingStatusEnum.confirmed
+        self.booking_command.booking_record.booking_status = BookingStatusEnum.CONFIRMED
 
     def undo(self, session) -> None:
         if self.payment_record:
             # Đổi trạng thái sang Refunded
-            self.payment_record.payment_status = PaymentStatusEnum.refunded
+            self.payment_record.payment_status = PaymentStatusEnum.REFUNDED
 
 
 class ChangetourtatusCommand(DatabaseCommand):

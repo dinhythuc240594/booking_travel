@@ -102,7 +102,7 @@ class BookingService:
     @staticmethod
     def cancel_booking(booking_id: int):
         """Hủy Bookings (Soft logic) thay vì xóa khỏi CSDL"""
-        return BookingService.update_booking_status(booking_id, BookingStatusEnum.cancelled)
+        return BookingService.update_booking_status(booking_id, BookingStatusEnum.CANCELLED)
 
     @staticmethod
     def get_bookings_by_user_id(user_id: int):

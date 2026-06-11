@@ -321,8 +321,6 @@ class Controller():
             tour_model = self.tour_model
             
             tour = tour_model.get_by_slug(tours_slug)
-            print(f"Tour found: {tour}")
-            
             if not tour:
                 print(f"Tour not found for slug: {tours_slug}")
                 return None
@@ -497,7 +495,8 @@ class Controller():
             data = request.get_json()
             
             # Lấy user_id từ session hoặc request body
-            user_id = session.get('user_id') or data.get('userId')
+            user_id = session.get('user_id')
+            print(f"user_id: {user_id}")
             if not user_id:
                 return jsonify({
                     'status': 401,

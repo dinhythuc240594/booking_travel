@@ -45,7 +45,9 @@ export default function DetailTour({ slug }: DetailTourProps) {
         setError(null);
 
         // Fetch from backend API
-        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/tours/${slug}`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/tours/${slug}`, {
+          credentials: "include"
+        });
         if (!res.ok) {
           throw new Error("Tour not found in database");
         }

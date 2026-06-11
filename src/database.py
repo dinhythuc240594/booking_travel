@@ -102,10 +102,10 @@ class BookingTypeEnum(enum.Enum):
 
 
 class BookingStatusEnum(enum.Enum):
-    pending = "pending"
-    confirmed = "confirmed"
-    cancelled = "cancelled"
-    completed = "completed"
+    PENDING = "pending"
+    CONFIRMED = "confirmed"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
 
     def __str__(self):
         return self.value
@@ -128,10 +128,10 @@ class BookingStatusEnum(enum.Enum):
 
 
 class PaymentMethodEnum(enum.Enum):
-    credit_card = "credit_card"
-    paypal = "paypal"
-    bank_transfer = "bank_transfer"
-    cash = "cash"
+    CREDIT_CARD = "credit_card"
+    PAYPAL = "paypal"
+    BANK_TRANSFER = "bank_transfer"
+    CASH = "cash"
 
     def __str__(self):
         return self.value
@@ -154,10 +154,10 @@ class PaymentMethodEnum(enum.Enum):
 
 
 class PaymentStatusEnum(enum.Enum):
-    pending = "pending"
-    successful = "successful"
-    failed = "failed"
-    refunded = "refunded"
+    PENDING = "pending"
+    SUCCESSFUL = "successful"
+    FAILED = "failed"
+    REFUNDED = "refunded"
 
     def __str__(self):
         return self.value
@@ -321,7 +321,7 @@ class Bookings(Base):
     check_in_date = Column(DateTime)
     check_out_date = Column(DateTime)
     total_price = Column(Numeric(10, 2), nullable=False)
-    booking_status = Column(Enum(BookingStatusEnum), default=BookingStatusEnum.pending)
+    booking_status = Column(Enum(BookingStatusEnum), default=BookingStatusEnum.PENDING)
     created_at = Column(DateTime, default=datetime.datetime.now)
 
     # Relationships
@@ -336,7 +336,7 @@ class Payment(Base):
     booking_id = Column(Integer, ForeignKey('bookings.booking_id', ondelete="CASCADE"), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
     payment_method = Column(Enum(PaymentMethodEnum), nullable=False)
-    payment_status = Column(Enum(PaymentStatusEnum), default=PaymentStatusEnum.pending)
+    payment_status = Column(Enum(PaymentStatusEnum), default=PaymentStatusEnum.PENDING)
     payment_date = Column(DateTime, default=datetime.datetime.now)
 
     # Relationships
