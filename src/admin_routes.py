@@ -15,6 +15,7 @@ admin_bp = Blueprint('admin', __name__,
 
 controller = admin_controller.AdminController
 
+
 class BaseAdminView(base.BaseView, controller):
     def __init__(self):
         super().__init__()
@@ -30,17 +31,21 @@ class Login(BaseAdminView):
     def post(self):
         return self.login()
 
+
 class Logout(BaseAdminView):
     def get(self):
         return self.logout()
+
 
 class Dashboard(BaseAdminView):
     def get(self):
         return self.dashboard()
 
+
 class EditorDashboard(BaseAdminView):
     def get(self):
         return self.editor_dashboard()
+
 
 class Profile(BaseAdminView):
 
@@ -49,6 +54,7 @@ class Profile(BaseAdminView):
 
     def post(self):
         return self.profile()
+
 
 class ProfileUser(BaseAdminView):
 
@@ -73,6 +79,7 @@ class TourCreate(BaseAdminView):
     def post(self):
         return self.tour_create()
 
+
 class ToursEdit(BaseAdminView):
 
     def get(self, tour_id):
@@ -81,15 +88,18 @@ class ToursEdit(BaseAdminView):
     def post(self, tour_id):
         return self.tours_edit(tour_id)
 
+
 class ToursApprove(BaseAdminView):
 
     def post(self, tour_id):
         return self.tours_approve(tour_id)
 
+
 class ToursReject(BaseAdminView):
 
     def post(self, tour_id):
         return self.tours_reject(tour_id)
+
 
 class TourDelete(BaseAdminView):
 
@@ -154,25 +164,30 @@ class ApiEditorNotifications(BaseAdminView):
     def get(self):
         return self.api_editor_notifications()
 
+
 class ApiStatistics(BaseAdminView):
 
     def get(self):
         return self.api_statistics()
+
 
 class ApiStatisticsEditor(BaseAdminView):
 
     def get(self):
         return self.api_statistics_editor()
 
+
 class ApiPendingTour(BaseAdminView):
 
     def get(self):
         return self.api_pending_tour()
 
+
 class ApiApprovedTour(BaseAdminView):
 
     def get(self):
         return self.api_approved_tour()
+
 
 class ApiRejectedTour(BaseAdminView):
 
@@ -233,6 +248,7 @@ class ApiCategoryTour(BaseAdminView):
     def get(self):
         return self.api_get_category()
 
+
 class ApiUploadImage(BaseAdminView):
 
     def post(self):
@@ -263,6 +279,7 @@ class ApiGetUser(BaseAdminView):
 
     def get(self, user_id):
         return self.api_get_user(user_id)
+
 
 class ApiToggleUserStatus(BaseAdminView):
 

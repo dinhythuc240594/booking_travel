@@ -1,4 +1,4 @@
-from abstract_booking import AbstractBookingItem
+from composite.abstract_booking import AbstractBookingItem
 from typing import List
 
 class BookingPackage(AbstractBookingItem):

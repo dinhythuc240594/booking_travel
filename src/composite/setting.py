@@ -1,5 +1,5 @@
 
-from abstract_setting import AbstractSettingNode
+from composite.abstract_setting import AbstractSettingNode
 from typing import List
 from database import (
     Setting,

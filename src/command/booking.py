@@ -9,14 +9,16 @@ from datetime import datetime
 class CreateBookingCommand(DatabaseCommand):
 
     """Lệnh tạo Booking (Hotel hoặc Tour) cho Khách hàng"""
-    def __init__(self, user_id: int, booking_type, reference_id: int, total_price: float, check_in_date: datetime = None, check_out_date: datetime = None):
-        self.user_id = user_id
-        self.booking_type = booking_type
-        self.reference_id = reference_id
-        self.check_in_date = check_in_date
-        self.check_out_date = check_out_date
-        self.total_price = total_price
+    def __init__(self, data: dict):
+        self.data = data
         self.booking_record = None
+
+        self.user_id = data.get('user_id')
+        self.booking_type = data.get('booking_type')
+        self.reference_id = data.get('reference_id')
+        self.check_in_date = data.get('check_in_date')
+        self.check_out_date = data.get('check_out_date')
+        self.total_price = data.get('total_price')
 
     def execute(self, session) -> None:
         self.booking_record = Bookings(

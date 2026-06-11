@@ -1,16 +1,8 @@
 
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, or_
 import database as db
-import datetime
-import utils
-import json
-from booking_service import BookingService
-from user_service import UserService
-from setting_service import SettingService
-from related_service import RelatedService
-from tour_admin_service import TourAdminService
-from tour_client_service import TourClientService
+from service.booking_service import BookingService
+from datetime import datetime, timedelta
 
 
 class BookingModel:
@@ -19,7 +11,14 @@ class BookingModel:
     def __init__(self, db_session: Session):
         self.db = db_session
 
-    def create_combo_booking(self, user_id: int, hotel_id: int, nights: int, tour_id: int, persons: int, payment_method_str: str) -> bool:
+    def create_combo_booking(
+        self, 
+        user_id: int, hotel_id: int, nights: int, 
+        tour_id: int, persons: int, payment_method_str: str,
+        check_in_date: datetime,
+        total_price: float,
+        check_out_date: datetime
+    ) -> bool:
         """
         Create booking follow combo API. 
         Note: BookingService trả về boolean (True/False) cho giao dịch này.
@@ -29,14 +28,20 @@ class BookingModel:
         if not payment_method:
             payment_method = db.PaymentMethodEnum.credit_card # Default fallback
 
-        success = BookingService.create_combo_booking(
-            user_id=user_id, 
-            hotel_id=hotel_id, 
-            nights=nights,
-            tour_id=tour_id, 
-            persons=persons, 
-            payment_method=payment_method
-        )
+        success = BookingService.create_combo_booking({
+                    "user_id": user_id,
+                    "booking_type": db.BookingTypeEnum.tour,
+                    "hotel_id": hotel_id,
+                    "nights": nights,
+                    "reference_id": tour_id,
+                    "persons": persons,
+                    "payment_method": payment_method,
+                    "check_in_date": check_in_date,
+                    "check_out_date": check_out_date,
+                    "total_price": total_price,
+                    "booking_status": db.BookingStatusEnum.pending
+                })
+
         return success
 
     def get_by_id(self, booking_id: int) -> db.Bookings:

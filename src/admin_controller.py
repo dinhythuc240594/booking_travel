@@ -10,25 +10,21 @@ from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME, CATEGORY_NAME_DICT
 from email_utils import send_email
+from template_html import EMAIL_BODY_HTML, EMAIL_SUBJECT_TEST, EMAIL_BODY_HTML_TEST, EMAIL_BODY_TEXT_TEST
 from database import (
-    Bookings,
     Tour,
     TourRejection,
     TourStatus,
     get_session,
     UserRole,
-    NewsletterSubscription,
-    PasswordResetToken,
     Setting,
     User,
 )
-from models import (
-    TourModel,
-    UserModel,
-    BookingModel,
-    SettingModel,
-    LocationModel
-)
+from models.tour_models import TourModel
+from models.user_models import AdminModel
+from models.booking_models import BookingModel
+from models.related_models import LocationModel, SettingModel
+
 
 class AdminController:
     """Controller class quản lý các route của admin"""
@@ -37,7 +33,7 @@ class AdminController:
         """Khởi tạo controller"""
         self.db_session = get_session()
         self.tour_model = TourModel(self.db_session)
-        self.user_model = UserModel(self.db_session)
+        self.admin_model = AdminModel(self.db_session)
         self.booking_model = BookingModel(self.db_session)
         self.setting_model = SettingModel(self.db_session)
         self.location_model = LocationModel(self.db_session)
@@ -63,11 +59,11 @@ class AdminController:
             remember = data.get('remember') == 'on'
             
             # Kiểm tra tài khoản bị khóa trước khi xác thực
-            if self.user_model.is_locked_user(username):
+            if self.admin_model.is_locked_user(username):
                 flash('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên', 'error')
                 return render_template('admin/login.html')
             
-            user = self.user_model.authenticate(username, password)
+            user = self.admin_model.authenticate(username, password)
             
             if user and user.is_active and user.role in [UserRole.ADMIN, UserRole.STAFF]:
                 # Lưu session đăng nhập
@@ -120,7 +116,7 @@ class AdminController:
         if 'user_id' not in session:
             return redirect(url_for('admin.login'))
 
-        user = self.user_model.get_by_id(session['user_id'])
+        user = self.admin_model.get_by_id(session['user_id'])
 
         return render_template('admin/admin.html',
                              total_tours=total_tour,
@@ -146,7 +142,7 @@ class AdminController:
         pending_tours = [t for t in my_tours if t.status == TourStatus.PENDING]
         published_tours = [t for t in my_tours if t.status == TourStatus.PUBLISHED]
         
-        user = self.user_model.get_by_id(user_id)
+        user = self.admin_model.get_by_id(user_id)
 
         location_list = self.location_model.get_all()
 
@@ -237,7 +233,7 @@ class AdminController:
         
         # Kiểm tra quyền
         user_id = session.get('user_id')
-        user = self.user_model.get_by_id(user_id)
+        user = self.admin_model.get_by_id(user_id)
         
         if user.role != UserRole.ADMIN and tour.author_id != user_id:
             flash('Bạn không có quyền chỉnh sửa tour này', 'error')
@@ -328,7 +324,7 @@ class AdminController:
             return redirect(request.referrer or url_for('admin.dashboard'))
         
         # Lấy thông tin tác giả
-        author = self.user_model.get_by_id(tour.author_id)
+        author = self.admin_model.get_by_id(tour.author_id)
         if author and author.email:
             try:
                 # Tạo link tour
@@ -336,90 +332,7 @@ class AdminController:
                 
                 email_subject = f"Tour của bạn đã bị từ chối: {tour.title}"
                 
-                email_body_html = f"""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset="UTF-8">
-                    <style>
-                        body {{
-                            font-family: Arial, sans-serif;
-                            line-height: 1.6;
-                            color: #333;
-                            max-width: 600px;
-                            margin: 0 auto;
-                            padding: 20px;
-                        }}
-                        .header {{
-                            background-color: #dc3545;
-                            color: white;
-                            padding: 20px;
-                            text-align: center;
-                            border-radius: 5px 5px 0 0;
-                        }}
-                        .content {{
-                            background-color: #f8f9fa;
-                            padding: 20px;
-                            border: 1px solid #dee2e6;
-                        }}
-                        .reason-box {{
-                            background-color: white;
-                            border-left: 4px solid #dc3545;
-                            padding: 15px;
-                            margin: 20px 0;
-                        }}
-                        .tour-link {{
-                            display: inline-block;
-                            background-color: #0066cc;
-                            color: white;
-                            padding: 12px 24px;
-                            text-decoration: none;
-                            border-radius: 5px;
-                            margin: 20px 0;
-                        }}
-                        .footer {{
-                            text-align: center;
-                            color: #6c757d;
-                            font-size: 12px;
-                            margin-top: 20px;
-                            padding-top: 20px;
-                            border-top: 1px solid #dee2e6;
-                        }}
-                    </style>
-                </head>
-                <body>
-                    <div class="header">
-                        <h2>Thông báo từ chối bài viết</h2>
-                    </div>
-                    <div class="content">
-                        <p>Xin chào <strong>{author.full_name or author.username}</strong>,</p>
-                        
-                        <p>Chúng tôi rất tiếc phải thông báo rằng tour của bạn đã bị từ chối:</p>
-                        
-                        <h3 style="color: #0066cc;">{tour.title}</h3>
-                        
-                        <div class="reason-box">
-                            <strong>Lý do từ chối:</strong>
-                            <p style="margin-top: 10px; white-space: pre-wrap;">{reason}</p>
-                        </div>
-                        
-                        <p>Bạn có thể xem lại tour của mình tại link sau:</p>
-                        <div style="text-align: center;">
-                            <a href="{tour_url}" class="tour-link">Xem tour</a>
-                        </div>
-                        
-                        <p>Vui lòng xem xét lại tour và chỉnh sửa theo góp ý trên trước khi gửi lại để duyệt.</p>
-                        
-                        <p>Trân trọng,<br>
-                        <strong>Ban biên tập BookingTravel</strong></p>
-                    </div>
-                    <div class="footer">
-                        <p>Đây là email tự động. Vui lòng không trả lời email này.</p>
-                        <p>© 2024 BookingTravel. All rights reserved.</p>
-                    </div>
-                </body>
-                </html>
-                """
+                email_body_html = EMAIL_BODY_HTML.format(author.full_name or author.username, tour.title, reason, tour_url)
                 
                 # Gửi email
                 email_sent = send_email(
@@ -557,7 +470,7 @@ class AdminController:
                 'error': 'Chưa đăng nhập'
             }), 401
         
-        user = self.user_model.get_by_id(session['user_id'])
+        user = self.admin_model.get_by_id(session['user_id'])
         if not user:
             return jsonify({
                 'success': False,
@@ -671,54 +584,20 @@ class AdminController:
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
-        total = self.db_session.query(Tour).filter(
-            Tour.author_id == user_id
-        ).count() or 0
-        
-        pending_count = self.db_session.query(Tour).filter(
-            Tour.author_id == user_id, Tour.status == TourStatus.PENDING
-        ).count() or 0
-        
-        approved_count = self.db_session.query(Tour).filter(
-            Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
-        ).count() or 0
-        
-        published_count = self.db_session.query(Tour).filter(
-            Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
-        ).count() or 0
-        
-        rejected_count = self.db_session.query(Tour).filter(
-            Tour.author_id == user_id, Tour.status == TourStatus.REJECTED
-        ).count() or 0
-        
-        draft_count = self.db_session.query(Tour).filter(
-            Tour.author_id == user_id, Tour.status == TourStatus.DRAFT
-        ).count() or 0
-
-        tour_approved = self.db_session.query(Tour).filter(
-            Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
-        ).order_by(Tour.published_at.desc()).first()
-
-        tour_update = self.db_session.query(Tour).filter(
-            Tour.author_id == user_id, Tour.status == TourStatus.DRAFT, Tour.updated_at > Tour.created_at
-        ).order_by(Tour.created_at.desc()).first()
-
-        tour_newest = self.db_session.query(Tour).filter(
-            Tour.author_id == user_id
-        ).order_by(Tour.created_at.desc()).first()
+        data = self.admin_model.statistics_editor(user_id)
 
         return jsonify({
             'success': True,
             'data': {
-                'total': total,
-                'pending': pending_count,
-                'published': published_count,
-                'rejected': rejected_count,
-                'approved': approved_count,
-                'draft': draft_count,
-                'tour_approved': tour_approved.title if tour_approved else '',
-                'tour_update': tour_update.title if tour_update else '',
-                'tour_newest': tour_newest.title if tour_newest else ''
+                'total': data['total'],
+                'pending': data['pending_count'],
+                'published': data['published_count'],
+                'rejected': data['rejected_count'],
+                'approved': data['approved_count'],
+                'draft': data['draft_count'],
+                'tour_approved': data['tour_approved'].title if data['tour_approved'] else '',
+                'tour_update': data['tour_update'].title if data['tour_update'] else '',
+                'tour_newest': data['tour_newest'].title if data['tour_newest'] else ''
             }
         })
 
@@ -930,7 +809,7 @@ class AdminController:
         data_dict['price_per_adult'] = float(data.get('price_per_adult', '0.0'))
         data_dict['price_per_child'] = float(data.get('price_per_child', '0.0'))
 
-        data = self.user_model.create_tour(data_dict)
+        data = self.admin_model.create_tour(data_dict)
         return jsonify({'success': data['success'], 'message': data['message'], 'data': data['data']})
 
     def api_edit_tour(self, tour_id: int):
@@ -944,12 +823,12 @@ class AdminController:
             if field in data and isinstance(data[field], str):
                 data[field] = data[field].lower() in ('true', '1', 'yes', 'on')
 
-        data = self.user_model.edit_tour(tour_id, data)
+        data = self.admin_model.edit_tour(tour_id, data)
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
     def api_delete_tour(self, tour_id: int):
         
-        data = self.user_model.delete_tour(tour_id)
+        data = self.admin_model.delete_tour(tour_id)
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
     def api_approve_atour(self, tour_id: int):
@@ -957,7 +836,7 @@ class AdminController:
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
 
-        data = self.user_model.approve_tour(tour_id, user_id)
+        data = self.admin_model.approve_tour(tour_id, user_id)
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
     def api_reject_atour(self, tour_id: int):
@@ -967,7 +846,7 @@ class AdminController:
             
         data = request.form or request.json
         reason = data.get('reason', '')
-        data = self.user_model.reject_tour(tour_id, user_id, reason)
+        data = self.admin_model.reject_tour(tour_id, user_id, reason)
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
     def api_get_category(self):
@@ -975,7 +854,7 @@ class AdminController:
         return jsonify({'success': True, 'data': categories})
 
     def api_get_user(self, user_id: int):
-        user = self.user_model.get_by_id(user_id)
+        user = self.admin_model.get_by_id(user_id)
         if not user:
             return jsonify({'success': False, 'error': 'Người dùng không tồn tại'}), 404
         return jsonify({
@@ -993,7 +872,7 @@ class AdminController:
         })
 
     def api_toggle_user_status(self, user_id: int):
-        success, message = self.user_model.user_toggle_status(user_id)
+        success, message = self.admin_model.user_toggle_status(user_id)
         return jsonify({'success': success, 'message': message})
 
     def api_upload_image(self):
@@ -1055,7 +934,7 @@ class AdminController:
         if 'user_id' not in session:
             return jsonify({'status': False, 'message': 'Chưa đăng nhập'}), 401
         
-        user = self.user_model.get_by_id(session['user_id'])
+        user = self.admin_model.get_by_id(session['user_id'])
         if not user:
             return jsonify({'status': False, 'message': 'Không tìm thấy thông tin người dùng'}), 404
 
@@ -1110,11 +989,11 @@ class AdminController:
                 address = data.get('address', '').strip()
                 
                 if email and email != user.email:
-                    existing_user = self.user_model.get_by_email(email)
+                    existing_user = self.admin_model.get_by_email(email)
                     if existing_user and existing_user.user_id != user.user_id:
                         return jsonify({'status': False, 'message': 'Email này đã được sử dụng'}), 400
 
-                self.user_model.update(user.user_id, {
+                self.admin_model.update(user.user_id, {
                     'full_name': full_name,
                     'email': email,
                     'phone_number': phone_number,
@@ -1123,7 +1002,7 @@ class AdminController:
                     'address': address
                 })
                 
-                user = self.user_model.get_by_id(session['user_id'])
+                user = self.admin_model.get_by_id(session['user_id'])
                 session['full_name'] = user.full_name or user.username
                 
                 return jsonify({
@@ -1171,7 +1050,7 @@ class AdminController:
             flash('Vui lòng đăng nhập để xem thông tin cá nhân', 'error')
             return redirect(url_for('admin.login'))
         
-        user = self.user_model.get_by_id(session['user_id'])
+        user = self.admin_model.get_by_id(session['user_id'])
         if not user:
             flash('Không tìm thấy thông tin người dùng', 'error')
             session.clear()
@@ -1225,12 +1104,12 @@ class AdminController:
                 phone = data.get('phone', '').strip()
                 
                 if email and email != user.email:
-                    existing_user = self.user_model.get_by_email(email)
+                    existing_user = self.admin_model.get_by_email(email)
                     if existing_user and existing_user.user_id != user.user_id:
                         flash('Email này đã được sử dụng', 'error')
                         return redirect(url_for('admin.profile'))
                 
-                self.user_model.update(user.user_id, {
+                self.admin_model.update(user.user_id, {
                     'full_name': full_name if full_name else None,
                     'email': email,
                     'phone_number': phone if phone else None
@@ -1341,7 +1220,7 @@ class AdminController:
         if 'user_id' not in session:
             return jsonify({'success': False, 'error': 'Unauthorized'}), 401
         
-        current_user = self.user_model.get_by_id(session['user_id'])
+        current_user = self.admin_model.get_by_id(session['user_id'])
         if not current_user or current_user.role != UserRole.ADMIN:
             return jsonify({'success': False, 'error': 'Permission denied'}), 403
         
@@ -1358,13 +1237,13 @@ class AdminController:
             if not username:
                 return jsonify({'success': False, 'error': 'Tên đăng nhập không được để trống'}), 400
             
-            if self.user_model.get_by_username(username):
+            if self.admin_model.get_by_username(username):
                 return jsonify({'success': False, 'error': 'Tên đăng nhập đã tồn tại'}), 400
             
             if not validate_email(email):
                 return jsonify({'success': False, 'error': 'Email không đúng định dạng'}), 400
             
-            if self.user_model.get_by_email(email):
+            if self.admin_model.get_by_email(email):
                 return jsonify({'success': False, 'error': 'Email đã được sử dụng'}), 400
             
             password_valid, password_error = validate_password(password)
@@ -1376,7 +1255,7 @@ class AdminController:
             role = role_map.get(role_str.lower(), UserRole.CUSTOMER)
             
             # Create user
-            user = self.user_model.create(
+            user = self.admin_model.create(
                 username=username,
                 email=email,
                 password=password,
@@ -1406,7 +1285,7 @@ class AdminController:
 
         user_id = session['user_id']        
         try:
-            user = self.user_model.get_by_id(user_id)
+            user = self.admin_model.get_by_id(user_id)
             if not user:
                 return jsonify({'success': False, 'error': 'Không tìm thấy người dùng'}), 404
             
@@ -1432,7 +1311,7 @@ class AdminController:
             phone = data.get('phone', '').strip()
             role_str = data.get('role', '')
 
-            success = self.user_model.update(user_id, {
+            success = self.admin_model.update(user_id, {
                 'full_name': full_name,
                 'email': email,
                 'phone_number': phone,
@@ -1454,7 +1333,7 @@ class AdminController:
             if 'user_id' not in session:
                 return jsonify({'success': False, 'error': 'Unauthorized'}), 401
             
-            current_user = self.user_model.get_by_id(session['user_id'])
+            current_user = self.admin_model.get_by_id(session['user_id'])
             if not current_user or current_user.role != UserRole.ADMIN:
                 return jsonify({'success': False, 'error': 'Permission denied'}), 403
             
@@ -1493,7 +1372,7 @@ class AdminController:
             if 'user_id' not in session:
                 return jsonify({'success': False, 'error': 'Unauthorized'}), 401
             
-            current_user = self.user_model.get_by_id(session['user_id'])
+            current_user = self.admin_model.get_by_id(session['user_id'])
             if not current_user or current_user.role != UserRole.ADMIN:
                 return jsonify({'success': False, 'error': 'Permission denied'}), 403
             
@@ -1533,7 +1412,7 @@ class AdminController:
             if 'user_id' not in session:
                 return jsonify({'success': False, 'error': 'Unauthorized'}), 401
             
-            current_user = self.user_model.get_by_id(session['user_id'])
+            current_user = self.admin_model.get_by_id(session['user_id'])
             if not current_user or current_user.role != UserRole.ADMIN:
                 return jsonify({'success': False, 'error': 'Permission denied'}), 403
             
@@ -1634,7 +1513,7 @@ class AdminController:
         if 'user_id' not in session:
             return jsonify({'success': False, 'error': 'Unauthorized'}), 401
         
-        current_user = self.user_model.get_by_id(session['user_id'])
+        current_user = self.admin_model.get_by_id(session['user_id'])
         if not current_user or current_user.role != UserRole.ADMIN:
             return jsonify({'success': False, 'error': 'Permission denied'}), 403
         
@@ -1666,32 +1545,10 @@ class AdminController:
                     'success': False,
                     'error': f'Thiếu cài đặt: {", ".join(missing_fields)}'
                 }), 400
-
-            subject = "Test Email - BookingTravel"
-            body_html = """
-            <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-                <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #2c3e50;">Email Test thành công!</h2>
-                    <p>Đây là email test từ hệ thống BookingTravel.</p>
-                    <p>Nếu bạn nhận được email này, có nghĩa là cài đặt SMTP của bạn đã hoạt động đúng.</p>
-                    <p style="color: #7f8c8d; font-size: 12px; margin-top: 30px;">
-                        Đây là email tự động. Vui lòng không trả lời email này.
-                    </p>
-                </div>
-            </body>
-            </html>
-            """
-            body_text = """Email Test thành công!
-
-Đây là email test từ hệ thống BookingTravel.
-
-Nếu bạn nhận được email này, có nghĩa là cài đặt SMTP của bạn đã hoạt động đúng.
-"""
             
             # Tạm thời cập nhật email_utils với settings từ database
             # (Trong thực tế, nên refactor email_utils để đọc từ database)
-            success = send_email(test_email, subject, body_html, body_text)
+            success = send_email(test_email, EMAIL_SUBJECT_TEST, EMAIL_BODY_HTML_TEST, EMAIL_BODY_TEXT_TEST)
             
             if success:
                 return jsonify({

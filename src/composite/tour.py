@@ -1,6 +1,6 @@
 
-from abstract_booking import AbstractBookingItem
-from abstract_tour import AbstractTourNode
+from composite.abstract_booking import AbstractBookingItem
+from composite.abstract_tour import AbstractTourNode
 from database import Tour, TourStatus
 from typing import List
 

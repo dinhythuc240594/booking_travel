@@ -1,4 +1,5 @@
 
+from models.user_models import CustomerModel
 from hashlib import new
 from database import Tour
 from flask import render_template, request, jsonify, abort, redirect, url_for, flash, session
@@ -14,32 +15,32 @@ from database import (
     Viewedtour,
     Savedtour, 
     PasswordResetToken,
-    Location
 )
 
-from models import (
-    TourModel,
-    UserModel,
-    BookingModel,
-    LocationModel
-)
+from models.tour_models import TourModel
+from models.user_models import CustomerModel
+from models.booking_models import BookingModel
+from models.related_models import LocationModel
 
 PER_PAGE = 25
+CATEGORY_MAP = {
+    'beach': ['beach', 'Biển', 'Biển đảo'],
+    'mountain': ['mountain', 'Núi', 'Núi rừng', 'Khám phá', 'Mạo hiểm'],
+    'resort': ['resort', 'Nghỉ dưỡng', 'Nghỉ dưỡng 5 sao'],
+    'culture': ['culture', 'Văn hóa', 'Văn hóa - Lịch sử', 'Trải nghiệm'],
+}
+
 
 class Controller():
 
     """Mangaer controller - manage related user, tour, ..."""
-    
-    # db_session = get_session()
-    # tour_model = TourModel(db_session)
-    # user_model = UserModel(db_session)
 
     def __init__(self):
         """initialize controller"""
         self.db_session = get_session()
         self.booking_model = BookingModel(self.db_session)
         self.tour_model = TourModel(self.db_session)
-        self.user_model = UserModel(self.db_session)
+        self.customer_model = CustomerModel(self.db_session)
         self.location_model = LocationModel(self.db_session)
 
     def list_tour(self, limit = 25, offset = 0):
@@ -50,19 +51,10 @@ class Controller():
         try:
             category = request.args.get('category')
             if category and category != 'all':
-                # Map category from frontend ID to database category_name values
-                category_map = {
-                    'beach': ['beach', 'Biển', 'Biển đảo'],
-                    'mountain': ['mountain', 'Núi', 'Núi rừng', 'Khám phá', 'Mạo hiểm'],
-                    'resort': ['resort', 'Nghỉ dưỡng', 'Nghỉ dưỡng 5 sao'],
-                    'culture': ['culture', 'Văn hóa', 'Văn hóa - Lịch sử', 'Trải nghiệm'],
-                }
-                
-                # Fetch matching tours
-                if category in category_map:
+                if category in CATEGORY_MAP:
                     from sqlalchemy import or_
                     query = self.db_session.query(Tour).filter(Tour.is_deleted == False, Tour.status == TourStatus.PUBLISHED)
-                    filters = [Tour.category_name.ilike(f"%{name}%") for name in category_map[category]]
+                    filters = [Tour.category_name.ilike(f"%{name}%") for name in CATEGORY_MAP[category]]
                     query = query.filter(or_(*filters))
                     tours_list = query.all()
                 else:
@@ -83,11 +75,11 @@ class Controller():
         username = data.get('username')
         password = data.get('password')
 
-        if self.user_model.is_locked_user(username):
+        if self.customer_model.is_locked_user(username):
             flash('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên', 'error')
             return redirect(url_for('client.user_login'))
         
-        user = self.user_model.authenticate(username, password)
+        user = self.customer_model.authenticate(username, password)
         
         if user and user.is_active and user.role == UserRole.CUSTOMER:
             session['user_id'] = user.user_id
@@ -124,7 +116,7 @@ class Controller():
         print(f"username: {email}\npassword: {password}")
 
         # check status locked of account before authentication
-        if self.user_model.is_locked_user(email):
+        if self.customer_model.is_locked_user(email):
             return jsonify({
                 'status': False,
                 'code': 400,
@@ -132,7 +124,7 @@ class Controller():
                 'user': {}
             })
         
-        user = self.user_model.authenticate(email, password)
+        user = self.customer_model.authenticate(email, password)
         
         if user and user.is_active and user.role == UserRole.CUSTOMER:
             session['user_id'] = user.user_id
@@ -154,8 +146,8 @@ class Controller():
                 "address": user.address,
                 "gender": user.gender,
                 "dateOfBirth": user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '',
-                # "createdAt": user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
-                # "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
+                "createdAt": user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
+                "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
             }
 
             return jsonify({
@@ -368,16 +360,10 @@ class Controller():
                 ).first()
                 is_saved = saved_tour is not None
 
-            # time_format = '%d-%m-%Y %H:%M'
-            # time_zone = 'Asia/Ho_Chi_Minh'
-            
-            # format_time = lambda x: x.astimezone(pytz.timezone(time_zone)).strftime(time_format)
-
             return {
                 "tour": tour_model._tour_to_dict(tour),
                 "is_saved": is_saved,
                 "user_id": user_id,
-                # "format_time": format_time
             }
         except Exception as e:
             self.db_session.rollback()
@@ -444,18 +430,6 @@ class Controller():
         finally:
             self.db_session.close()
 
-    # def tour_category(self):
-    #     category =  request.args.get('category') 
-    #     try:
-    #         tours_model = self.tour_model
-    #         tours_list = tours_model.get_by_category_name(category)
-    #         json_tours = [tours_model._tour_to_dict(tour) for tour in tours_list]
-    #         return json_tours
-    #     except Exception as e:
-    #         self.db_session.rollback()
-    #         print(f"Error in tour_category: {str(e)}")
-    #         return None
-
     def bookings(self):
         try:
             booking_model = self.booking_model
@@ -513,9 +487,6 @@ class Controller():
         Route: POST /bookings
         """
         try:
-            import database as db
-            from flask import jsonify, request, session
-            from datetime import datetime, timedelta
 
             if not request.is_json:
                 return jsonify({
@@ -546,7 +517,7 @@ class Controller():
                 }), 400
 
             # Tìm tour
-            tour = self.db_session.query(db.Tour).get(tour_id)
+            tour = self.tour_model.get_by_id(tour_id)
             if not tour:
                 return jsonify({
                     'status': 404,
@@ -560,38 +531,31 @@ class Controller():
                 departure_date = datetime.now() + timedelta(days=7)
 
             # Tạo đối tượng Booking mới
-            new_booking = db.Bookings(
-                user_id=user_id,
-                booking_type=db.BookingTypeEnum.TOUR,
-                reference_id=tour_id,
-                check_in_date=departure_date,
-                check_out_date=departure_date + timedelta(days=tour.duration_days),
-                total_price=total_price,
-                booking_status=db.BookingStatusEnum.pending
+            success = self.booking_model.create_combo_booking(
+                user_id, 
+                None,
+                None,
+                tour_id,
+                adults,
+                data.get('paymentMethod', 'credit_card'),
+                departure_date,
+                total_price,
+                departure_date + timedelta(days=tour.duration_days)
             )
 
-            self.db_session.add(new_booking)
-            self.db_session.commit()
-            
-            # Tạo bản ghi thanh toán giả lập
-            payment_method_str = data.get('paymentMethod', 'credit_card')
-            payment_method = db.PaymentMethodEnum.from_string(payment_method_str) or db.PaymentMethodEnum.credit_card
-            
-            new_payment = db.Payment(
-                booking_id=new_booking.booking_id,
-                amount=total_price,
-                payment_method=payment_method,
-                payment_status=db.PaymentStatusEnum.successful,
-                payment_date=datetime.now()
-            )
-            self.db_session.add(new_payment)
-            self.db_session.commit()
-
-            return jsonify({
-                'status': 200,
-                'message': 'Đặt tour thành công',
-                'booking': self.booking_model._booking_to_dict(new_booking)
-            }), 200
+            if success:
+                booking = self.booking_model.get_by_user_id(user_id)
+                return jsonify({
+                    'status': 200,
+                    'message': 'Đặt tour thành công',
+                    'booking': self.booking_model._booking_to_dict(booking)
+                }), 200
+            else:
+                return jsonify({
+                    'status': 400,
+                    'message': 'Đặt tour thất bại',
+                    'booking': None
+                }), 400
 
         except Exception as e:
             self.db_session.rollback()
@@ -609,7 +573,6 @@ class Controller():
         Route: POST /bookings/cancel/<booking_id>
         """
         try:
-            from flask import jsonify
             success = self.booking_model.cancel_booking(booking_id)
             if success:
                 return jsonify({

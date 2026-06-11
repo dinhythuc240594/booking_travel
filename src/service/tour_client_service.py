@@ -85,3 +85,58 @@ class TourClientService:
             ).all()
         finally:
             session.close()
+
+
+    @staticmethod
+    def api_statistics_editor(user_id: int):
+        session = get_session()
+        try:
+            total = session.query(Tour).filter(
+                Tour.author_id == user_id
+            ).count() or 0
+            
+            pending_count = session.query(Tour).filter(
+                Tour.author_id == user_id, Tour.status == TourStatus.PENDING
+            ).count() or 0
+            
+            approved_count = session.query(Tour).filter(
+                Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
+            ).count() or 0
+            
+            published_count = session.query(Tour).filter(
+                Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
+            ).count() or 0
+            
+            rejected_count = session.query(Tour).filter(
+                Tour.author_id == user_id, Tour.status == TourStatus.REJECTED
+            ).count() or 0
+            
+            draft_count = session.query(Tour).filter(
+                Tour.author_id == user_id, Tour.status == TourStatus.DRAFT
+            ).count() or 0
+
+            tour_approved = session.query(Tour).filter(
+                Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
+            ).order_by(Tour.published_at.desc()).first()
+
+            tour_update = session.query(Tour).filter(
+                Tour.author_id == user_id, Tour.status == TourStatus.DRAFT, Tour.updated_at > Tour.created_at
+            ).order_by(Tour.created_at.desc()).first()
+
+            tour_newest = session.query(Tour).filter(
+                Tour.author_id == user_id
+            ).order_by(Tour.created_at.desc()).first()
+
+            return {
+                'total': total,
+                'pending_count': pending_count,
+                'approved_count': approved_count,
+                'published_count': published_count,
+                'rejected_count': rejected_count,
+                'draft_count': draft_count,
+                'tour_approved': tour_approved,
+                'tour_update': tour_update,
+                'tour_newest': tour_newest
+            }
+        finally:
+            session.close()

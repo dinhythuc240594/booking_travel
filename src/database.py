@@ -430,10 +430,10 @@ class Tour(Base):
     updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
 
     # Relationships
-    author = relationship("User", foreign_keys=[author_id], back_populates="tour_authored")
-    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="tour_reviewed")
+    author = relationship("User", foreign_keys=[author_id], back_populates="tour_authored", lazy="joined")
+    reviewer = relationship("User", foreign_keys=[reviewer_id], back_populates="tour_reviewed", lazy="joined")
     comments = relationship("TourComment", back_populates="tour", cascade="all, delete-orphan")
-    location = relationship("Location", back_populates="tour")
+    location = relationship("Location", back_populates="tour", lazy="joined")
 
 
 class TourRejection(Base):

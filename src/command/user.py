@@ -1,17 +1,8 @@
-from component import DatabaseCommand
+
 import datetime
 
-from database import (
-    TourRejection,
-    Setting,
-    Bookings, 
-    Payment, 
-    BookingStatusEnum, 
-    User, 
-    PaymentStatusEnum,
-    TourStatus,
-    NewsletterSubscription,
-    Tour)
+from command.component import DatabaseCommand
+from database import User
 
 
 class UserCommand(DatabaseCommand):

@@ -14,6 +14,7 @@ from database import init_db
 from client_routes import client_bp
 from admin_routes import admin_bp
 
+
 load_dotenv()  # Load varibale enviroment from file .env
 
 def create_app():

@@ -1,5 +1,5 @@
 
-from abstract_booking import AbstractBookingItem
+from composite.abstract_booking import AbstractBookingItem
 from database import Hotels
 
 

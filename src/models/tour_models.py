@@ -5,12 +5,8 @@ import database as db
 import datetime
 import utils
 import json
-from booking_service import BookingService
-from user_service import UserService
-from setting_service import SettingService
-from related_service import RelatedService
-from tour_admin_service import TourAdminService
-from tour_client_service import TourClientService
+from service.tour_admin_service import TourAdminService
+from service.tour_client_service import TourClientService
 
 
 class TourModel:
