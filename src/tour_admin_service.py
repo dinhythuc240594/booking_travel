@@ -84,10 +84,10 @@ class TourAdminService:
             })
             invoker.execute_transaction(session, [update_cmd])
             
-            return True, "Thành công", {"id": tour_id, "slug": tour_data['slug']}
+            return command.tour_record
         except Exception as e:
             print(e)
-            return False, str(e), None
+            return None
         finally:
             session.close()
 
@@ -181,3 +181,12 @@ class TourAdminService:
             return {'success': False, 'error': str(e)}
         finally:
             session_db.close()
+
+    @staticmethod
+    def get_tour_by_slug(data: dict):
+        session = get_session()
+        try:
+            tour = session.query(Tour).filter(Tour.slug == data['slug'], Tour.is_deleted == False).first()
+            return tour
+        finally:
+            session.close()

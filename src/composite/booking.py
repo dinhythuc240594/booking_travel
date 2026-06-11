@@ -1,58 +1,5 @@
-from abc import ABC, abstractmethod
+from abstract_booking import AbstractBookingItem
 from typing import List
-
-from database import (
-    Setting,
-    Hotels, 
-    Tour, 
-    Location,
-    TourStatus
-)
-
-#######
-# Composite Pattern sẽ đóng vai trò tính toán giá (total_price) cho giỏ hàng/gói dịch vụ trước khi lưu xuống bảng Bookings. 
-# Nó xử lý sự khác biệt giữa Hotels (tính theo đêm) và Tour (tính theo người)
-#######
-
-
-class AbstractBookingItem(ABC):
-    """Component: Interface chung cho mọi item chuẩn bị được book"""
-    @abstractmethod
-    def get_total_price(self) -> float:
-        pass
-
-    @abstractmethod
-    def show_details(self, indent: str = "") -> str:
-        pass
-
-
-class HotelsBookingItem(AbstractBookingItem):
-
-    """Leaf 1: Xử lý giá của Hotels (Giá * Số đêm)"""
-    def __init__(self, hotels: Hotels, nights: int):
-        self.hotels = hotels
-        self.nights = nights
-
-    def get_total_price(self) -> float:
-        return float(self.hotels.price_per_night) * self.nights
-
-    def show_details(self, indent: str = "") -> str:
-        return f"{indent}- 🏨 Khách sạn: {self.hotels.name} ({self.nights} đêm) - ${self.get_total_price()}"
-
-
-class TourBookingItem(AbstractBookingItem):
-
-    """Leaf 2: Xử lý giá của Tour (Giá * Số người)"""
-    def __init__(self, tour: Tour, persons: int):
-        self.tour = tour
-        self.persons = persons
-
-    def get_total_price(self) -> float:
-        return (float(self.tour.price_per_adult) * self.persons) + (float(self.tour.price_per_child) * self.persons)
-
-    def show_details(self, indent: str = "") -> str:
-        return f"{indent}- 🚌 Tour: {self.tour.name} ({self.persons} người) - ${self.get_total_price()}"
-
 
 class BookingPackage(AbstractBookingItem):
 

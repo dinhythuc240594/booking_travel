@@ -4,11 +4,8 @@ import datetime
 
 from database import (
     TourRejection,
-    Setting,
-    Bookings, 
     Payment, 
     BookingStatusEnum, 
-    User, 
     PaymentStatusEnum,
     TourStatus,
     NewsletterSubscription,

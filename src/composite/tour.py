@@ -1,26 +1,22 @@
-from abc import ABC, abstractmethod
+
+from abstract_booking import AbstractBookingItem
+from abstract_tour import AbstractTourNode
+from database import Tour, TourStatus
 from typing import List
 
-from database import (
-    Tour, 
-    TourStatus
-)
 
-#######
-# Composite Pattern sẽ đóng vai trò tính toán giá (total_price) cho giỏ hàng/gói dịch vụ trước khi lưu xuống bảng Bookings. 
-# Nó xử lý sự khác biệt giữa Hotels (tính theo đêm) và Tour (tính theo người)
-#######
+class TourBookingItem(AbstractBookingItem):
 
-class AbstractTourNode(ABC):
+    """Leaf 2: Xử lý giá của Tour (Giá * Số người)"""
+    def __init__(self, tour: Tour, persons: int):
+        self.tour = tour
+        self.persons = persons
 
-    """Component: Interface chung cho việc hiển thị cấu trúc Tour"""
-    @abstractmethod
-    def get_tour_count(self) -> int:
-        pass
+    def get_total_price(self) -> float:
+        return (float(self.tour.price_per_adult) * self.persons) + (float(self.tour.price_per_child) * self.persons)
 
-    @abstractmethod
-    def show_tours(self, indent: str = "") -> str:
-        pass
+    def show_details(self, indent: str = "") -> str:
+        return f"{indent}- 🚌 Tour: {self.tour.name} ({self.persons} người) - ${self.get_total_price()}"
 
 
 class TourLeafNode(AbstractTourNode):

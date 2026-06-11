@@ -1,7 +1,5 @@
 
-from typing import Optional
 
-from flask import jsonify, session
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
 import database as db
@@ -13,6 +11,8 @@ from user_service import UserService
 from setting_service import SettingService
 from related_service import RelatedService
 from tour_admin_service import TourAdminService
+from tour_client_service import TourClientService
+
 
 class UserModel:
     """Model class management User"""
@@ -31,7 +31,10 @@ class UserModel:
     def get_by_id(self, user_id: int) -> db.User:
         """Get user follow ID"""
         return UserService.get_user_by_id(user_id)
-    
+
+
+class AdminModel(UserModel):
+
     def create(self, username: str, email: str, password: str, 
                full_name: str = None, phone: str = None, 
                role: db.UserRole = db.UserRole.CUSTOMER) -> db.User:
@@ -179,6 +182,10 @@ class UserModel:
         return False, "Không thể cập nhật"
 
 
+class CustomerModel(UserModel):
+    pass
+
+
 class BookingModel:
     """Model class management Bookings"""
     
@@ -264,26 +271,25 @@ class TourModel:
                price_per_child: float = 0.0,
                summary: str = None, thumbnail: str = None, images: str = None,
                slug: str = None, status: db.TourStatus = db.TourStatus.DRAFT) -> db.Tour:
+        
         if slug is None:
             slug = self._generate_slug(title)
         
-        tour = db.Tour(
-            title=title,
-            slug=slug,
-            content=content,
-            summary=summary,
-            thumbnail=thumbnail,
-            images=images,
-            location_id=location_id,
-            author_id=author_id,
-            duration_days=duration_days,
-            price_per_adult=price_per_adult,
-            price_per_child=price_per_child,
-            status=status
-        )
-        self.db.add(tour)
-        self.db.commit()
-        self.db.refresh(tour)
+        tour = TourAdminService.create_tour({
+            "title": title, 
+            "content": content, 
+            "location_id": location_id, 
+            "author_id": author_id, 
+            "duration_days": duration_days, 
+            "price_per_adult": price_per_adult, 
+            "price_per_child": price_per_child, 
+            "summary": summary, 
+            "thumbnail": thumbnail, 
+            "images": images, 
+            "slug": slug, 
+            "status": status
+        })
+
         return tour
     
     def get_by_id(self, tour_id: int, include_deleted: bool = False) -> db.Tour:
@@ -293,20 +299,10 @@ class TourModel:
         return query.first()
     
     def get_by_slug(self, slug: str) -> db.Tour:
-        return self.db.query(db.Tour).filter(
-            db.Tour.slug == slug,
-            db.Tour.is_deleted == False
-        ).first()
+        return TourAdminService.get_tour_by_slug({"slug": slug})
     
     def get_by_category_name(self, category_name: str) -> db.Tour:
-        if category_name == 'all':
-            return self.db.query(db.Tour).filter(
-                db.Tour.is_deleted == False
-            ).all()
-        return self.db.query(db.Tour).filter(
-            db.Tour.category_name == category_name,
-            db.Tour.is_deleted == False
-        ).all()
+        return TourClientService.get_by_category_name(category_name)
 
     def get_all(self, limit: int = None, offset: int = 0, 
                 status: db.TourStatus = None, include_deleted: bool = False) -> list[db.Tour]:

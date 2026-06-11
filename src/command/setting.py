@@ -1,17 +1,7 @@
 from command.component import DatabaseCommand
 import datetime
 
-from database import (
-    TourRejection,
-    Setting,
-    Bookings, 
-    Payment, 
-    BookingStatusEnum, 
-    User, 
-    PaymentStatusEnum,
-    TourStatus,
-    NewsletterSubscription,
-    Tour)
+from database import Setting
 
 
 class BulkUpdateSettingsCommand(DatabaseCommand):

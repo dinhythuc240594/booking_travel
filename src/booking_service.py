@@ -1,7 +1,10 @@
 from database import get_session, Bookings, BookingTypeEnum, BookingStatusEnum, PaymentMethodEnum, Hotels, Tour
 from command.component import DBTransactionInvoker
 from command.tour import CreateBookingCommand, ProcessPaymentCommand
-from composite.booking import HotelsBookingItem, TourBookingItem, BookingPackage
+from composite.booking import BookingPackage
+from composite.hotel import HotelsBookingItem
+from composite.tour import TourBookingItem
+
 
 class BookingService:
     

@@ -1,4 +1,4 @@
-from command.component import DatabaseCommand
+from component import DatabaseCommand
 import datetime
 
 from database import (
@@ -13,7 +13,8 @@ from database import (
     NewsletterSubscription,
     Tour)
 
-class CreateAdminUserCommand(DatabaseCommand):
+
+class UserCommand(DatabaseCommand):
 
     """Lệnh tạo User mới từ Admin Panel"""
     def __init__(self, user_data: dict):

@@ -1,16 +1,9 @@
 from command.component import DatabaseCommand
 from database import (
-    TourRejection,
-    Setting,
     Bookings, 
-    Payment, 
     BookingStatusEnum, 
-    User, 
-    PaymentStatusEnum,
-    TourStatus,
-    NewsletterSubscription,
-    Tour)
-from datetime import datetime, timedelta
+)
+from datetime import datetime
 
 
 class CreateBookingCommand(DatabaseCommand):

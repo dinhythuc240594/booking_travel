@@ -1,3 +1,5 @@
+
+from command.user import UserCommand
 from database import get_session, User, UserRole
 import datetime
 
@@ -8,18 +10,19 @@ class UserService:
         """Tạo tài khoản người dùng mới"""
         session = get_session()
         try:
-            new_user = User(
-                username=username,
-                email=email,
-                password_hash=password_hash, # Lưu ý: Nên hash password bằng bcrypt hoặc werkzeug.security trước khi truyền vào
-                full_name=full_name,
-                phone_number=phone_number,
-                role=role
-            )
-            session.add(new_user)
+
+            command = UserCommand({
+                'username': username,
+                'email': email,
+                'password_hash': password_hash, 
+                'full_name': full_name,
+                'phone_number': phone_number,
+                'role': role
+            })
+            command.execute(session)
             session.commit()
-            session.refresh(new_user)
-            return new_user
+            session.refresh(command.user_record)
+            return command.user_record
         except Exception as e:
             session.rollback()
             return None

@@ -148,28 +148,14 @@ class Location(BaseClientView):
     def get(self):
         return self.locations()
 
-# class TourCategory(BaseClientView):
-    
-#     def get(self):
-#         return self.tour_category()
 
-
-# client_bp.add_url_rule('/', 'home', Home.as_view('home'))
-# client_bp.add_url_rule('/home', 'home1', Home.as_view('home1'))
 client_bp.add_url_rule('/search', 'search', Search.as_view('search'))
 client_bp.add_url_rule('/tours', 'tours', Tours.as_view('tours'))
 client_bp.add_url_rule('/tours/<tours_slug>', 'tours_detail', ToursDetail.as_view('tours_detail'))
 client_bp.add_url_rule('/locations', 'locations', Location.as_view('locations'))
-# client_bp.add_url_rule('/catagory', 'tours_category', TourCategory.as_view('tours_category'))
 client_bp.add_url_rule('/bookings', 'bookings', Bookings.as_view('bookings'))
 client_bp.add_url_rule('/bookings/cancel/<int:booking_id>', 'cancel_booking', CancelBooking.as_view('cancel_booking'))
 
 client_bp.add_url_rule('/signin', 'signin', Login.as_view('signin'))
 client_bp.add_url_rule('/signup', 'signup', Register.as_view('signup'))
 client_bp.add_url_rule('/forgot_password', 'forgot_password', ForgotPassword.as_view('forgot_password'))
-
-# client_bp.add_url_rule('/introducing', 'introducing', Introducing.as_view('introducing'))
-# client_bp.add_url_rule('/security', 'security', Security.as_view('security'))
-# client_bp.add_url_rule('/term', 'term_of_service', Term.as_view('term_of_service'))
-# client_bp.add_url_rule('/contact', 'contact', Contact.as_view('contact'))
-# client_bp.add_url_rule('/guide', 'guide', Guide.as_view('guide'))
