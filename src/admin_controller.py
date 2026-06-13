@@ -485,7 +485,7 @@ class AdminController:
                 'name': user.full_name or user.username,
                 'role': user.role.value,
                 'email': user.email,
-                'avatar': f'/static/avatars/{user.avatar_url}' if user.avatar_url else None,
+                'avatar': user.avatar,
             }
         })
     
@@ -1064,6 +1064,7 @@ class AdminController:
             return redirect(url_for('admin.login'))
         
         user = self.admin_model.get_by_id(session['user_id'])
+        print(user.avatar)
         if not user:
             flash('Không tìm thấy thông tin người dùng', 'error')
             session.clear()
@@ -1100,8 +1101,9 @@ class AdminController:
                     
                     # Lưu đường dẫn avatar (relative to static folder)
                     avatar_url = f"static/uploads/avatars/{filename}"
-                    user.avatar = avatar_url
-                    self.db_session.commit()
+                    # user.avatar = avatar_url
+                    # self.db_session.commit()
+                    self.admin_model.update(user.user_id, {'avatar': avatar_url})
                     
                     # Cập nhật session
                     session['avatar'] = avatar_url
