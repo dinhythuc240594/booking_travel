@@ -8,8 +8,8 @@ function markSectionLoaded(section) {
 
 $(document).ready(function () {
 
-    // Check authentication
-    checkAuth();
+    // // Check authentication
+    // checkAuth();
 
     // Initialize Summernote editor
     $('#articleContent, #editArticleContent').summernote({

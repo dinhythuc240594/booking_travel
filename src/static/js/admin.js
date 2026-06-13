@@ -7,8 +7,8 @@ $(document).ready(function () {
         return;
     }
 
-    // Check authentication
-    checkAuth();
+    // // Check authentication
+    // checkAuth();
 
     // Initialize chart
     initializeChart();
