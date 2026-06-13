@@ -124,44 +124,42 @@ class AdminModel(UserModel):
     def create_tour(self, data_dict: dict) -> db.Tour:
 
         # Gọi Service thực thi (Xử lý Command + File)
-        success, message, result_data = TourAdminService.create_tour(data_dict)
-        
-        if success:
-            return {'success': True, 'message': 'Tạo bài viết thành công', 'data': result_data}
-        return {'success': False, 'message': 'Tạo bài viết thất bại', 'data': message}
+        tour_id = TourAdminService.create_tour(data_dict)
+        if tour_id:
+            return {'success': True, 'message': 'Tạo bài viết thành công', 'tour_id': tour_id}
+        return {'success': False, 'message': 'Tạo bài viết thất bại', 'tour_id': None}
 
-
-    def edit_tour(self, tour_id: int, data: dict) -> tuple[bool, str]:
+    def edit_tour(self, tour_id: int, data: dict) -> dict:
 
         # Gọi Service xử lý Update (Sẽ tự quét file và execute Command)
-        success, message = TourAdminService.update_tour(tour_id, data)
+        success, message, tour_record = TourAdminService.update_tour(tour_id, data)
         if success:
-            return {'success': True, 'message': 'Cập nhật bài viết thành công'}
-        return {'success': False, 'message': 'Cập nhật bài viết thất bại'}
+            return {'success': True, 'message': 'Cập nhật bài viết thành công', 'data': tour_record}
+        return {'success': False, 'message': 'Cập nhật bài viết thất bại', 'data': None}
 
-    def delete_tour(self, tour_id: int) -> tuple[bool, str]:
+    def delete_tour(self, tour_id: int) -> dict:
         """Xóa bài viết"""
         
-        success, message = TourAdminService.delete_tour(tour_id)
+        success, message, tour_record = TourAdminService.delete_tour(tour_id)
         if success:
-            return {'success': True, 'message': 'Xóa bài viết thành công'}
-        return {'success': False, 'message': 'Xóa bài viết thất bại'}
+            return {'success': True, 'message': 'Xóa bài viết thành công', 'data': tour_record}
+        return {'success': False, 'message': 'Xóa bài viết thất bại', 'data': None}
 
-    def approve_tour(self, tour_id: int, user_id: int) -> tuple[bool, str]:
+    def approve_tour(self, tour_id: int, user_id: int) -> dict:
         """Duyệt bài viết"""
         
-        success, message = TourAdminService.api_approved_atour(tour_id, user_id)
+        success, message, tour_record = TourAdminService.api_approved_atour(tour_id, user_id)
         if success:
-            return {'success': True, 'message': 'Duyệt bài viết thành công'}
-        return {'success': False, 'message': 'Duyệt bài viết thất bại'}
+            return {'success': True, 'message': 'Duyệt bài viết thành công', 'data': tour_record}
+        return {'success': False, 'message': 'Duyệt bài viết thất bại', 'data': None}
 
-    def reject_tour(self, tour_id: int, user_id: int, reason: str = None) -> tuple[bool, str]:
+    def reject_tour(self, tour_id: int, user_id: int, reason: str = None) -> dict:
         """Từ chối bài viết"""
         
-        success, message = TourAdminService.api_rejected_atour(tour_id, user_id, reason)
+        success, message, tour_record = TourAdminService.api_rejected_atour(tour_id, user_id, reason)
         if success:
-            return {'success': True, 'message': 'Từ chối bài viết thành công'}
-        return {'success': False, 'message': 'Từ chối bài viết thất bại'}
+            return {'success': True, 'message': 'Từ chối bài viết thành công', 'data': tour_record}
+        return {'success': False, 'message': 'Từ chối bài viết thất bại', 'data': None}
 
     def statistics_editor(self, user_id: int):
         """Thống kê bài viết"""

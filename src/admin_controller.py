@@ -810,8 +810,10 @@ class AdminController:
         data_dict['price_per_adult'] = float(data.get('price_per_adult', '0.0'))
         data_dict['price_per_child'] = float(data.get('price_per_child', '0.0'))
 
-        data = self.admin_model.create_tour(data_dict)
-        return jsonify({'success': data['success'], 'message': data['message'], 'data': data['data']})
+        result = self.admin_model.create_tour(data_dict)
+        tour_obj = self.tour_model.get_by_id(result['tour_id'])
+        data = self._tour_to_dict(tour_obj) if tour_obj else None
+        return jsonify({'success': result.get('success'), 'message': result.get('message'), 'data': data})
 
     def api_edit_tour(self, tour_id: int):
         user_id = session.get('user_id')
@@ -824,13 +826,17 @@ class AdminController:
             if field in data and isinstance(data[field], str):
                 data[field] = data[field].lower() in ('true', '1', 'yes', 'on')
 
-        data = self.admin_model.edit_tour(tour_id, data)
-        return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
+        result = self.admin_model.edit_tour(tour_id, data)
+        tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)
+        data = self._tour_to_dict(tour_obj) if tour_obj else None
+        return jsonify({'success': result.get('success'), 'message': result.get('message'), 'data': data})
 
     def api_delete_tour(self, tour_id: int):
         
-        data = self.admin_model.delete_tour(tour_id)
-        return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
+        result = self.admin_model.delete_tour(tour_id)
+        tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)
+        data = self._tour_to_dict(tour_obj) if tour_obj else None
+        return jsonify({'success': result.get('success'), 'message': result.get('message'), 'data': data})
 
     def api_approve_atour(self, tour_id: int):
         user_id = session.get('user_id')
@@ -838,6 +844,8 @@ class AdminController:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
 
         data = self.admin_model.approve_tour(tour_id, user_id)
+        tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)
+        data['data'] = self._tour_to_dict(tour_obj) if tour_obj else None
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
     def api_reject_atour(self, tour_id: int):
@@ -848,6 +856,8 @@ class AdminController:
         data = request.form or request.json
         reason = data.get('reason', '')
         data = self.admin_model.reject_tour(tour_id, user_id, reason)
+        tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)
+        data['data'] = self._tour_to_dict(tour_obj) if tour_obj else None
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
     def api_get_category(self):

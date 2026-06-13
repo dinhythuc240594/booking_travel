@@ -83,8 +83,7 @@ class TourAdminService:
                 'content': new_content, 'thumbnail': new_thumb, 'images': images_json
             })
             invoker.execute_transaction(session, [update_cmd])
-            
-            return command.tour_record
+            return tour_id
         except Exception as e:
             print(e)
             return None
@@ -92,7 +91,7 @@ class TourAdminService:
             session.close()
 
     @staticmethod
-    def update_tour(tour_id: int, data: dict) -> tuple[bool, str]:
+    def update_tour(tour_id: int, data: dict) -> tuple[bool, str, Tour]:
         session = get_session()
         invoker = DBTransactionInvoker()
         
@@ -120,49 +119,49 @@ class TourAdminService:
         command = UpdateTourCommand(tour_id, update_data)
         try:
             invoker.execute_transaction(session, [command])
-            return True, "Cập nhật thành công"
+            return True, "Cập nhật thành công", command.tour_record
         except Exception as e:
             print(e)
-            return False, str(e)
+            return False, str(e), None
         finally:
             session.close()
 
     @staticmethod
-    def delete_tour(tour_id: int) -> tuple[bool, str]:
+    def delete_tour(tour_id: int) -> tuple[bool, str, Tour]:
         session = get_session()
         invoker = DBTransactionInvoker()
         command = SoftDeleteTourCommand(tour_id)
         try:
             invoker.execute_transaction(session, [command])
-            return True, "Xóa tour thành công"
+            return True, "Xóa tour thành công", command.tour_record
         except Exception as e:
-            return False, str(e)
+            return False, str(e), None
         finally:
             session.close()
 
     @staticmethod
-    def api_approved_atour(tour_id: int, user_id: int) -> tuple[bool, str]:
+    def api_approved_atour(tour_id: int, user_id: int) -> tuple[bool, str, Tour]:
         session = get_session()
         invoker = DBTransactionInvoker()
         command = ApproveTourCommand(tour_id, user_id)
         try:
             invoker.execute_transaction(session, [command])
-            return True, "Duyệt tour thành công"
+            return True, "Duyệt tour thành công", command.tour_record
         except Exception as e:
-            return False, str(e)
+            return False, str(e), None
         finally:
             session.close()
 
     @staticmethod
-    def api_rejected_atour(tour_id: int, user_id: int, reason: str) -> tuple[bool, str]:
+    def api_rejected_atour(tour_id: int, user_id: int, reason: str) -> tuple[bool, str, Tour]:
         session = get_session()
         invoker = DBTransactionInvoker()
         command = RejectTourCommand(tour_id, user_id, reason)
         try:
             invoker.execute_transaction(session, [command])
-            return True, "Từ chối tour thành công"
+            return True, "Từ chối tour thành công", command.tour_record
         except Exception as e:
-            return False, str(e)
+            return False, str(e), None
         finally:
             session.close()
 
