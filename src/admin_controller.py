@@ -584,7 +584,8 @@ class AdminController:
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
-        data = self.admin_model.statistics_editor(user_id)
+        res = self.admin_model.statistics_editor(user_id)
+        data = res['data']
 
         return jsonify({
             'success': True,
