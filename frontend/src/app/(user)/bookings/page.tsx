@@ -53,7 +53,7 @@ export default function BookingsPage() {
     }
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookings?user_id=${user.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/bookings?email=${user.email}`, {
         credentials: "include"
       });
       if (!res.ok) throw new Error("Failed to fetch bookings from server");
