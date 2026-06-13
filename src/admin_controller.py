@@ -484,7 +484,8 @@ class AdminController:
                 'username': user.username,
                 'name': user.full_name or user.username,
                 'role': user.role.value,
-                'email': user.email
+                'email': user.email,
+                'avatar': f'/static/avatars/{user.avatar_url}' if user.avatar_url else None,
             }
         })
     
