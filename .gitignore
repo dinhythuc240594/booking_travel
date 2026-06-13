@@ -34,7 +34,7 @@ instance/
 *.db
 *.sqlite
 *.sqlite3
-*.sql
+# *.sql
 
 # Environment variables
 .env
