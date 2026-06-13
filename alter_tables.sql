@@ -15,3 +15,4 @@ ALTER TABLE `users`
 -- ---------------------------------------------------------
 ALTER TABLE `tour` 
     ADD COLUMN `discount_price` DECIMAL(10, 2) NULL AFTER `price_per_child`;
+    
