@@ -627,6 +627,7 @@ class AdminController:
             'data': [{
                 'tour_id': tour.tour_id,
                 'title': tour.title,
+                'category_name': CATEGORY_NAME_DICT[tour.category_name] if tour.category_name else 'N/A',
                 'author': tour.author.username if tour.author else 'N/A',
                 'date': tour.published_at.strftime('%d/%m/%Y %H:%M') if tour.published_at else '',
                 'views': tour.view_count
@@ -1208,7 +1209,7 @@ class AdminController:
                     'username': user.username,
                     'email': user.email,
                     'full_name': user.full_name,
-                    'phone': user.phone_number,
+                    'phone_number': user.phone_number,
                     'role': user.role.value if user.role else 'user',
                     'is_active': user.is_active,
                     'created_at': user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
@@ -1291,10 +1292,11 @@ class AdminController:
     
     def api_update_user(self, user_id):
         """API cập nhật user hoặc lấy thông tin user"""
+
+        current_user_id = session['user_id']
         if 'user_id' not in session:
             return jsonify({'success': False, 'error': 'Bạn không có quyền truy cập'}), 401
 
-        user_id = session['user_id']        
         try:
             user = self.admin_model.get_by_id(user_id)
             if not user:
@@ -1315,16 +1317,16 @@ class AdminController:
                     }
                 })
             
-            # PUT request - update user
+            # POST request - update user
             data = request.json if request.is_json else request.form
             full_name = data.get('full_name', '').strip()
-            email = data.get('email', '').strip().lower()
+            # email = data.get('email', '').strip().lower()
             phone = data.get('phone', '').strip()
             role_str = data.get('role', '')
 
             success = self.admin_model.update(user_id, {
                 'full_name': full_name,
-                'email': email,
+                # 'email': email,
                 'phone_number': phone,
                 'role': role_str,
                 'updated_at': datetime.utcnow()
@@ -1332,7 +1334,7 @@ class AdminController:
             
             return jsonify({
                 'success': success,
-                'message': 'Cập nhật thông tin thành công'
+                'message': 'Cập nhật thông tin thành công' if success else 'Cập nhật thông tin thất bại'
             })
         except Exception as e:
             self.db_session.rollback()

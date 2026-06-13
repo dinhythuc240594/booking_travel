@@ -731,47 +731,6 @@ async function loadPendingArticles() {
     }
 }
 
-// Load API articles
-// async function loadAPIArticles() {
-//     try {
-//         const response = await fetch('/admin/api/api-articles');
-//         const result = await response.json();
-
-//         if (result.success && result.data) {
-//             let html = '';
-//             result.data.forEach((article, index) => {
-//                 const date = article.published_at ? new Date(article.published_at).toLocaleString('vi-VN') : 'N/A';
-//                 html += `
-//                     <tr>
-//                         <td>${index + 1}</td>
-//                         <td><strong>${article.title}</strong></td>
-//                         <td><span class="badge bg-info">${article.source}</span></td>
-//                         <td><span class="badge bg-primary">${article.category_name || 'N/A'}</span></td>
-//                         <td>${date}</td>
-//                         <td>
-//                             <button class="btn btn-sm btn-info btn-action btn-preview-api" data-article='${JSON.stringify(article)}' title="Xem trước">
-//                                 <i class="fas fa-eye"></i>
-//                             </button>
-//                             <button class="btn btn-sm btn-success btn-action btn-save-api" data-article='${JSON.stringify(article)}' title="Lưu bài viết">
-//                                 <i class="fas fa-save"></i> Lưu
-//                             </button>
-//                         </td>
-//                     </tr>
-//                 `;
-//             });
-
-//             if (result.data.length === 0) {
-//                 html = '<tr><td colspan="6" class="text-center text-muted">Chưa có bài viết nào từ API. Nhấn "Lấy bài mới từ API" để tải.</td></tr>';
-//             }
-
-//             $('#apiArticlesTable').html(html);
-//         }
-//     } catch (error) {
-//         console.error('Lỗi tải bài viết từ API:', error);
-//         $('#apiArticlesTable').html('<tr><td colspan="6" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>');
-//     }
-// }
-
 // Fetch API articles
 async function fetchAPIArticles() {
     const btn = $('#fetchAPIBtn');

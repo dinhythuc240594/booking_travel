@@ -43,13 +43,11 @@ class UserService:
         """Cập nhật thông tin người dùng"""
         session = get_session()
         try:
-            print(user_id)
             user = session.query(User).filter(User.user_id == user_id).first()
             if not user:
                 return False
             
             for key, value in data_dict.items():
-                print(key)
                 if hasattr(user, key):
                     setattr(user, key, value)
             
@@ -57,6 +55,7 @@ class UserService:
             session.commit()
             return True
         except Exception as e:
+            print(e)
             session.rollback()
             return False
         finally:
