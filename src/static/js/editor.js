@@ -558,7 +558,7 @@ async function loadMyArticles(page = 1, status = null, search = null) {
 
         // Chuẩn hóa dữ liệu trả về để phù hợp với displayArticles
         const articles = (result.data || []).map(item => ({
-            id: item.id,
+            tour_id: item.tour_id,
             title: item.title,
             // Ưu tiên tên danh mục lấy từ bảng categories (category_name / category_title...),
             // fallback về slug hoặc chuỗi rỗng nếu không có
@@ -569,8 +569,19 @@ async function loadMyArticles(page = 1, status = null, search = null) {
             date: item.created_at || item.published_at || ''
         }));
 
+        var tabIdLoad = '';
+        if (status == 'draft') {
+            tabIdLoad = 'draftsTable';
+        } else if (status == 'pending') {
+            tabIdLoad = 'pendingTable';
+        } else if (status == 'published') {
+            tabIdLoad = 'publishedTable';
+        } else {
+            tabIdLoad = 'myArticlesTable';
+        }
+
         const pagination = result.pagination || {};
-        displayArticles(articles, 'myArticlesTable');
+        displayArticles(articles, tabIdLoad);
         updatePagination(
             pagination,
             'myArticlesPagination',
@@ -673,6 +684,8 @@ function getCreateNewsTitle(articles) {
 
 // Display articles vào bảng theo ID
 function displayArticles(articles, tableBodyId) {
+    // create empty table before load
+    $('#' + tableBodyId).html('');
     let html = '';
     articles.forEach((article, index) => {
         const statusBadge = getStatusBadge(article.status);
@@ -1307,7 +1320,7 @@ async function saveEdit(newStatus = null) {
     const price_per_child = $('#editArticlePricePerChild').val() || 0;
     const slug = $('#editArticleSlug').val();
     const duration_days = $('#editArticleDurationDays').val() || 0;
-    const status = "draft";
+    const status = newStatus;
     // const tags = normalizeTagString($('#editArticleTags').val());
     if (!title) {
         showToast('Cảnh báo', 'Vui lòng nhập tiêu đề bài viết!', 'warning');
@@ -1380,7 +1393,7 @@ async function saveEdit(newStatus = null) {
         if (result.success) {
             showToast('Thành công', 'Bài viết đã được cập nhật', 'success');
             bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-            loadMyArticles();
+            loadMyArticles(1, status, null);
         } else {
             showToast('Lỗi', result.error || 'Không thể cập nhật bài viết', 'warning');
         }
