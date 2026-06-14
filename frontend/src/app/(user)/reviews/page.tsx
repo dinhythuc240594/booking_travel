@@ -59,7 +59,7 @@ export default function ReviewsPage() {
           (toursData.tours || []).forEach((t: any) => {
             tourMap.set(String(t.tour_id || t.id), {
               title: t.title || "Tour du lịch",
-              image: t.thumbnail || "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=300",
+              image: process.env.NEXT_PUBLIC_BASE_URL + t.thumbnail || "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=300",
               slug: t.slug || "",
             });
           });

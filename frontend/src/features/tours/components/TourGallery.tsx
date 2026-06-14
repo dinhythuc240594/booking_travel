@@ -50,13 +50,13 @@ export default function TourGallery({ images, title }: TourGalleryProps) {
       {/* LƯỚI ẢNH AIRBNB-STYLE */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3 rounded-3xl overflow-hidden aspect-[2/1] min-h-[300px] md:min-h-[400px]">
         {/* Ảnh lớn bên trái */}
-        <div 
+        <div
           onClick={() => openLightbox(0)}
           className="md:col-span-2 md:row-span-2 relative cursor-pointer overflow-hidden group bg-zinc-100 dark:bg-zinc-800"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={displayImages[0]}
+            src={process.env.NEXT_PUBLIC_BASE_URL + displayImages[0]}
             alt={`${title} - 1`}
             className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
           />
