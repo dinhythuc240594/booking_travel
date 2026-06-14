@@ -16,7 +16,7 @@ class TourBookingItem(AbstractBookingItem):
         return (float(self.tour.price_per_adult) * self.persons) + (float(self.tour.price_per_child) * self.persons)
 
     def show_details(self, indent: str = "") -> str:
-        return f"{indent}- 🚌 Tour: {self.tour.name} ({self.persons} người) - ${self.get_total_price()}"
+        return f"{indent}- 🚌 Tour: {self.tour.title} ({self.persons} người) - ${self.get_total_price()}"
 
     def to_dict(self) -> dict:
         return {
@@ -48,7 +48,7 @@ class TourLeafNode(AbstractTourNode):
         else:
             status_icon = "🔴"
             
-        return f"{indent}- {status_icon} [ID: {self.tour.tour_id}] {self.tour.name} | Trạng thái: {self.tour.status.value}"
+        return f"{indent}- {status_icon} [ID: {self.tour.tour_id}] {self.tour.title} | Trạng thái: {self.tour.status.value}"
 
     def to_dict(self) -> dict:
         return {

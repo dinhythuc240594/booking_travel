@@ -460,7 +460,7 @@ class Hotels(Base):
     location_id = Column(Integer, ForeignKey('locations.location_id', ondelete="SET NULL"))
     name = Column(String(150), nullable=False)
     star_rating = Column(Integer)
-    price_per_night = Column(Numeric(10, 2), nullable=False)
+    price_per_night = Column(Numeric(15, 2), nullable=False)
     address = Column(String(255))
 
     # Relationships
@@ -476,7 +476,7 @@ class Bookings(Base):
     reference_id = Column(Integer, nullable=False) # Chứa ID của Hotels hoặc Tour
     check_in_date = Column(DateTime)
     check_out_date = Column(DateTime)
-    total_price = Column(Numeric(10, 2), nullable=False)
+    total_price = Column(Numeric(15, 2), nullable=False)
     booking_status = Column(BookingStatusType(), default=BookingStatus.PENDING)
     created_at = Column(DateTime, default=datetime.datetime.now)
 
@@ -490,7 +490,7 @@ class Payment(Base):
     
     payment_id = Column(Integer, primary_key=True, autoincrement=True)
     booking_id = Column(Integer, ForeignKey('bookings.booking_id', ondelete="CASCADE"), nullable=False)
-    amount = Column(Numeric(10, 2), nullable=False)
+    amount = Column(Numeric(15, 2), nullable=False)
     payment_method = Column(PaymentMethodType(), nullable=False)
     payment_status = Column(PaymentStatusType(), default=PaymentStatus.PENDING)
     payment_date = Column(DateTime, default=datetime.datetime.now)
@@ -568,9 +568,9 @@ class Tour(Base):
     content = Column(Text, nullable=False)
     duration_days = Column(Integer, nullable=False, default=1)
     category_name = Column(String(250), nullable=True)
-    price_per_adult = Column(Numeric(10, 2), nullable=False, default=0.0)
-    price_per_child = Column(Numeric(10, 2), nullable=False, default=0.0)
-    discount_price = Column(Numeric(10, 2), nullable=True)
+    price_per_adult = Column(Numeric(15, 2), nullable=False, default=0.0)
+    price_per_child = Column(Numeric(15, 2), nullable=False, default=0.0)
+    discount_price = Column(Numeric(15, 2), nullable=True)
 
     thumbnail = Column(String(255), nullable=True)
     images = Column(Text, nullable=True)  # JSON Array lưu ảnh
@@ -694,7 +694,21 @@ def init_db():
         columns = [col['name'] for col in inspector.get_columns('tour')]
         if 'discount_price' not in columns:
             with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE tour ADD COLUMN discount_price DECIMAL(10, 2) NULL"))
+                conn.execute(text("ALTER TABLE tour ADD COLUMN discount_price DECIMAL(15, 2) NULL"))
                 conn.commit()
     except Exception as e:
         print(f"Error checking/adding discount_price column: {e}")
+
+    # Alter column precisions to DECIMAL(15, 2) to prevent out of range errors for VND currency
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE bookings MODIFY COLUMN total_price DECIMAL(15, 2) NOT NULL"))
+            conn.execute(text("ALTER TABLE payments MODIFY COLUMN amount DECIMAL(15, 2) NOT NULL"))
+            conn.execute(text("ALTER TABLE tour MODIFY COLUMN price_per_adult DECIMAL(15, 2) NOT NULL DEFAULT 0.0"))
+            conn.execute(text("ALTER TABLE tour MODIFY COLUMN price_per_child DECIMAL(15, 2) NOT NULL DEFAULT 0.0"))
+            conn.execute(text("ALTER TABLE tour MODIFY COLUMN discount_price DECIMAL(15, 2) NULL"))
+            conn.execute(text("ALTER TABLE hotels MODIFY COLUMN price_per_night DECIMAL(15, 2) NOT NULL"))
+            conn.commit()
+            print("Successfully updated database columns to DECIMAL(15, 2)")
+    except Exception as e:
+        print(f"Error updating column precisions to DECIMAL(15, 2): {e}")

@@ -1,4 +1,4 @@
-from database import get_session, Bookings, BookingStatus, PaymentMethod, Hotels, Tour
+from database import get_session, Bookings, BookingStatus, BookingType, Tour
 from command.component import DBTransactionInvoker
 from command.tour import CreateBookingCommand, ProcessPaymentCommand
 from composite.booking import BookingPackage
@@ -39,7 +39,7 @@ class BookingService:
             # if hotel:
             #     hotel_cmd = CreateBookingCommand(
             #         user_id=user_id, 
-            #         booking_type=BookingTypeEnum.hotel, 
+            #         booking_type=BookingType.hotel, 
             #         reference_id=hotel.hotel_id, 
             #         total_price=float(hotel.price_per_night) * nights
             #     )
@@ -68,6 +68,7 @@ class BookingService:
             return True
 
         except Exception as e:
+            print(e)
             return False
         finally:
             session.close()
@@ -103,6 +104,21 @@ class BookingService:
     def cancel_booking(booking_id: int):
         """Hủy Bookings (Soft logic) thay vì xóa khỏi CSDL"""
         return BookingService.update_booking_status(booking_id, BookingStatus.CANCELLED)
+
+    @staticmethod
+    def get_latest_booking_by_id(user_id: int):
+        """
+        Tìm kiếm booking (cả tour và hotel) theo booking_id.
+        Nếu tour_id không tồn tại, trả về None để hiển thị thông báo lỗi thích hợp.
+        """
+        session = get_session()
+        try:
+            booking = session.query(Bookings).filter(Bookings.user_id == user_id).order_by(Bookings.booking_id.desc()).first()
+            if booking and booking.booking_type == BookingType.TOUR and not session.query(Tour).filter(Tour.tour_id == booking.reference_id).first():
+                return None
+            return booking
+        finally:
+            session.close()
 
     @staticmethod
     def get_bookings_by_user_id(user_id: int):

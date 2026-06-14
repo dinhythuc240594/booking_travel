@@ -190,7 +190,7 @@ export default function ProfilePage() {
 
       const data = await saveProfileRes();
 
-      if (data?.status) {
+      if (data?.message == 'success') {
         const userData = data.user;
         updateUser({
           name: userData.full_name,
@@ -203,7 +203,7 @@ export default function ProfilePage() {
         setMessage({ type: "success", text: "Cập nhật thông tin cá nhân thành công!" });
         setIsEditing(false);
       } else {
-        setMessage({ type: "error", text: "Có lỗi xảy ra, vui lòng thử lại sau." });
+        setMessage({ type: "error", text: data?.message || "Có lỗi xảy ra, vui lòng thử lại sau." });
       }
     } catch (err) {
       setMessage({ type: "error", text: "Có lỗi xảy ra, vui lòng thử lại sau." });

@@ -196,13 +196,13 @@ class Controller():
             errors.append('Tên đăng nhập không được để trống')
         elif len(username) < 3:
             errors.append('Tên đăng nhập phải có ít nhất 3 ký tự')
-        elif self.user_model.get_by_username(username):
+        elif self.customer_model.get_by_username(username):
             errors.append('Tên đăng nhập đã tồn tại')
         
         # Validate email
         if not validate_email(email):
             errors.append('Email không đúng định dạng')
-        elif self.user_model.get_by_email(email):
+        elif self.customer_model.get_by_email(email):
             errors.append('Email đã được sử dụng')
         
         # Validate phone
@@ -229,7 +229,7 @@ class Controller():
                 # Clean phone number
                 phone_clean = phone.replace(' ', '').replace('-', '').replace('(', '').replace(')', '')
                 
-                user = self.user_model.create(
+                user = self.customer_model.create(
                     username=username,
                     email=email,
                     password=hash_password(password),
@@ -277,7 +277,7 @@ class Controller():
             flash('Email không đúng định dạng')
         else:
             # Tìm user
-            user = self.user_model.get_by_email(email)
+            user = self.customer_model.get_by_email(email)
             
             if user:
                 # Tạo token reset
@@ -543,7 +543,7 @@ class Controller():
             )
 
             if success:
-                booking = self.booking_model.get_by_user_id(user_id)
+                booking = self.booking_model.get_latest_by_user_id(user_id)
                 return jsonify({
                     'status': 200,
                     'message': 'Đặt tour thành công',

@@ -75,7 +75,7 @@ function LoginContent() {
 
     const data = await fetchUser();
 
-    if (data?.status) {
+    if (data?.message == 'success') {
       login(data.user, "mock-jwt-token-xyz");
       setSuccess(true);
       setLoading(false);
@@ -84,7 +84,7 @@ function LoginContent() {
       }, 1000);
     }
     else {
-      setError("Email hoặc mật khẩu không chính xác.");
+      setError(data.message);
       setLoading(false);
     }
   };

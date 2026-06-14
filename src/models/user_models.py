@@ -77,8 +77,6 @@ class UserModel:
         
         return False
 
-class AdminModel(UserModel):
-
     def create(self, username: str, email: str, password: str, 
                full_name: str = None, phone: str = None, 
                role: db.UserRole = db.UserRole.CUSTOMER) -> db.User:
@@ -107,6 +105,8 @@ class AdminModel(UserModel):
             )
 
         return user
+
+class AdminModel(UserModel):
     
     def update(self, user_id: int, data: dict) -> db.User:
         """

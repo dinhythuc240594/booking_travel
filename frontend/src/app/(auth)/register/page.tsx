@@ -101,10 +101,10 @@ function RegisterContent() {
         }),
       });
       const data = await response.json();
-      setData(data);
+      return data;
     }
 
-    await registerUser();
+    const data = await registerUser();
 
     if (data?.message === "success") {
       login(data.user, "mock-jwt-token-xyz");

@@ -24,7 +24,7 @@ class ProcessPaymentCommand(DatabaseCommand):
     def __init__(self, booking_command: CreateBookingCommand, amount: float, payment_method):
         self.booking_command = booking_command
         self.amount = amount
-        self.payment_method = payment_method # PaymentMethodEnum
+        self.payment_method = payment_method # PaymentMethod
         self.payment_record = None
 
     def execute(self, session) -> None:

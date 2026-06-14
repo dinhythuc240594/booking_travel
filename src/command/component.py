@@ -30,10 +30,17 @@ class DBTransactionInvoker:
             self._history.clear()
             
         except Exception as e:
-            # Chạy undo logic cho các command đã execute thành công từ dưới lên trên
+            # Rollback transaction in the database
+            try:
+                session.rollback()
+            except Exception:
+                pass
+                
+            # Run in-memory undo logic for commands that executed successfully
             for command in reversed(self._history):
-                command.undo(session)
+                try:
+                    command.undo(session)
+                except Exception:
+                    pass
             
-            # Commit các trạng thái Rollback (như Hủy/Hoàn tiền) xuống DB
-            session.commit()
-            raise e # Ném lỗi ra ngoài cho Controller/Service xử lý
+            raise e # Raise original exception for Controller/Service handling

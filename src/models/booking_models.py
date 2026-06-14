@@ -24,16 +24,16 @@ class BookingModel:
         Note: BookingService trả về boolean (True/False) cho giao dịch này.
         """
         # Convert string to Enum payment method
-        payment_method = db.PaymentMethodEnum.from_string(payment_method_str)
+        payment_method = db.PaymentMethod.from_string(payment_method_str)
         if not payment_method:
-            payment_method = db.PaymentMethodEnum.CREDIT_CARD # Default fallback
+            payment_method = db.PaymentMethod.CREDIT_CARD # Default fallback
 
         success = BookingService.create_combo_booking({
                     "user_id": user_id,
                     "booking_type": db.BookingType.TOUR,
                     "hotel_id": hotel_id,
                     "nights": nights,
-                    "reference_id": tour_id,
+                    "tour_id": tour_id,
                     "persons": persons,
                     "payment_method": payment_method,
                     "check_in_date": check_in_date,
@@ -48,7 +48,11 @@ class BookingModel:
         """Đọc thông tin Bookings qua ID"""
         return BookingService.get_booking_by_id(booking_id)
 
-    def get_by_user_id(self, user_id: int) -> db.Bookings:
+    def get_latest_by_user_id(self, user_id: int) -> db.Bookings:
+        """Đọc thông tin Bookings qua User ID"""
+        return BookingService.get_latest_booking_by_id(user_id)
+
+    def get_by_user_id(self, user_id: int) -> list:
         """Đọc thông tin Bookings qua User ID"""
         return BookingService.get_bookings_by_user_id(user_id)
 
