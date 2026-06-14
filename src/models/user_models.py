@@ -106,8 +106,6 @@ class UserModel:
 
         return user
 
-class AdminModel(UserModel):
-    
     def update(self, user_id: int, data: dict) -> db.User:
         """
         Update user
@@ -120,6 +118,8 @@ class AdminModel(UserModel):
             User object
         """
         return UserService.update_user(user_id, data)
+
+class AdminModel(UserModel):
 
     def create_tour(self, data_dict: dict) -> db.Tour:
 

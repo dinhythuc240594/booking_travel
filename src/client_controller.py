@@ -69,31 +69,6 @@ class Controller():
         finally:
             self.db_session.close()
 
-    def handle_login(self):
-
-        data = request.json if request.is_json else request.form
-        username = data.get('username')
-        password = data.get('password')
-
-        if self.customer_model.is_locked_user(username):
-            flash('Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên', 'error')
-            return redirect(url_for('client.user_login'))
-        
-        user = self.customer_model.authenticate(username, password)
-        
-        if user and user.is_active and user.role == UserRole.CUSTOMER:
-            session['user_id'] = user.user_id
-            session['username'] = user.username
-            session['full_name'] = user.full_name or user.username
-            session['role'] = user.role.value
-
-            flash('Đăng nhập thành công', 'success')
-            return redirect(url_for('client.home'))
-        else:
-            print('Tên đăng nhập hoặc mật khẩu không đúng')
-            flash('Tên đăng nhập hoặc mật khẩu không đúng', 'error')
-            return redirect(url_for('client.user_login'))
-
     def check_login(self):
         """
         Check login for user
@@ -153,14 +128,14 @@ class Controller():
             return jsonify({
                 'status': True,
                 'code': 200,
-                'message': 'success',
+                'message': 'Đăng nhập thành công',
                 'user': user
             })
         else:
             return jsonify({
                 'status': False,
                 'code': 401,
-                'message': 'failed',
+                'message': 'Tên đăng nhập hoặc mật khẩu không đúng',
                 'user': {}
             })
 
@@ -172,7 +147,8 @@ class Controller():
         
         if not request.is_json:
             return jsonify({
-                'status': 400,
+                'status': False,
+                'code': 400,
                 'message': 'Yêu cầu không đúng định dạng',
                 'user': {}
             })
@@ -220,7 +196,8 @@ class Controller():
         if errors:
             for error in errors:
                 return jsonify({
-                    'status': 400,
+                    'status': False,
+                    'code': 400,
                     'message': error,
                     'user': {}
                 })
@@ -249,15 +226,17 @@ class Controller():
                         "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
                     }
                     return jsonify({
-                        'status': 200,
-                        'message': 'success',
+                        'status': True,
+                        'code': 200,
+                        'message': 'Đăng ký thành công',
                         'user': user
                     })
             except Exception as e:
                 print(e)
                 return jsonify({
-                    'status': 400,
-                    'message': 'failed',
+                    'status': False,
+                    'code': 400,
+                    'message': 'Đăng ký thất bại',
                     'user': {}
                 })
 
@@ -272,9 +251,19 @@ class Controller():
         
         # Validation
         if not email:
-            flash('Email không được để trống')
+            return jsonify({
+                'status': False,
+                'code': 400,
+                'message': 'Email không được để trống',
+                'user': {}
+            })
         elif not validate_email(email):
-            flash('Email không đúng định dạng')
+            return jsonify({
+                'status': False,
+                'code': 400,
+                'message': 'Email không đúng định dạng',
+                'user': {}
+            })
         else:
             # Tìm user
             user = self.customer_model.get_by_email(email)
@@ -305,9 +294,124 @@ class Controller():
                 send_password_reset_email(user.email, reset_token)
             
             # Luôn hiển thị thông báo thành công (bảo mật)
-            success_msg = 'Nếu email tồn tại trong hệ thống, chúng tôi đã gửi link đặt lại mật khẩu đến email của bạn. Vui lòng kiểm tra hộp thư của bạn.'
-            flash(success_msg, 'success')
-            return redirect(url_for('client.user_login'))
+            return jsonify({
+                'status': True,
+                'code': 200,
+                'message': 'Email đã được gửi nếu tồn tại trong hệ thống',
+                'user': {}
+            })
+
+    def reset_password_api(self):
+        """
+        API reset password using token
+        Route: POST /reset-password
+        """
+        if not request.is_json:
+            return jsonify({
+                'status': False,
+                'code': 400,
+                'message': 'Yêu cầu không đúng định dạng',
+                'user': {}
+            })
+            
+        data = request.get_json()
+        token = data.get('token', '').strip()
+        password = data.get('password', '')
+        confirm_password = data.get('confirm_password', '')
+        
+        # Validation
+        if not token:
+            return jsonify({
+                'status': False,
+                'code': 400,
+                'message': 'Thiếu mã xác thực (token)',
+                'user': {}
+            })
+            
+        if not password or not confirm_password:
+            return jsonify({
+                'status': False,
+                'code': 400,
+                'message': 'Mật khẩu mới không được để trống',
+                'user': {}
+            })
+            
+        password_valid, password_error = validate_password(password)
+        if not password_valid:
+            return jsonify({
+                'status': False,
+                'code': 400,
+                'message': password_error,
+                'user': {}
+            })
+            
+        if password != confirm_password:
+            return jsonify({
+                'status': False,
+                'code': 400,
+                'message': 'Mật khẩu xác nhận không khớp',
+                'user': {}
+            })
+            
+        try:
+            # Tìm token hợp lệ
+            reset_token_obj = self.db_session.query(PasswordResetToken).filter(
+                PasswordResetToken.token == token,
+                PasswordResetToken.used == False,
+                PasswordResetToken.expires_at > datetime.utcnow()
+            ).first()
+            
+            if not reset_token_obj:
+                return jsonify({
+                    'status': False,
+                    'code': 400,
+                    'message': 'Mã xác thực không hợp lệ hoặc đã hết hạn',
+                    'user': {}
+                })
+            
+            # Mã hóa mật khẩu
+            hashed_pass = hash_password(password)
+
+            # Cập nhật customer
+            success = self.customer_model.update(
+                reset_token_obj.user_id,
+                {'password_hash': hashed_pass}
+            )
+            
+            if success:
+                # Đánh dấu các token cũ của user này là đã sử dụng
+                self.db_session.query(PasswordResetToken).filter(
+                    PasswordResetToken.user_id == reset_token_obj.user_id,
+                    PasswordResetToken.used == False
+                ).update({PasswordResetToken.used: True}, synchronize_session=False)
+                
+                self.db_session.commit()
+                
+                return jsonify({
+                    'status': True,
+                    'code': 200,
+                    'message': 'Đặt lại mật khẩu thành công',
+                    'user': {}
+                })
+            else:
+                return jsonify({
+                    'status': False,
+                    'code': 500,
+                    'message': 'Không thể cập nhật mật khẩu mới',
+                    'user': {}
+                })
+                
+        except Exception as e:
+            self.db_session.rollback()
+            print(f"Error in reset_password_api: {str(e)}")
+            return jsonify({
+                'status': False,
+                'code': 500,
+                'message': 'Có lỗi xảy ra trong quá trình đặt lại mật khẩu',
+                'user': {}
+            })
+        finally:
+            self.db_session.close()
 
     def tours_detail(self, tours_slug: str):
         """
@@ -488,7 +592,8 @@ class Controller():
 
             if not request.is_json:
                 return jsonify({
-                    'status': 400,
+                    'status': False,
+                    'code': 400,
                     'message': 'Yêu cầu không đúng định dạng JSON'
                 }), 400
 
@@ -499,7 +604,8 @@ class Controller():
             print(f"user_id: {user_id}")
             if not user_id:
                 return jsonify({
-                    'status': 401,
+                    'status': False,
+                    'code': 401,
                     'message': 'Yêu cầu đăng nhập để đặt tour'
                 }), 401
 
@@ -511,7 +617,8 @@ class Controller():
 
             if not tour_id:
                 return jsonify({
-                    'status': 400,
+                    'status': False,
+                    'code': 400,
                     'message': 'Thiếu mã tour'
                 }), 400
 
@@ -519,7 +626,8 @@ class Controller():
             tour = self.tour_model.get_by_id(tour_id)
             if not tour:
                 return jsonify({
-                    'status': 404,
+                    'status': False,
+                    'code': 404,
                     'message': 'Không tìm thấy tour trong hệ thống'
                 }), 404
 
@@ -545,13 +653,15 @@ class Controller():
             if success:
                 booking = self.booking_model.get_latest_by_user_id(user_id)
                 return jsonify({
-                    'status': 200,
+                    'status': True,
+                    'code': 200,
                     'message': 'Đặt tour thành công',
                     'booking': self.booking_model._booking_to_dict(booking)
                 }), 200
             else:
                 return jsonify({
-                    'status': 400,
+                    'status': False,
+                    'code': 400,
                     'message': 'Đặt tour thất bại',
                     'booking': None
                 }), 400
@@ -575,34 +685,21 @@ class Controller():
             success = self.booking_model.cancel_booking(booking_id)
             if success:
                 return jsonify({
-                    'status': 200,
+                    'status': True,
+                    'code': 200,
                     'message': 'Hủy đặt chỗ thành công'
                 }), 200
             else:
                 return jsonify({
-                    'status': 400,
+                    'status': False,
+                    'code': 400,
                     'message': 'Không thể hủy đặt chỗ này'
                 }), 400
         except Exception as e:
             return jsonify({
-                'status': 500,
+                'status': False,
+                'code': 500,
                 'message': f'Lỗi hệ thống: {str(e)}'
             }), 500
 
-    def get_tours_tree(self):
-        """
-        Lấy cấu trúc cây phân cấp tour sử dụng Composite Pattern.
-        Route: GET /tours/tree
-        """
-        try:
-            tree_dict = self.tour_model.get_tours_tree()
-            return jsonify({
-                'success': True,
-                'tree': tree_dict
-            })
-        except Exception as e:
-            return jsonify({
-                'success': False,
-                'error': str(e)
-            }), 500
 

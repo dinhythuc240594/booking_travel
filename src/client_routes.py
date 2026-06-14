@@ -3,7 +3,7 @@
 client router - define routes for client
 """
 
-from flask import Blueprint, render_template, request, jsonify, abort, make_response, session
+from flask import Blueprint, render_template, request, jsonify, abort, make_response, session, redirect
 import json
 import base
 import client_controller
@@ -91,41 +91,20 @@ class Register(BaseClientView):
 
 class ForgotPassword(BaseClientView):
     
-    def get(self):
-        return render_template('client/forgot_password.html')
-    
     def post(self):
-        self.forgot_password()
+        return self.forgot_password()
 
 
-class Introducing(BaseClientView):
+class ResetPassword(BaseClientView):
     
     def get(self):
-        return render_template('client/introducing.html')
+        import os
+        token = request.args.get('token', '')
+        frontend_url = os.environ.get('FRONTEND_URL') or 'http://localhost:3000'
+        return redirect(f"{frontend_url}/reset-password?token={token}")
 
-
-class Security(BaseClientView):
-    
-    def get(self):
-        return render_template('client/security.html')
-
-
-class Term(BaseClientView):
-    
-    def get(self):
-        return render_template('client/term_of_service.html')
-
-
-class Contact(BaseClientView):
-    
-    def get(self):
-        return render_template('client/contact.html')
-
-
-class Guide(BaseClientView):
-    
-    def get(self):
-        return render_template('client/guide.html')
+    def post(self):
+        return self.reset_password_api()
 
 
 class Bookings(BaseClientView):
@@ -149,15 +128,8 @@ class Location(BaseClientView):
         return self.locations()
 
 
-class ToursTree(BaseClientView):
-
-    def get(self):
-        return self.get_tours_tree()
-
-
 client_bp.add_url_rule('/search', 'search', Search.as_view('search'))
 client_bp.add_url_rule('/tours', 'tours', Tours.as_view('tours'))
-client_bp.add_url_rule('/tours/tree', 'tours_tree', ToursTree.as_view('tours_tree'))
 client_bp.add_url_rule('/tours/<tours_slug>', 'tours_detail', ToursDetail.as_view('tours_detail'))
 client_bp.add_url_rule('/locations', 'locations', Location.as_view('locations'))
 client_bp.add_url_rule('/bookings', 'bookings', Bookings.as_view('bookings'))
@@ -166,3 +138,4 @@ client_bp.add_url_rule('/bookings/cancel/<int:booking_id>', 'cancel_booking', Ca
 client_bp.add_url_rule('/signin', 'signin', Login.as_view('signin'))
 client_bp.add_url_rule('/signup', 'signup', Register.as_view('signup'))
 client_bp.add_url_rule('/forgot_password', 'forgot_password', ForgotPassword.as_view('forgot_password'))
+client_bp.add_url_rule('/reset_password', 'reset_password', ResetPassword.as_view('reset_password'))

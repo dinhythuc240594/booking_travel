@@ -3,11 +3,12 @@
 import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/store/auth.store";
 import Header from "@/components/common/Header";
 import Footer from "@/components/common/Footer";
 import {
-  Mail,
+  Lock,
+  Eye,
+  EyeOff,
   Compass,
   Loader2,
   AlertCircle,
@@ -16,58 +17,73 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-function ForgotPasswordContent() {
+function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated } = useAuthStore();
+  const token = searchParams.get("token") || "";
 
-  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Lấy đường dẫn chuyển hướng từ tham số redirect (nếu có)
-  const redirectUrl = searchParams.get("redirect") || "/";
-
   useEffect(() => {
-    if (isAuthenticated) {
-      router.push(redirectUrl);
+    if (!token) {
+      setError("Mã xác thực không tìm thấy. Vui lòng sử dụng liên kết từ email của bạn.");
     }
-  }, [isAuthenticated, router, redirectUrl]);
+  }, [token]);
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    if (!email.trim()) {
-      setError("Vui lòng nhập địa chỉ email.");
+    if (!token) {
+      setError("Mã xác thực không hợp lệ. Vui lòng yêu cầu một liên kết mới.");
       return;
     }
 
-    // Kiểm tra định dạng email cơ bản
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      setError("Địa chỉ email không đúng định dạng.");
+    if (!password || !confirmPassword) {
+      setError("Vui lòng điền đầy đủ các trường.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("Mật khẩu mới phải chứa ít nhất 6 ký tự.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Mật khẩu xác nhận không khớp.");
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/forgot_password`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/reset_password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({
+          token,
+          password,
+          confirm_password: confirmPassword,
+        }),
       });
 
       const data = await response.json();
 
       if (data?.status === true) {
         setSuccess(true);
+        setTimeout(() => {
+          router.push("/login");
+        }, 3000);
       } else {
-        setError(data?.message || "Có lỗi xảy ra khi gửi yêu cầu.");
+        setError(data?.message || "Đặt lại mật khẩu thất bại.");
       }
     } catch (err) {
       setError("Không thể kết nối đến máy chủ. Vui lòng thử lại sau.");
@@ -96,10 +112,10 @@ function ForgotPasswordContent() {
             </span>
           </Link>
           <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
-            Quên mật khẩu?
+            Đặt lại mật khẩu
           </h2>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 px-4">
-            Nhập email liên kết với tài khoản của bạn để nhận liên kết đặt lại mật khẩu.
+          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">
+            Vui lòng nhập mật khẩu mới và xác nhận mật khẩu của bạn.
           </p>
         </div>
 
@@ -118,56 +134,90 @@ function ForgotPasswordContent() {
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <h3 className="text-lg font-bold text-zinc-900 dark:text-white mb-2">
-              Đã gửi email thành công!
+              Đặt lại mật khẩu thành công!
             </h3>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 max-w-xs mx-auto mb-6">
-              Hệ thống đã gửi liên kết đặt lại mật khẩu đến email <strong>{email}</strong> nếu tài khoản tồn tại trong hệ thống. Vui lòng kiểm tra hộp thư của bạn (bao gồm cả thư rác).
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 max-w-xs mx-auto">
+              Mật khẩu của bạn đã được cập nhật thành công. Đang tự động chuyển hướng về trang Đăng nhập...
             </p>
-            <Button
-              onClick={() => router.push("/login")}
-              className="py-4 px-6 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold border-0 shadow-sm transition-all duration-300 cursor-pointer text-xs"
-            >
-              Quay lại Đăng nhập
-            </Button>
           </div>
         )}
 
-        {/* Forgot Password Form */}
-        <form onSubmit={handleForgotPassword} className="space-y-5">
-          {/* Email Input */}
+        {/* Reset Password Form */}
+        <form onSubmit={handleResetPassword} className="space-y-4">
+          {/* Mật khẩu mới */}
           <div>
-            <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
-              Địa chỉ Email của bạn
+            <label htmlFor="password" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+              Mật khẩu mới (tối thiểu 6 ký tự)
             </label>
             <div className="relative">
               <span className="absolute left-4 top-3 text-zinc-400">
-                <Mail className="w-4.5 h-4.5" />
+                <Lock className="w-4.5 h-4.5" />
               </span>
               <input
-                id="email"
-                type="email"
+                id="password"
+                type={showPassword ? "text" : "password"}
                 required
-                placeholder="email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-zinc-800 dark:text-zinc-100 transition-all disabled:opacity-50"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading || !token}
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-11 pr-11 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-zinc-800 dark:text-zinc-100 transition-all disabled:opacity-50"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+                disabled={!token}
+                className="absolute right-4 top-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors disabled:opacity-50"
+              >
+                {showPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Xác nhận mật khẩu mới */}
+          <div>
+            <label htmlFor="confirmPassword" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+              Xác nhận mật khẩu mới
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-3 text-zinc-400">
+                <Lock className="w-4.5 h-4.5" />
+              </span>
+              <input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                required
+                placeholder="••••••••"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={loading || !token}
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-11 pr-11 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-zinc-800 dark:text-zinc-100 transition-all disabled:opacity-50"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                tabIndex={-1}
+                disabled={!token}
+                className="absolute right-4 top-3 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors disabled:opacity-50"
+              >
+                {showConfirmPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+              </button>
             </div>
           </div>
 
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={loading}
+            disabled={loading || !token}
             className="w-full py-6 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold border-0 shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4.5 h-4.5 animate-spin" /> Đang gửi yêu cầu...
+                <Loader2 className="w-4.5 h-4.5 animate-spin" /> Đang cập nhật mật khẩu...
               </>
             ) : (
-              "Gửi liên kết đặt lại mật khẩu"
+              "Xác nhận mật khẩu mới"
             )}
           </Button>
         </form>
@@ -187,7 +237,7 @@ function ForgotPasswordContent() {
   );
 }
 
-export default function ForgotPasswordPage() {
+export default function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-50 flex flex-col font-sans">
       <Header />
@@ -198,7 +248,7 @@ export default function ForgotPasswordPage() {
             <Loader2 className="w-10 h-10 text-cyan-500 animate-spin" />
           </div>
         }>
-          <ForgotPasswordContent />
+          <ResetPasswordContent />
         </Suspense>
       </main>
 

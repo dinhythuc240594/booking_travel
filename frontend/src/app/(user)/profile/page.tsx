@@ -190,7 +190,7 @@ export default function ProfilePage() {
 
       const data = await saveProfileRes();
 
-      if (data?.message == 'success') {
+      if (data?.status == true) {
         const userData = data.user;
         updateUser({
           name: userData.full_name,

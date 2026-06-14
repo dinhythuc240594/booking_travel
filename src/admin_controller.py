@@ -1082,9 +1082,9 @@ class AdminController:
                 user.password_hash = hash_password(new_password)
                 self.db_session.commit()
                 
-                return jsonify({'status': True, 'message': 'Đổi mật khẩu thành công'})
+                return jsonify({'status': True, 'message': 'success'})
             
-        return jsonify({'status': False, 'message': 'Hành động không hợp lệ'})
+        return jsonify({'status': False, 'message': 'failed'})
 
     #### profile admin or editor ####
     def profile(self):

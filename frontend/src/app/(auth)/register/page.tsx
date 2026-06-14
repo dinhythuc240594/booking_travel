@@ -106,7 +106,7 @@ function RegisterContent() {
 
     const data = await registerUser();
 
-    if (data?.message === "success") {
+    if (data?.status === true) {
       login(data.user, "mock-jwt-token-xyz");
       setSuccess(true);
       setLoading(false);
