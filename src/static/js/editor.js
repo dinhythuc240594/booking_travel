@@ -920,6 +920,7 @@ async function saveDraft() {
     const thumbnail = $('#articleImageUrl').val() || '';
     const price_per_adult = $('#price_per_adult').val() || 0;
     const price_per_child = $('#price_per_child').val() || 0;
+    const duration_days = $('#articleDurationDays').val() || 1;
     const isHot = $('#articleIsHot').is(':checked');
     const isFeatured = $('#articleIsFeatured').is(':checked');
     // const tags = normalizeTagString($('#articleTags').val());
@@ -978,6 +979,7 @@ async function saveDraft() {
                 location_id: location_id,
                 price_per_adult: price_per_adult,
                 price_per_child: price_per_child,
+                duration_days: duration_days,
                 summary: description,
                 thumbnail: thumbnail,
                 is_hot: isHot,
@@ -1004,6 +1006,7 @@ async function saveDraft() {
             $('#articleGalleryUrls').val('[]');
             $('#articleIsHot').prop('checked', false);
             $('#articleIsFeatured').prop('checked', false);
+            $('#articleDurationDays').val('1');
 
             // Đồng bộ lại thống kê từ API
             refreshEditorStats(false);
@@ -1068,6 +1071,7 @@ async function submitArticle() {
     const location_id = $('#articleLocation').val();
     const price_per_adult = $('#price_per_adult').val() || 0;
     const price_per_child = $('#price_per_child').val() || 0;
+    const duration_days = $('#articleDurationDays').val() || 1;
     const description = $('#articleDescription').val().trim();
     const thumbnail = $('#articleImageUrl').val() || '';
     const isHot = $('#articleIsHot').is(':checked');
@@ -1105,6 +1109,11 @@ async function submitArticle() {
         return;
     }
 
+    if (!duration_days || duration_days < 1) {
+        showToast('Cảnh báo', 'Vui lòng nhập số ngày đi hợp lệ (tối thiểu 1 ngày)!', 'warning');
+        return;
+    }
+
     // // Validate tags - chỉ chấp nhận tags có sẵn
     // const tagValidation = validateTags(tags);
     // if (!tagValidation.valid) {
@@ -1127,6 +1136,7 @@ async function submitArticle() {
                 location_id: location_id,
                 price_per_adult: price_per_adult,
                 price_per_child: price_per_child,
+                duration_days: duration_days,
                 summary: description,
                 thumbnail: thumbnail,
                 is_hot: isHot,
@@ -1153,6 +1163,7 @@ async function submitArticle() {
             $('#articleGalleryUrls').val('[]');
             $('#articleIsHot').prop('checked', false);
             $('#articleIsFeatured').prop('checked', false);
+            $('#articleDurationDays').val('1');
 
             // Đồng bộ lại thống kê từ API
             refreshEditorStats(false);

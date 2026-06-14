@@ -67,11 +67,13 @@ class ToursDetail(BaseClientView):
         tour = data.get("tour")
         is_saved = data.get("is_saved")
         user_id = data.get("user_id")
+        related_tours = data.get("related_tours", [])
 
         return jsonify({
             'tour': tour,
             'is_saved': is_saved,
             'user_id': user_id,
+            'relatedTours': related_tours
         })
 
 

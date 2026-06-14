@@ -462,10 +462,44 @@ class Controller():
                 ).first()
                 is_saved = saved_tour is not None
 
+            # Lấy các tour liên quan (cùng địa điểm hoặc cùng danh mục, loại trừ tour hiện tại)
+            related_tours = []
+            if tour.location_id or tour.category_name:
+                from sqlalchemy import or_, desc
+                query = self.db_session.query(Tour).filter(
+                    Tour.status == TourStatus.PUBLISHED,
+                    Tour.is_deleted == False,
+                    Tour.tour_id != tour.tour_id
+                )
+                
+                filters = []
+                if tour.location_id:
+                    filters.append(Tour.location_id == tour.location_id)
+                if tour.category_name:
+                    filters.append(Tour.category_name == tour.category_name)
+                
+                if filters:
+                    query = query.filter(or_(*filters))
+                
+                db_related = query.order_by(desc(Tour.published_at)).limit(3).all()
+                related_tours = [tour_model._tour_to_dict(t) for t in db_related]
+                
+            if len(related_tours) < 3:
+                exclude_ids = [tour.tour_id] + [t["tour_id"] for t in related_tours]
+                from sqlalchemy import desc
+                fallback_query = self.db_session.query(Tour).filter(
+                    Tour.status == TourStatus.PUBLISHED,
+                    Tour.is_deleted == False,
+                    ~Tour.tour_id.in_(exclude_ids)
+                ).order_by(desc(Tour.published_at)).limit(3 - len(related_tours))
+                for t in fallback_query.all():
+                    related_tours.append(tour_model._tour_to_dict(t))
+
             return {
                 "tour": tour_model._tour_to_dict(tour),
                 "is_saved": is_saved,
                 "user_id": user_id,
+                "related_tours": related_tours
             }
         except Exception as e:
             self.db_session.rollback()

@@ -294,7 +294,8 @@
 
                             <div class="mb-3">
                                 <label class="form-label">Ảnh đi kèm (Nhiều ảnh)</label>
-                                <input type="file" class="form-control" id="editArticleGallery" accept="image/*" multiple>
+                                <input type="file" class="form-control" id="editArticleGallery" accept="image/*"
+                                    multiple>
                                 <input type="hidden" id="editArticleGalleryUrls" value="[]">
                                 <div id="editGalleryPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
                                 <small class="text-muted">Có thể chọn nhiều ảnh. Ảnh sẽ được upload tự động</small>
@@ -318,6 +319,13 @@
                                 <input type="text" class="form-control" id="editArticlePricePerChild"
                                     placeholder="Nhập giá: 500000">
                                 <small class="text-muted">Nhập giá theo định dạng: 500000</small>
+                            </div>
+
+                            <div class="mb-3" style="position: relative;">
+                                <label class="form-label">Số ngày đi *</label>
+                                <input type="number" class="form-control" id="editArticleDurationDays"
+                                    placeholder="Ví dụ: 3" min="1" required>
+                                <small class="text-muted">Nhập số ngày đi của tour (ví dụ: 3)</small>
                             </div>
 
                             <!-- <div class="mb-3">

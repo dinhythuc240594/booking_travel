@@ -95,10 +95,10 @@ export default function TourCard({ tour }: TourCardProps) {
             <Clock className="w-3.5 h-3.5 text-zinc-400" />
             <span>{tour.duration}</span>
           </div>
-          <div className="flex items-center gap-1">
+          {/* <div className="flex items-center gap-1">
             <Users className="w-3.5 h-3.5 text-zinc-400" />
             <span>Tối đa {tour.maxGroupSize} người</span>
-          </div>
+          </div> */}
         </div>
 
         {/* Giá & CTA Đặt Tour */}

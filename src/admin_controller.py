@@ -824,6 +824,10 @@ class AdminController:
         data_dict['slug'] = generate_slug(data.get('title'), status.value) + str(random())[:8]
         data_dict['price_per_adult'] = float(data.get('price_per_adult', '0.0'))
         data_dict['price_per_child'] = float(data.get('price_per_child', '0.0'))
+        try:
+            data_dict['duration_days'] = int(data.get('duration_days', '1') or '1')
+        except (ValueError, TypeError):
+            data_dict['duration_days'] = 1
 
         result = self.admin_model.create_tour(data_dict)
         tour_obj = self.tour_model.get_by_id(result['tour_id'])
@@ -860,6 +864,12 @@ class AdminController:
         for field in ['is_hot', 'is_featured']:
             if field in data and isinstance(data[field], str):
                 data[field] = data[field].lower() in ('true', '1', 'yes', 'on')
+
+        if 'duration_days' in data:
+            try:
+                data['duration_days'] = int(data['duration_days'] or '1')
+            except (ValueError, TypeError):
+                data['duration_days'] = 1
 
         result = self.admin_model.edit_tour(tour_id, data)
         tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)

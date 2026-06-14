@@ -33,6 +33,7 @@ interface DetailTourProps {
 export default function DetailTour({ slug }: DetailTourProps) {
   const [tour, setTour] = useState<Tour | null>(null);
   const [reviews, setReviews] = useState<any[]>([]);
+  const [dbRelatedTours, setDbRelatedTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -57,57 +58,60 @@ export default function DetailTour({ slug }: DetailTourProps) {
         if (isMounted) {
           if (data && data.tour) {
             const apiTour = data.tour;
-            // Map backend fields to frontend Tour structure
-            const durationDays = apiTour.duration_days || 1;
-            const durationStr = `${durationDays} ngày ${Math.max(0, durationDays - 1)} đêm`;
 
-            // Format start dates
-            let startDatesList = ["2026-06-15", "2026-06-22", "2026-06-29"];
-
-            // Format images array
-            let imagesList = [apiTour.thumbnail || apiTour.featuredImage || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop&q=80"];
-            if (Array.isArray(apiTour.images) && apiTour.images.length > 0) {
-              imagesList = apiTour.images;
-            }
-
-            const normalizedTour: Tour = {
-              id: String(apiTour.tour_id),
-              title: apiTour.title || "",
-              slug: apiTour.slug || "",
-              description: apiTour.content || apiTour.summary || "",
-              price: Number(apiTour.price_per_adult) || 0,
-              discountPrice: apiTour.discount_price !== undefined && apiTour.discount_price !== null ? Number(apiTour.discount_price) : undefined,
-              price_per_child: Number(apiTour.price_per_child) || 0,
-              duration: durationStr,
-              location: apiTour.location_name || "Việt Nam",
-              featuredImage: apiTour.thumbnail || imagesList[0],
-              images: imagesList,
-              rating: apiTour.rating || 4.8,
-              reviewsCount: apiTour.reviewsCount || 15,
-              category: mapCategoryNameToId(apiTour.category_name || "culture"),
-              maxGroupSize: apiTour.maxGroupSize || 20,
-              startDates: startDatesList,
-              highlights: apiTour.highlights || [
-                "Chuyến đi khám phá thắng cảnh nổi tiếng của địa phương.",
-                "Tìm hiểu văn hóa, lối sống và con người nơi đây.",
-                "Thưởng thức các đặc sản ẩm thực trứ danh bản địa."
-              ],
-              included: apiTour.included || [
-                "Phương tiện di chuyển chất lượng cao suốt tuyến.",
-                "Khách sạn/Resort nghỉ ngơi tiện nghi hiện đại.",
-                "Các bữa ăn theo tiêu chuẩn trong chương trình.",
-                "Vé tham quan tất cả các điểm có trong lịch trình.",
-                "Bảo hiểm du lịch toàn diện trị giá cao."
-              ],
-              excluded: apiTour.excluded || [
-                "Các chi phí cá nhân (điện thoại, giặt ủi, mua sắm,...).",
-                "Đồ uống phát sinh tự gọi trong các bữa ăn.",
-                "Thuế giá trị gia tăng VAT và tiền Tip cho hướng dẫn viên."
-              ],
-              itinerary: apiTour.itinerary || []
+            const normalizeTour = (item: any): Tour => {
+              const durationDays = item.duration_days || 1;
+              const durationStr = `${durationDays} ngày ${Math.max(0, durationDays - 1)} đêm`;
+              let imagesList = [item.thumbnail || item.featuredImage || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop&q=80"];
+              if (Array.isArray(item.images) && item.images.length > 0) {
+                imagesList = item.images;
+              }
+              return {
+                id: String(item.tour_id),
+                title: item.title || "",
+                slug: item.slug || "",
+                description: item.content || item.summary || "",
+                price: Number(item.price_per_adult) || 0,
+                discountPrice: item.discount_price !== undefined && item.discount_price !== null ? Number(item.discount_price) : undefined,
+                price_per_child: Number(item.price_per_child) || 0,
+                duration: durationStr,
+                location: item.location_name || "Việt Nam",
+                featuredImage: item.thumbnail || imagesList[0],
+                images: imagesList,
+                rating: item.rating || 4.8,
+                reviewsCount: item.reviewsCount || 15,
+                category: mapCategoryNameToId(item.category_name || "culture"),
+                maxGroupSize: item.maxGroupSize || 20,
+                startDates: ["2026-06-15", "2026-06-22", "2026-06-29"],
+                highlights: item.highlights || [
+                  "Chuyến đi khám phá thắng cảnh nổi tiếng của địa phương.",
+                  "Tìm hiểu văn hóa, lối sống và con người nơi đây.",
+                  "Thưởng thức các đặc sản ẩm thực trứ danh bản địa."
+                ],
+                included: item.included || [
+                  "Phương tiện di chuyển chất lượng cao suốt tuyến.",
+                  "Khách sạn/Resort nghỉ ngơi tiện nghi hiện đại.",
+                  "Các bữa ăn theo tiêu chuẩn trong chương trình.",
+                  "Vé tham quan tất cả các điểm có trong lịch trình.",
+                  "Bảo hiểm du lịch toàn diện trị giá cao."
+                ],
+                excluded: item.excluded || [
+                  "Các chi phí cá nhân (điện thoại, giặt ủi, mua sắm,...).",
+                  "Đồ uống phát sinh tự gọi trong các bữa ăn.",
+                  "Thuế giá trị gia tăng VAT và tiền Tip cho hướng dẫn viên."
+                ],
+                itinerary: item.itinerary || []
+              };
             };
 
+            const normalizedTour = normalizeTour(apiTour);
             setTour(normalizedTour);
+
+            if (data && Array.isArray(data.relatedTours)) {
+              setDbRelatedTours(data.relatedTours.map((t: any) => normalizeTour(t)));
+            } else {
+              setDbRelatedTours([]);
+            }
 
             // Filter mock reviews for this tour
             const tourReviews = mockReviews.filter((r) => r.tourId === normalizedTour.id);
@@ -126,6 +130,13 @@ export default function DetailTour({ slug }: DetailTourProps) {
             setTour(mockTour);
             const tourReviews = mockReviews.filter((r) => r.tourId === mockTour.id);
             setReviews(tourReviews);
+
+            // Set related mock tours
+            const related = mockTours
+              .filter((t) => t.slug !== mockTour.slug)
+              .sort((a, b) => (a.category === mockTour.category ? -1 : 1))
+              .slice(0, 3);
+            setDbRelatedTours(related);
           } else {
             setError("Không tìm thấy tour này");
           }
@@ -185,7 +196,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
   }
 
   // Filter related tours (exclude current tour, match same category if possible)
-  const relatedTours = mockTours
+  const relatedTours = dbRelatedTours.length > 0 ? dbRelatedTours : mockTours
     .filter((t) => t.slug !== tour.slug)
     .sort((a, b) => (a.category === tour.category ? -1 : 1))
     .slice(0, 3);
@@ -273,9 +284,9 @@ export default function DetailTour({ slug }: DetailTourProps) {
 
         {/* TIÊU ĐỀ TOUR */}
         <div className="mb-8">
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-xs font-bold uppercase tracking-wider mb-3">
+          {/* <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 text-xs font-bold uppercase tracking-wider mb-3">
             <Sparkles className="w-3.5 h-3.5" /> Chuyến đi đặc sắc
-          </span>
+          </span> */}
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight leading-tight mb-4">
             {tour.title}
           </h1>
@@ -295,10 +306,10 @@ export default function DetailTour({ slug }: DetailTourProps) {
               <Clock className="w-4.5 h-4.5 text-zinc-400" />
               <span>{tour.duration}</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            {/* <div className="flex items-center gap-1.5">
               <Users className="w-4.5 h-4.5 text-zinc-400" />
               <span>Tối đa {tour.maxGroupSize} khách</span>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -316,7 +327,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
             {/* 1. Tổng quan mô tả */}
             <section className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl p-6 md:p-8 shadow-sm">
               {/* <h2 className="text-xl font-bold text-zinc-950 dark:text-white mb-4">Mô tả hành trình</h2> */}
-              <div 
+              <div
                 className="tour-description-html text-sm text-zinc-600 dark:text-zinc-400 leading-7 font-normal"
                 dangerouslySetInnerHTML={{ __html: tour.description || "" }}
               />
