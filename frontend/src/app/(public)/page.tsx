@@ -67,7 +67,7 @@ export default function PublicPage() {
               category: mapCategoryNameToId(t.category_name || t.category || "culture"),
               maxGroupSize: t.maxGroupSize || 20,
               startDates: t.startDates || ["2026-06-12", "2026-06-19", "2026-06-26"],
-              highlights: t.highlights || []
+              highlights: t.highlights || [],
             };
           });
           setListTours(normalized);
@@ -216,7 +216,7 @@ export default function PublicPage() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={dest.image_url.startsWith("http") ? dest.image_url : (process.env.NEXT_PUBLIC_BASE_URL || "") + dest.image_url}
+                    src={dest.image_url ? (dest.image_url.startsWith("http") ? dest.image_url : (process.env.NEXT_PUBLIC_BASE_URL || "") + dest.image_url) : "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800"}
                     alt={dest.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"

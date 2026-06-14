@@ -5,7 +5,8 @@ export interface ItineraryDay {
 }
 
 export interface Tour {
-  id: string;
+  id?: string;
+  tour_id: string;
   title: string;
   slug: string;
   description: string;
@@ -25,6 +26,12 @@ export interface Tour {
   included?: string[]; // Dịch vụ bao gồm (xe đưa đón, khách sạn,...)
   excluded?: string[]; // Dịch vụ không bao gồm (tip, chi phí cá nhân,...)
   itinerary?: ItineraryDay[];
+  location_name?: string;
+  country?: string;
+  className?: string;
+  image_url?: string;
+  name?: string;
+  toursCount?: number;
 }
 
 export interface TourFilterOptions {

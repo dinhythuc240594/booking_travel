@@ -211,11 +211,14 @@ class Controller():
                 
                 if user:
                     user = {
-                        "id": user.user_id,
+                        # "id": user.user_id,
                         "email": user.email,
                         "name": user.full_name,
                         "role": user.role.value,
-                        "phone": user.phone_number,
+                        "phoneNumber": user.phone_number,
+                        "address": user.address,
+                        "gender": user.gender,
+                        "dateOfBirth": user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '',
                         "createdAt": user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
                         "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
                     }

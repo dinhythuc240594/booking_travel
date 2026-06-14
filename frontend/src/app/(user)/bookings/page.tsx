@@ -64,7 +64,7 @@ export default function BookingsPage() {
         tourId: String(b.tourId || b.reference_id),
         tourTitle: b.tourTitle || "Hành trình du lịch",
         tourImage: b.tourImage || "",
-        userId: b.user_id,
+        // userId: b.user_id,
         userName: user.name,
         departureDate: b.departureDate || b.check_in_date || new Date().toISOString(),
         adults: 1,
@@ -389,7 +389,7 @@ export default function BookingsPage() {
                                     <div className="w-12 h-12 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 flex-shrink-0">
                                       {/* eslint-disable-next-line @next/next/no-img-element */}
                                       <img
-                                        src={booking.tourImage || "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=150"}
+                                        src={booking.tourImage.startsWith('http') ? booking.tourImage : (process.env.NEXT_PUBLIC_BASE_URL || "") + booking.tourImage}
                                         alt={booking.tourTitle}
                                         className="w-full h-full object-cover"
                                       />

@@ -68,6 +68,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
               }
               return {
                 id: String(item.tour_id),
+                tour_id: item.tour_id,
                 title: item.title || "",
                 slug: item.slug || "",
                 description: item.content || item.summary || "",
@@ -80,6 +81,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
                 images: imagesList,
                 rating: item.rating || 4.8,
                 reviewsCount: item.reviewsCount || 15,
+                image_url: item.thumbnail || imagesList[0],
                 category: mapCategoryNameToId(item.category_name || "culture"),
                 maxGroupSize: item.maxGroupSize || 20,
                 startDates: ["2026-06-15", "2026-06-22", "2026-06-29"],

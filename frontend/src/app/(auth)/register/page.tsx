@@ -99,6 +99,7 @@ function RegisterContent() {
           password: password,
           confirm_password: confirmPassword,
         }),
+        credentials: "include",
       });
       const data = await response.json();
       return data;
