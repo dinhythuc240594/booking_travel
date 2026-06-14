@@ -49,9 +49,6 @@ class EditorDashboard(BaseAdminView):
 
 class Profile(BaseAdminView):
 
-    def get(self):
-        return self.profile()
-
     def post(self):
         return self.profile()
 

@@ -75,6 +75,15 @@ class ToursDetail(BaseClientView):
         })
 
 
+class Profile(BaseClientView):
+
+    def get(self):
+        return self.profile_user()
+
+    def post(self):
+        return self.profile_user()
+
+
 class Login(BaseClientView):
     
     def post(self):
@@ -135,6 +144,7 @@ client_bp.add_url_rule('/locations', 'locations', Location.as_view('locations'))
 client_bp.add_url_rule('/bookings', 'bookings', Bookings.as_view('bookings'))
 client_bp.add_url_rule('/bookings/cancel/<int:booking_id>', 'cancel_booking', CancelBooking.as_view('cancel_booking'))
 
+client_bp.add_url_rule('/profile', 'profile', Profile.as_view('profile'))
 client_bp.add_url_rule('/signin', 'signin', Login.as_view('signin'))
 client_bp.add_url_rule('/signup', 'signup', Register.as_view('signup'))
 client_bp.add_url_rule('/forgot_password', 'forgot_password', ForgotPassword.as_view('forgot_password'))

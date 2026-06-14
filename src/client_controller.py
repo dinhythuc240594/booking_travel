@@ -1,12 +1,11 @@
 
-from models.user_models import CustomerModel
-from hashlib import new
-from database import Tour
+
+import os
+
 from flask import render_template, request, jsonify, abort, redirect, url_for, flash, session
-import pytz
-import json
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
-from utils import validate_email, validate_password, validate_phone, hash_password, DOMESTIC
+from utils import validate_email, validate_password, validate_phone, hash_password, DOMESTIC, verify_password
 from email_utils import generate_token, send_password_reset_email
 from database import (
     get_session,
@@ -15,6 +14,7 @@ from database import (
     Viewedtour,
     Savedtour, 
     PasswordResetToken,
+    Tour
 )
 
 from models.tour_models import TourModel
@@ -702,4 +702,116 @@ class Controller():
                 'message': f'Lỗi hệ thống: {str(e)}'
             }), 500
 
+    def profile_user(self):
+        """
+        Trang thông tin cá nhân của user
+        Route: GET POST /profile
+        """
+        if 'user_id' not in session:
+            return jsonify({'status': False, 'code': 401, 'message': 'Chưa đăng nhập'}), 401
+        
+        user = self.admin_model.get_by_id(session['user_id'])
+        if not user:
+            return jsonify({'status': False, 'code': 404, 'message': 'Không tìm thấy thông tin người dùng'}), 404
 
+        if request.method == 'POST':
+            data = request.json if request.is_json else request.form
+            action = data.get('action')
+            if action == 'update_avatar':
+                if 'avatar' not in request.files:
+                    return jsonify({'status': False, 'code': 400, 'message': 'Không có file được chọn'}), 400
+                
+                file = request.files['avatar']
+                if file.filename == '':
+                    return jsonify({'status': False, 'code': 400, 'message': 'Không có file được chọn'}), 400
+                
+                if file and self._allowed_file(file.filename):
+                    filename = secure_filename(f"avatar_{user.user_id}_{file.filename}")
+                    # Tạo đường dẫn upload folder
+                    upload_folder = os.path.join('src', 'static', 'uploads', 'avatars')
+                    os.makedirs(upload_folder, exist_ok=True)
+                    filepath = os.path.join(upload_folder, filename)
+                    file.save(filepath)
+                    
+                    # Xóa avatar cũ nếu có
+                    if user.avatar:
+                        old_path = user.avatar.lstrip('/')
+                        old_path = os.path.join('src', old_path) if not old_path.startswith('src') else old_path
+                        if os.path.exists(old_path):
+                            try:
+                                os.remove(old_path)
+                            except:
+                                pass
+                    
+                    # Lưu đường dẫn avatar (relative to static folder)
+                    avatar_url = f"static/uploads/avatars/{filename}"
+                    user.avatar = avatar_url
+                    self.db_session.commit()
+                    
+                    # Cập nhật session
+                    session['avatar'] = avatar_url
+                    
+                    return jsonify({'status': True, 'code': 200, 'message': 'Cập nhật avatar thành công', 'avatar_url': f'/{avatar_url}'})
+                else:
+                    return jsonify({'status': False, 'code': 400, 'message': 'File không hợp lệ. Chỉ chấp nhận: png, jpg, jpeg, gif, webp'})
+            
+            elif action == 'update_info':
+                data = request.json if request.is_json else request.form
+                full_name = data.get('full_name', '').strip()
+                email = data.get('email', '').strip()
+                phone_number = data.get('phone_number', '').strip()
+                gender = data.get('gender', '').strip()
+                date_of_birth = data.get('date_of_birth', '').strip()
+                address = data.get('address', '').strip()
+                
+                if email and email != user.email:
+                    existing_user = self.admin_model.get_by_email(email)
+                    if existing_user and existing_user.user_id != user.user_id:
+                        return jsonify({'status': False, 'message': 'Email này đã được sử dụng'}), 400
+
+                self.admin_model.update(user.user_id, {
+                    'full_name': full_name,
+                    'email': email,
+                    'phone_number': phone_number,
+                    'gender': gender,
+                    'date_of_birth': date_of_birth,
+                    'address': address
+                })
+                
+                user = self.admin_model.get_by_id(session['user_id'])
+                session['full_name'] = user.full_name or user.username
+                
+                return jsonify({
+                    'status': True, 
+                    'message': 'Cập nhật thông tin thành công', 
+                    'user': {
+                        'full_name': user.full_name, 
+                        'email': user.email, 
+                        'phone_number': user.phone_number, 
+                        'gender': user.gender, 
+                        'date_of_birth': user.date_of_birth, 
+                        'address': user.address
+                    }
+                })
+            
+            elif action == 'change_password':
+                data = request.json if request.is_json else request.form
+                current_password = data.get('current_password')
+                new_password = data.get('new_password')
+                confirm_password = data.get('confirm_password')
+                
+                if not verify_password(user.password_hash, current_password):
+                    return jsonify({'status': False, 'code': 400, 'message': 'Mật khẩu hiện tại không đúng'})
+                
+                if new_password != confirm_password:
+                    return jsonify({'status': False, 'code': 400, 'message': 'Mật khẩu mới và xác nhận không khớp'})
+                
+                if len(new_password) < 6:
+                    return jsonify({'status': False, 'code': 400, 'message': 'Mật khẩu phải có ít nhất 6 ký tự'})
+                
+                user.password_hash = hash_password(new_password)
+                self.db_session.commit()
+                
+                return jsonify({'status': True, 'code': 200, 'message': 'success'})
+            
+        return jsonify({'status': False, 'code': 400, 'message': 'Thao tác thất bại. Vui lòng thử lại sau'})
