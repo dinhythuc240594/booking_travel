@@ -18,7 +18,7 @@ class BookingPackage(AbstractBookingItem):
         return sum(item.get_total_price() for item in self.items)
 
     def show_details(self, indent: str = "") -> str:
-        details = f"{indent}📦 GÓI COMBO: {self.package_name} | Tổng giá trị: ${self.get_total_price()}\n"
+        details = f"{indent} gói combo: {self.package_name} | tổng tiền: ${self.get_total_price()}\n"
         for item in self.items:
             details += item.show_details(indent + "  ") + "\n"
         return details.rstrip()
