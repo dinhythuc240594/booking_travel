@@ -36,7 +36,7 @@ export default function TourCard({ tour }: TourCardProps) {
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-100 dark:bg-zinc-800">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={tour.featuredImage}
+          src={tour.featuredImage.startsWith("http") ? tour.featuredImage : (process.env.NEXT_PUBLIC_BASE_URL || "") + tour.featuredImage}
           alt={tour.title}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
           loading="lazy"
