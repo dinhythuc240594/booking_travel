@@ -315,14 +315,15 @@ export default function DetailTour({ slug }: DetailTourProps) {
 
             {/* 1. Tổng quan mô tả */}
             <section className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl p-6 md:p-8 shadow-sm">
-              <h2 className="text-xl font-bold text-zinc-950 dark:text-white mb-4">Mô tả hành trình</h2>
-              <p className="text-sm text-zinc-600 dark:text-zinc-400 leading-7 font-normal whitespace-pre-wrap">
-                {tour.description}
-              </p>
+              {/* <h2 className="text-xl font-bold text-zinc-950 dark:text-white mb-4">Mô tả hành trình</h2> */}
+              <div 
+                className="tour-description-html text-sm text-zinc-600 dark:text-zinc-400 leading-7 font-normal"
+                dangerouslySetInnerHTML={{ __html: tour.description || "" }}
+              />
             </section>
 
             {/* 2. Điểm nổi bật (Highlights) */}
-            {tour.highlights && tour.highlights.length > 0 && (
+            {/* {tour.highlights && tour.highlights.length > 0 && (
               <section className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl p-6 md:p-8 shadow-sm">
                 <h2 className="text-xl font-bold text-zinc-950 dark:text-white mb-5">Điểm nhấn nổi bật</h2>
                 <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -336,15 +337,14 @@ export default function DetailTour({ slug }: DetailTourProps) {
                   ))}
                 </ul>
               </section>
-            )}
+            )} */}
 
             {/* 3. Lịch trình chi tiết (Timeline Itinerary) */}
-            <section className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl p-6 md:p-8 shadow-sm">
+            {/* <section className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl p-6 md:p-8 shadow-sm">
               <h2 className="text-xl font-bold text-zinc-950 dark:text-white mb-6">Lịch trình chi tiết</h2>
               <div className="relative pl-6 sm:pl-8 border-l border-zinc-200 dark:border-zinc-800 space-y-8">
                 {itineraryList.map((item, index) => (
                   <div key={index} className="relative">
-                    {/* Vòng tròn điểm mốc của timeline */}
                     <span className="absolute -left-[31px] sm:-left-[39px] top-1 w-4 h-4 rounded-full bg-cyan-500 border-4 border-zinc-50 dark:border-zinc-900 shadow-md ring-2 ring-cyan-500/20" />
 
                     <h3 className="font-bold text-sm sm:text-base text-zinc-950 dark:text-white mb-3">
@@ -358,11 +358,10 @@ export default function DetailTour({ slug }: DetailTourProps) {
                   </div>
                 ))}
               </div>
-            </section>
+            </section> */}
 
             {/* 4. Dịch vụ bao gồm & Không bao gồm */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Bao gồm */}
+            {/* <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-emerald-50/20 dark:bg-emerald-950/5 border border-emerald-200/20 dark:border-emerald-900/10 rounded-3xl p-6">
                 <h3 className="font-bold text-emerald-700 dark:text-emerald-400 mb-4 text-base flex items-center gap-2">
                   <Check className="w-5 h-5" /> Dịch vụ bao gồm
@@ -378,10 +377,10 @@ export default function DetailTour({ slug }: DetailTourProps) {
                       </>
                     )}
                 </ul>
-              </div>
+              </div> */}
 
-              {/* Không bao gồm */}
-              <div className="bg-red-50/20 dark:bg-red-950/5 border border-red-200/20 dark:border-red-900/10 rounded-3xl p-6">
+            {/* Không bao gồm */}
+            {/* <div className="bg-red-50/20 dark:bg-red-950/5 border border-red-200/20 dark:border-red-900/10 rounded-3xl p-6">
                 <h3 className="font-bold text-red-700 dark:text-red-400 mb-4 text-base flex items-center gap-2">
                   <Info className="w-5 h-5" /> Không bao gồm
                 </h3>
@@ -396,10 +395,10 @@ export default function DetailTour({ slug }: DetailTourProps) {
                     )}
                 </ul>
               </div>
-            </section>
+            </section> */}
 
             {/* 5. Nhận xét đánh giá khách hàng */}
-            <section className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl p-6 md:p-8 shadow-sm">
+            {/* <section className="bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800/80 rounded-3xl p-6 md:p-8 shadow-sm">
               <h2 className="text-xl font-bold text-zinc-950 dark:text-white mb-6 flex items-center gap-2">
                 <MessageSquare className="w-5 h-5 text-cyan-500" /> Nhận xét khách hàng ({reviews.length})
               </h2>
@@ -410,7 +409,6 @@ export default function DetailTour({ slug }: DetailTourProps) {
                     <div key={rev.id} className="pt-6 first:pt-0">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
-                          {/* Avatar người dùng */}
                           <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 flex items-center justify-center text-white font-bold overflow-hidden select-none">
                             {rev.avatarUrl ? (
                               // eslint-disable-next-line @next/next/no-img-element
@@ -425,7 +423,6 @@ export default function DetailTour({ slug }: DetailTourProps) {
                           </div>
                         </div>
 
-                        {/* Điểm sao */}
                         <div style={{ display: "none" }} className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 px-2 py-0.5 rounded-lg text-amber-600 dark:text-amber-400 text-xs font-bold">
                           <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
                           <span>{rev.rating}</span>
@@ -440,7 +437,7 @@ export default function DetailTour({ slug }: DetailTourProps) {
               ) : (
                 <p className="text-sm text-zinc-400">Chưa có nhận xét nào cho tour này.</p>
               )}
-            </section>
+            </section> */}
 
           </div>
 

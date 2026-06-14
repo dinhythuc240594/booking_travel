@@ -53,7 +53,7 @@ export default function TourCard({ tour }: TourCardProps) {
         )}
 
         {/* Nút yêu thích (Wishlist) */}
-        <button
+        <button style={{ display: "none" }}
           onClick={(e) => {
             e.preventDefault();
             toggleWishlist(tourIdStr);

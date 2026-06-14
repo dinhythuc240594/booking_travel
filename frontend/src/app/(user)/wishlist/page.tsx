@@ -68,8 +68,10 @@ export default function WishlistPage() {
               price_per_child: Number(t.price_per_child) || 0,
               duration: t.duration ? t.duration : durationStr,
               location: t.location_name || t.location || "Việt Nam",
-              featuredImage: t.thumbnail || "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800",
-              images: Array.isArray(t.images) && t.images.length > 0 ? t.images : [t.thumbnail],
+              featuredImage: t.thumbnail ? (t.thumbnail.startsWith('http') ? t.thumbnail : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.thumbnail) : "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800",
+              images: Array.isArray(t.images) && t.images.length > 0 
+                ? t.images.map((img: string) => img.startsWith('http') ? img : (process.env.NEXT_PUBLIC_BASE_URL || "") + img)
+                : [t.thumbnail ? (t.thumbnail.startsWith('http') ? t.thumbnail : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.thumbnail) : "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800"],
               rating: t.rating || 4.8,
               reviewsCount: t.reviewsCount || 12,
               category: mapCategoryNameToId(t.category_name || t.category || "culture"),

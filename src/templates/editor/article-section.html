@@ -50,6 +50,14 @@
                         </div>
 
                         <div class="mb-3">
+                            <label class="form-label">Ảnh đi kèm (Nhiều ảnh)</label>
+                            <input type="file" class="form-control" id="articleGallery" accept="image/*" multiple>
+                            <input type="hidden" id="articleGalleryUrls" value="[]">
+                            <div id="galleryPreview" class="d-flex flex-wrap gap-2 mt-2"></div>
+                            <small class="text-muted">Có thể chọn nhiều ảnh. Ảnh sẽ được upload tự động</small>
+                        </div>
+
+                        <div class="mb-3">
                             <label class="form-label">Mô tả ngắn</label>
                             <textarea class="form-control" id="articleDescription" rows="3"
                                 placeholder="Mô tả ngắn gọn về bài viết..."></textarea>

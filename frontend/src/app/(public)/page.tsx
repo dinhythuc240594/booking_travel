@@ -58,8 +58,10 @@ export default function PublicPage() {
               price_per_child: Number(t.price_per_child) || 0,
               duration: t.duration ? t.duration : durationStr,
               location: t.location_name || t.location || "Việt Nam",
-              featuredImage: process.env.NEXT_PUBLIC_BASE_URL + t.thumbnail || t.featuredImage || "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80",
-              images: Array.isArray(process.env.NEXT_PUBLIC_BASE_URL + t.images) && t.images.length > 0 ? t.images : [process.env.NEXT_PUBLIC_BASE_URL + t.thumbnail || process.env.NEXT_PUBLIC_BASE_URL + t.featuredImage],
+              featuredImage: t.thumbnail ? (t.thumbnail.startsWith('http') ? t.thumbnail : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.thumbnail) : (t.featuredImage ? (t.featuredImage.startsWith('http') ? t.featuredImage : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.featuredImage) : "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80"),
+              images: Array.isArray(t.images) && t.images.length > 0 
+                ? t.images.map((img: string) => img.startsWith('http') ? img : (process.env.NEXT_PUBLIC_BASE_URL || "") + img)
+                : [t.thumbnail ? (t.thumbnail.startsWith('http') ? t.thumbnail : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.thumbnail) : (t.featuredImage ? (t.featuredImage.startsWith('http') ? t.featuredImage : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.featuredImage) : "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80")],
               rating: t.rating || 4.8,
               reviewsCount: t.reviewsCount || 12,
               category: mapCategoryNameToId(t.category_name || t.category || "culture"),

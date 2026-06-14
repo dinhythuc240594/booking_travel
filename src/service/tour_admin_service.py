@@ -79,8 +79,22 @@ class TourAdminService:
                 tour_data['content'], tour_data['thumbnail'], tour_id
             )
             
+            # Xử lý gallery images
+            gallery_images = data.get('images', [])
+            if isinstance(gallery_images, str):
+                try:
+                    gallery_images = json.loads(gallery_images)
+                except:
+                    gallery_images = []
+            
+            if gallery_images:
+                gallery_images = [img.replace('temp', f'tour_{tour_id}') if 'temp' in img else img for img in gallery_images]
+                final_images_json = json.dumps(gallery_images)
+            else:
+                final_images_json = images_json
+            
             update_cmd = UpdateTourCommand(tour_id, {
-                'content': new_content, 'thumbnail': new_thumb, 'images': images_json
+                'content': new_content, 'thumbnail': new_thumb, 'images': final_images_json
             })
             invoker.execute_transaction(session, [update_cmd])
             return tour_id
@@ -99,13 +113,30 @@ class TourAdminService:
             data.get('content', ''), data.get('thumbnail', ''), tour_id
         )
         
+        # Xử lý gallery images
+        gallery_images = data.get('images', [])
+        if isinstance(gallery_images, str):
+            try:
+                gallery_images = json.loads(gallery_images)
+            except:
+                gallery_images = []
+        
+        if gallery_images:
+            gallery_images = [img.replace('temp', f'tour_{tour_id}') if 'temp' in img else img for img in gallery_images]
+            final_images_json = json.dumps(gallery_images)
+        else:
+            if 'images' in data:
+                final_images_json = json.dumps([])
+            else:
+                final_images_json = images_json
+        
         update_data = {
             'title': data.get('title'),
             'slug': data.get('slug'),
             'content': new_content,
             'summary': data.get('summary'),
             'thumbnail': new_thumb,
-            'images': images_json,
+            'images': final_images_json,
             'location_id': data.get('location_id'), # Sửa thành location_id
             'duration_days': data.get('duration_days', 1),
             'price_per_adult': data.get('price_per_adult'),

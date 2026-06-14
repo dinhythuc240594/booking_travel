@@ -220,6 +220,60 @@ $(document).ready(function () {
         }
     });
 
+    // Multiple images upload for create form
+    $('#articleGallery').change(async function () {
+        const files = this.files;
+        if (!files || files.length === 0) return;
+        
+        let urls = [];
+        try {
+            urls = JSON.parse($('#articleGalleryUrls').val() || '[]');
+        } catch(e) {}
+        
+        showSpinner();
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const url = await uploadArticleImage(file, 'tour', $('#editArticleId').val());
+            if (url) {
+                urls.push(url);
+            }
+        }
+        
+        hideSpinner();
+        $('#articleGalleryUrls').val(JSON.stringify(urls));
+        renderGalleryPreview('#galleryPreview', '#articleGalleryUrls', urls);
+        
+        $(this).val('');
+    });
+
+    // Multiple images upload for edit form
+    $('#editArticleGallery').change(async function () {
+        const files = this.files;
+        if (!files || files.length === 0) return;
+        
+        let urls = [];
+        try {
+            urls = JSON.parse($('#editArticleGalleryUrls').val() || '[]');
+        } catch(e) {}
+        
+        showSpinner();
+        
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            const url = await uploadArticleImage(file, 'tour', $('#editArticleId').val());
+            if (url) {
+                urls.push(url);
+            }
+        }
+        
+        hideSpinner();
+        $('#editArticleGalleryUrls').val(JSON.stringify(urls));
+        renderGalleryPreview('#editGalleryPreview', '#editArticleGalleryUrls', urls);
+        
+        $(this).val('');
+    });
+
     // Xem lý do từ chối
     $(document).on('click', '.btn-view-rejection', function () {
 
@@ -929,7 +983,8 @@ async function saveDraft() {
                 is_hot: isHot,
                 is_featured: isFeatured,
                 // tags: tags,
-                status: 'draft'
+                status: 'draft',
+                images: JSON.parse($('#articleGalleryUrls').val() || '[]')
             })
         });
 
@@ -945,6 +1000,8 @@ async function saveDraft() {
             $('#articleContent').summernote('code', '');
             $('#imagePreview').html('');
             $('#articleImageUrl').val('');
+            $('#galleryPreview').html('');
+            $('#articleGalleryUrls').val('[]');
             $('#articleIsHot').prop('checked', false);
             $('#articleIsFeatured').prop('checked', false);
 
@@ -1075,7 +1132,8 @@ async function submitArticle() {
                 is_hot: isHot,
                 is_featured: isFeatured,
                 // tags: tags,
-                status: 'pending'
+                status: 'pending',
+                images: JSON.parse($('#articleGalleryUrls').val() || '[]')
             })
         });
 
@@ -1091,6 +1149,8 @@ async function submitArticle() {
             $('#articleContent').summernote('code', '');
             $('#imagePreview').html('');
             $('#articleImageUrl').val('');
+            $('#galleryPreview').html('');
+            $('#articleGalleryUrls').val('[]');
             $('#articleIsHot').prop('checked', false);
             $('#articleIsFeatured').prop('checked', false);
 
@@ -1304,6 +1364,10 @@ async function editArticle(articleId) {
             $('#editArticleSlug').val(article.slug);
             // $('#editArticleTags').val(article.tags || '');
 
+            const galleryUrls = article.images || [];
+            $('#editArticleGalleryUrls').val(JSON.stringify(galleryUrls));
+            renderGalleryPreview('#editGalleryPreview', '#editArticleGalleryUrls', galleryUrls);
+
             const modal = new bootstrap.Modal(document.getElementById('editModal'));
             modal.show();
         } else {
@@ -1384,6 +1448,7 @@ async function saveEdit(newStatus = null) {
             price_per_child: price_per_child,
             slug: slug,
             duration_days: duration_days,
+            images: JSON.parse($('#editArticleGalleryUrls').val() || '[]')
             // tags: tags
         };
         if (newStatus) {
@@ -1944,3 +2009,33 @@ function renderTreeNode(node) {
     }
     return '';
 }
+
+// Render gallery preview inside a container
+function renderGalleryPreview(containerId, hiddenInputId, urls) {
+    const container = $(containerId);
+    container.empty();
+    urls.forEach((url, index) => {
+        container.append(`
+            <div class="position-relative" style="width: 80px; height: 80px; border-radius: 4px; overflow: hidden; border: 1px solid #ddd;">
+                <img src="${url}" style="width: 100%; height: 100%; object-fit: cover;">
+                <button type="button" class="btn btn-danger btn-sm p-0 position-absolute d-flex align-items-center justify-content-center" 
+                        style="top: 2px; right: 2px; width: 18px; height: 18px; font-size: 10px; border-radius: 50%;" 
+                        onclick="removeGalleryImage('${containerId}', '${hiddenInputId}', ${index})">
+                    &times;
+                </button>
+            </div>
+        `);
+    });
+}
+
+// Remove gallery image from the array and re-render
+window.removeGalleryImage = function(containerId, hiddenInputId, index) {
+    const input = $(hiddenInputId);
+    let urls = [];
+    try {
+        urls = JSON.parse(input.val() || '[]');
+    } catch(e) {}
+    urls.splice(index, 1);
+    input.val(JSON.stringify(urls));
+    renderGalleryPreview(containerId, hiddenInputId, urls);
+};

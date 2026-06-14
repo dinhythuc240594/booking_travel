@@ -21,12 +21,18 @@ export default function TourGallery({ images, title }: TourGalleryProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Đảm bảo có đủ 5 ảnh để tạo grid Airbnb đẹp mắt bằng cách bù ảnh phong cảnh fallback
-  const displayImages = [...images];
+  const rawImages = [...images];
   let fallbackIdx = 0;
-  while (displayImages.length < 5) {
-    displayImages.push(fallbackImages[fallbackIdx % fallbackImages.length]);
+  while (rawImages.length < 5) {
+    rawImages.push(fallbackImages[fallbackIdx % fallbackImages.length]);
     fallbackIdx++;
   }
+
+  const displayImages = rawImages.map(img => {
+    if (!img) return "";
+    if (img.startsWith("http")) return img;
+    return (process.env.NEXT_PUBLIC_BASE_URL || "") + (img.startsWith("/") ? img : "/" + img);
+  });
 
   const openLightbox = (index: number) => {
     setCurrentIndex(index);
@@ -56,7 +62,7 @@ export default function TourGallery({ images, title }: TourGalleryProps) {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={process.env.NEXT_PUBLIC_BASE_URL + displayImages[0]}
+            src={displayImages[0]}
             alt={`${title} - 1`}
             className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
           />
