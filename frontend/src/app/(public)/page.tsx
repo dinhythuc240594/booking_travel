@@ -59,7 +59,7 @@ export default function PublicPage() {
               duration: t.duration ? t.duration : durationStr,
               location: t.location_name || t.location || "Việt Nam",
               featuredImage: t.thumbnail ? (t.thumbnail.startsWith('http') ? t.thumbnail : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.thumbnail) : (t.featuredImage ? (t.featuredImage.startsWith('http') ? t.featuredImage : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.featuredImage) : "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80"),
-              images: Array.isArray(t.images) && t.images.length > 0 
+              images: Array.isArray(t.images) && t.images.length > 0
                 ? t.images.map((img: string) => img.startsWith('http') ? img : (process.env.NEXT_PUBLIC_BASE_URL || "") + img)
                 : [t.thumbnail ? (t.thumbnail.startsWith('http') ? t.thumbnail : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.thumbnail) : (t.featuredImage ? (t.featuredImage.startsWith('http') ? t.featuredImage : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.featuredImage) : "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80")],
               rating: t.rating || 4.8,
@@ -98,38 +98,6 @@ export default function PublicPage() {
     };
     filteredDestinations();
   }, [activeCategory]);
-
-  // Danh sách các điểm đến hàng đầu để dựng Spotlight Grid
-  // const spotDestinations = [
-  //   {
-  //     name: "Vịnh Hạ Long",
-  //     toursCount: 42,
-  //     image:
-  //       "https://images.unsplash.com/photo-1528127269322-539801943592?w=800&auto=format&fit=crop&q=80",
-  //     className: "md:col-span-2 md:row-span-2 h-[340px] md:h-[420px]",
-  //   },
-  //   {
-  //     name: "Đảo Phú Quốc",
-  //     toursCount: 28,
-  //     image:
-  //       "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?w=800&auto=format&fit=crop&q=80",
-  //     className: "md:col-span-1 md:row-span-1 h-[200px]",
-  //   },
-  //   {
-  //     name: "Phố Cổ Hội An",
-  //     toursCount: 19,
-  //     image:
-  //       "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&auto=format&fit=crop&q=80",
-  //     className: "md:col-span-1 md:row-span-2 h-[340px] md:h-[420px]",
-  //   },
-  //   {
-  //     name: "Đồng Văn, Hà Giang",
-  //     toursCount: 15,
-  //     image:
-  //       "https://images.unsplash.com/photo-1605538032432-a9f0c8d9baac?w=800&auto=format&fit=crop&q=80",
-  //     className: "md:col-span-1 md:row-span-1 h-[200px]",
-  //   },
-  // ];
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black text-zinc-900 dark:text-zinc-50 flex flex-col font-sans">
@@ -248,7 +216,7 @@ export default function PublicPage() {
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={dest.image_url || dest.image}
+                    src={dest.image_url.startsWith("http") ? dest.image_url : (process.env.NEXT_PUBLIC_BASE_URL || "") + dest.image_url}
                     alt={dest.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     loading="lazy"

@@ -309,9 +309,6 @@ async function loadRejectedArticles() {
         if (result.success && result.data) {
             let html = '';
             result.data.forEach((article, index) => {
-                const typeBadge = article.type === 'international'
-                    ? '<span class="badge bg-info">Quốc tế</span>'
-                    : '<span class="badge bg-secondary">Trong nước</span>';
 
                 const rejectedBy = article.rejected_by || 'N/A';
                 const rejectedAt = article.rejected_at || article.date;
@@ -322,7 +319,6 @@ async function loadRejectedArticles() {
                         <td>${index + 1}</td>
                         <td>
                             <strong>${escapeHtml(article.title)}</strong>
-                            ${typeBadge}
                         </td>
                         <td>${escapeHtml(article.author)}</td>
                         <td><span class="badge bg-primary">${escapeHtml(article.category_name)}</span></td>

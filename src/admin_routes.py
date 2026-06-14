@@ -49,14 +49,12 @@ class EditorDashboard(BaseAdminView):
 
 class Profile(BaseAdminView):
 
+    def get(self):
+        return self.profile()
+
     def post(self):
         return self.profile()
 
-
-class ProfileUser(BaseAdminView):
-
-    def post(self):
-        return self.profile_user()
 
 # =========================================================
 # 2. TOUR MANAGEMENT PAGES
@@ -329,7 +327,6 @@ admin_bp.add_url_rule('/logout', 'logout', Logout.as_view('logout'))
 admin_bp.add_url_rule('/dashboard', 'dashboard', Dashboard.as_view('dashboard'))
 admin_bp.add_url_rule('/editor-dashboard', 'editor_dashboard', EditorDashboard.as_view('editor_dashboard'))
 admin_bp.add_url_rule('/profile', 'profile', Profile.as_view('profile'))
-admin_bp.add_url_rule('/profile_user', 'profile_user', ProfileUser.as_view('profile_user'))
 
 # Tour Pages
 admin_bp.add_url_rule('/tour', 'tour_list', TourList.as_view('tour_list'))

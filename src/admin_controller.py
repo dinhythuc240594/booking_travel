@@ -8,7 +8,7 @@ from sqlalchemy import or_, desc
 
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME, CATEGORY_NAME_DICT
+from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME, CATEGORY_NAME_DICT, _allowed_file
 from email_utils import send_email
 from template_html import EMAIL_BODY_HTML, EMAIL_SUBJECT_TEST, EMAIL_BODY_HTML_TEST, EMAIL_BODY_TEXT_TEST
 from database import (
@@ -411,7 +411,7 @@ class AdminController:
         
         return jsonify({
             'success': True,
-            'data': [self._tour_to_dict(tour) for tour in tour_list]
+            'data': [self.tour_model._tour_to_dict(tour) for tour in tour_list]
         })
 
     def api_my_tour(self):
@@ -462,7 +462,7 @@ class AdminController:
         return jsonify(
             {
                 "success": True,
-                "data": [self._tour_to_dict(tour) for tour in items],
+                "data": [self.tour_model._tour_to_dict(tour) for tour in items],
                 "pagination": {
                     "page": page,
                     "per_page": per_page,
@@ -547,24 +547,6 @@ class AdminController:
             "data": notifications,
             "count": len(notifications)
         })
-    
-    def _tour_to_dict(self, tour) -> dict:
-        """Chuyển đổi Tour object thành dictionary dùng chung cho admin & client"""
-        return {
-            'tour_id': tour.tour_id,
-            'title': tour.title,
-            'slug': tour.slug,
-            'status': tour.status.value if getattr(tour, "status", None) else None,
-            'summary': getattr(tour, "summary", None),
-            'thumbnail': getattr(tour, "thumbnail", None),
-            'visible': getattr(tour, "visible", True),
-            'author_id': tour.author_id if getattr(tour, "author_id", None) else None,
-            'reviewer_id': tour.reviewer_id if getattr(tour, "reviewer_id", None) else None,
-            'view_count': getattr(tour, "view_count", 0),
-            'created_at': tour.created_at.isoformat() if getattr(tour, "created_at", None) else None,
-            'published_at': tour.published_at.isoformat() if getattr(tour, "published_at", None) else None,
-            'category_name': CATEGORY_NAME_DICT.get(getattr(tour, "category_name", None), 'N/A')
-        }
     
     def api_statistics(self):
         """API lấy thống kê dashboard"""
@@ -831,7 +813,7 @@ class AdminController:
 
         result = self.admin_model.create_tour(data_dict)
         tour_obj = self.tour_model.get_by_id(result['tour_id'])
-        data = self._tour_to_dict(tour_obj) if tour_obj else None
+        data = self.tour_model._tour_to_dict(tour_obj) if tour_obj else None
         return jsonify({'success': result.get('success'), 'message': result.get('message'), 'data': data})
 
     def api_edit_tour(self, tour_id: int):
@@ -873,14 +855,14 @@ class AdminController:
 
         result = self.admin_model.edit_tour(tour_id, data)
         tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)
-        data = self._tour_to_dict(tour_obj) if tour_obj else None
+        data = self.tour_model._tour_to_dict(tour_obj) if tour_obj else None
         return jsonify({'success': result.get('success'), 'message': result.get('message'), 'data': data})
 
     def api_delete_tour(self, tour_id: int):
         
         result = self.admin_model.delete_tour(tour_id)
         tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)
-        data = self._tour_to_dict(tour_obj) if tour_obj else None
+        data = self.tour_model._tour_to_dict(tour_obj) if tour_obj else None
         return jsonify({'success': result.get('success'), 'message': result.get('message'), 'data': data})
 
     def api_approve_atour(self, tour_id: int):
@@ -890,7 +872,7 @@ class AdminController:
 
         data = self.admin_model.approve_tour(tour_id, user_id)
         tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)
-        data['data'] = self._tour_to_dict(tour_obj) if tour_obj else None
+        data['data'] = self.tour_model._tour_to_dict(tour_obj) if tour_obj else None
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
     def api_reject_atour(self, tour_id: int):
@@ -902,7 +884,7 @@ class AdminController:
         reason = data.get('reason', '')
         data = self.admin_model.reject_tour(tour_id, user_id, reason)
         tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)
-        data['data'] = self._tour_to_dict(tour_obj) if tour_obj else None
+        data['data'] = self.tour_model._tour_to_dict(tour_obj) if tour_obj else None
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
     def api_get_category(self):
@@ -945,7 +927,7 @@ class AdminController:
             return jsonify({'success': False, 'error': 'Không có file được chọn'}), 400
         
         # Kiểm tra file hợp lệ
-        if not self._allowed_file(file.filename):
+        if not _allowed_file(file.filename):
             return jsonify({'success': False, 'error': 'File không hợp lệ. Chỉ chấp nhận: png, jpg, jpeg, gif, webp'}), 400
         
         # Lấy news_id từ request (nếu có) để lưu vào thư mục tương ứng
@@ -976,11 +958,6 @@ class AdminController:
             'image_url': image_url
         })
 
-    def _allowed_file(self, filename):
-        """Kiểm tra file có được phép upload không"""
-        return '.' in filename and \
-               filename.rsplit('.', 1)[1].lower() in current_app.config.get('ALLOWED_EXTENSIONS', {'png', 'jpg', 'jpeg', 'gif', 'webp'})
-
     #### profile admin or editor ####
     def profile(self):
         """
@@ -1009,7 +986,7 @@ class AdminController:
                 if file.filename == '':
                     return jsonify({'success': False, 'message': 'Không có file được chọn'}), 400
                 
-                if file and self._allowed_file(file.filename):
+                if file and _allowed_file(file.filename):
                     filename = secure_filename(f"avatar_{user.user_id}_{file.filename}")
                     # Tạo đường dẫn upload folder
                     upload_folder = os.path.join('src', 'static', 'uploads', 'avatars')

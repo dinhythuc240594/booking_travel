@@ -1,5 +1,7 @@
 from werkzeug.security import generate_password_hash, check_password_hash
 import re
+from flask import current_app
+
 
 DOMESTIC = [
     { 
@@ -81,6 +83,13 @@ CATEGORY_NAME_DICT = {
     "mountain": "Núi rừng",
     "resort": "Nghỉ dưỡng",
     "culture": "Văn hóa",
+}
+
+CATEGORY_MAP = {
+    'beach': ['beach', 'Biển', 'Biển đảo'],
+    'mountain': ['mountain', 'Núi', 'Núi rừng', 'Khám phá', 'Mạo hiểm'],
+    'resort': ['resort', 'Nghỉ dưỡng', 'Nghỉ dưỡng 5 sao'],
+    'culture': ['culture', 'Văn hóa', 'Văn hóa - Lịch sử', 'Trải nghiệm'],
 }
 
 # hash password before save into db
@@ -176,3 +185,8 @@ def generate_slug(title: str, status: str = None) -> str:
         slug = f"{slug}-{status}"
     
     return slug
+
+def _allowed_file(filename):
+    """Kiểm tra file có được phép upload không"""
+    return '.' in filename and \
+            filename.rsplit('.', 1)[1].lower() in current_app.config.get('ALLOWED_EXTENSIONS', {'png', 'jpg', 'jpeg', 'gif', 'webp'})

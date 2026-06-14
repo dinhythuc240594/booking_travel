@@ -124,7 +124,7 @@ export default function ToursListContent() {
             location: t.location_name || t.location || "Việt Nam",
             country: t.country || "Việt Nam",
             featuredImage: t.thumbnail ? (t.thumbnail.startsWith('http') ? t.thumbnail : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.thumbnail) : (t.featuredImage ? (t.featuredImage.startsWith('http') ? t.featuredImage : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.featuredImage) : "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80"),
-            images: Array.isArray(t.images) && t.images.length > 0 
+            images: Array.isArray(t.images) && t.images.length > 0
               ? t.images.map((img: string) => img.startsWith('http') ? img : (process.env.NEXT_PUBLIC_BASE_URL || "") + img)
               : [t.thumbnail ? (t.thumbnail.startsWith('http') ? t.thumbnail : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.thumbnail) : (t.featuredImage ? (t.featuredImage.startsWith('http') ? t.featuredImage : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.featuredImage) : "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80")],
             rating: t.rating || 4.8,
@@ -427,7 +427,7 @@ export default function ToursListContent() {
               </div>
 
               {/* Lọc: Đánh giá */}
-              <div>
+              {/* <div>
                 <span className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2.5">
                   Đánh giá tối thiểu
                 </span>
@@ -454,7 +454,7 @@ export default function ToursListContent() {
                     </label>
                   ))}
                 </div>
-              </div>
+              </div> */}
 
             </div>
           </aside>

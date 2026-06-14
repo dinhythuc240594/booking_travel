@@ -5,7 +5,7 @@ import os
 from flask import render_template, request, jsonify, abort, redirect, url_for, flash, session
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
-from utils import validate_email, validate_password, validate_phone, hash_password, DOMESTIC, verify_password
+from utils import validate_email, validate_password, validate_phone, hash_password, verify_password, _allowed_file, CATEGORY_MAP, DOMESTIC
 from email_utils import generate_token, send_password_reset_email
 from database import (
     get_session,
@@ -23,12 +23,6 @@ from models.booking_models import BookingModel
 from models.related_models import LocationModel
 
 PER_PAGE = 25
-CATEGORY_MAP = {
-    'beach': ['beach', 'Biển', 'Biển đảo'],
-    'mountain': ['mountain', 'Núi', 'Núi rừng', 'Khám phá', 'Mạo hiểm'],
-    'resort': ['resort', 'Nghỉ dưỡng', 'Nghỉ dưỡng 5 sao'],
-    'culture': ['culture', 'Văn hóa', 'Văn hóa - Lịch sử', 'Trải nghiệm'],
-}
 
 
 class Controller():
@@ -422,9 +416,7 @@ class Controller():
 
             print(f"Slug received: {tours_slug}")
             
-            tour_model = self.tour_model
-            
-            tour = tour_model.get_by_slug(tours_slug)
+            tour = self.tour_model.get_by_slug(tours_slug)
             if not tour:
                 print(f"Tour not found for slug: {tours_slug}")
                 return None
@@ -482,7 +474,7 @@ class Controller():
                     query = query.filter(or_(*filters))
                 
                 db_related = query.order_by(desc(Tour.published_at)).limit(3).all()
-                related_tours = [tour_model._tour_to_dict(t) for t in db_related]
+                related_tours = [self.tour_model._tour_to_dict(t) for t in db_related]
                 
             if len(related_tours) < 3:
                 exclude_ids = [tour.tour_id] + [t["tour_id"] for t in related_tours]
@@ -493,10 +485,10 @@ class Controller():
                     ~Tour.tour_id.in_(exclude_ids)
                 ).order_by(desc(Tour.published_at)).limit(3 - len(related_tours))
                 for t in fallback_query.all():
-                    related_tours.append(tour_model._tour_to_dict(t))
+                    related_tours.append(self.tour_model._tour_to_dict(t))
 
             return {
-                "tour": tour_model._tour_to_dict(tour),
+                "tour": self.tour_model._tour_to_dict(tour),
                 "is_saved": is_saved,
                 "user_id": user_id,
                 "related_tours": related_tours
@@ -568,13 +560,12 @@ class Controller():
 
     def bookings(self):
         try:
-            booking_model = self.booking_model
             user_id = session.get('user_id')
             print(f"User ID: {user_id}")
             if not user_id:
                 return jsonify([])
-            booking_list = booking_model.get_by_user_id(user_id)
-            json_bookings = [booking_model._booking_to_dict(booking) for booking in booking_list]
+            booking_list = self.booking_model.get_by_user_id(user_id)
+            json_bookings = [self.booking_model._booking_to_dict(booking) for booking in booking_list]
             return jsonify(json_bookings)
         except Exception as e:
             self.db_session.rollback()
@@ -759,7 +750,7 @@ class Controller():
                 if file.filename == '':
                     return jsonify({'status': False, 'code': 400, 'message': 'Không có file được chọn'}), 400
                 
-                if file and self._allowed_file(file.filename):
+                if file and _allowed_file(file.filename):
                     filename = secure_filename(f"avatar_{user.user_id}_{file.filename}")
                     # Tạo đường dẫn upload folder
                     upload_folder = os.path.join('src', 'static', 'uploads', 'avatars')
