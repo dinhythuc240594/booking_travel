@@ -5,8 +5,8 @@ import datetime
 from database import (
     TourRejection,
     Payment, 
-    BookingStatusEnum, 
-    PaymentStatusEnum,
+    BookingStatus, 
+    PaymentStatus,
     TourStatus,
     NewsletterSubscription,
     Tour)
@@ -34,18 +34,18 @@ class ProcessPaymentCommand(DatabaseCommand):
             booking_id=booking_id,
             amount=self.amount,
             payment_method=self.payment_method,
-            payment_status=PaymentStatusEnum.SUCCESSFUL
+            payment_status=PaymentStatus.SUCCESSFUL
         )
         session.add(self.payment_record)
         session.flush()
         
         # Cập nhật trạng thái Bookings thành confirmed
-        self.booking_command.booking_record.booking_status = BookingStatusEnum.CONFIRMED
+        self.booking_command.booking_record.booking_status = BookingStatus.CONFIRMED
 
     def undo(self, session) -> None:
         if self.payment_record:
             # Đổi trạng thái sang Refunded
-            self.payment_record.payment_status = PaymentStatusEnum.REFUNDED
+            self.payment_record.payment_status = PaymentStatus.REFUNDED
 
 
 class ChangetourtatusCommand(DatabaseCommand):

@@ -302,6 +302,24 @@ class ApiTestEmail(BaseAdminView):
         return self.api_test_email()
 
 
+class ApiBookingsList(BaseAdminView):
+
+    def get(self):
+        return self.api_bookings_list()
+
+
+class ApiUpdateBookingStatus(BaseAdminView):
+
+    def post(self, booking_id):
+        return self.api_update_booking_status(booking_id)
+
+
+class ApiBookingsStatistics(BaseAdminView):
+
+    def get(self):
+        return self.api_bookings_statistics()
+
+
 # Auth & Pages
 admin_bp.add_url_rule('/login', 'login', Login.as_view('login'))
 admin_bp.add_url_rule('/logout', 'logout', Logout.as_view('logout'))
@@ -318,6 +336,11 @@ admin_bp.add_url_rule('/tour/<int:tour_id>/edit', 'tours_edit', ToursEdit.as_vie
 admin_bp.add_url_rule('/tour/<int:tour_id>/approve', 'tours_approve', ToursApprove.as_view('tours_approve'))
 admin_bp.add_url_rule('/tour/<int:tour_id>/reject', 'tours_reject', ToursReject.as_view('tours_reject'))
 admin_bp.add_url_rule('/tour/<int:tour_id>/delete', 'tour_delete', TourDelete.as_view('tour_delete'))
+
+# API Bookings
+admin_bp.add_url_rule('/api/bookings', 'api_bookings_list', ApiBookingsList.as_view('api_bookings_list'))
+admin_bp.add_url_rule('/api/bookings/<int:booking_id>/status', 'api_update_booking_status', ApiUpdateBookingStatus.as_view('api_update_booking_status'))
+admin_bp.add_url_rule('/api/bookings/statistics', 'api_bookings_statistics', ApiBookingsStatistics.as_view('api_bookings_statistics'))
 
 # API Tours & Dashboards
 admin_bp.add_url_rule('/api/tour', 'api_tour_list', ApiTourList.as_view('api_tour_list'))

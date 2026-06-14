@@ -219,6 +219,7 @@ function updatePageTitle(section) {
         'rejected': 'Bài viết bị từ chối',
         'location': 'Quản lý địa điểm',
         'users': 'Quản lý người dùng',
+        'bookings': 'Quản lý Bookings',
         'statistics': 'Thống kê'
     };
     $('#pageTitle').text(titles[section] || 'Dashboard');
@@ -239,21 +240,9 @@ async function loadSectionData(section) {
         case 'location':
             loadLocations();
             break;
-        // case 'api':
-        //     loadAPIArticles();
-        //     // Tự động load categories khi vào tab API
-        //     const region = $('#apiRegion').val();
-        //     loadApiCategories(region);
-        //     break;
-        // case 'international':
-        //     loadInternationalArticles();
-        //     break;
-        // case 'international-pending':
-        //     loadInternationalPending();
-        //     break;
-        // case 'international-drafts':
-        //     loadInternationalDrafts();
-        //     break;
+        case 'bookings':
+            loadBookings();
+            break;
         case 'dashboard':
             loadStatistics();
             // loadHotArticles();
@@ -524,6 +513,57 @@ async function loadStatistics() {
                 }
             }
         }
+
+        // Fetch bookings statistics
+        const bookingsResponse = await fetch('/admin/api/bookings/statistics');
+        const bookingsResult = await bookingsResponse.json();
+        
+        if (bookingsResult.success && bookingsResult.data) {
+            const bookingStats = bookingsResult.data;
+            $('#statBookingTotal').text(bookingStats.total_bookings);
+            $('#statBookingRevenue').text(new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(bookingStats.total_revenue));
+            $('#statBookingPending').text(bookingStats.pending_count);
+            $('#statBookingCompleted').text(bookingStats.completed_count);
+            
+            // Render Recent Bookings
+            let recentHtml = '';
+            bookingStats.recent_bookings.forEach(booking => {
+                let badgeClass = 'bg-secondary';
+                let statusLabel = booking.status;
+                if (booking.status === 'pending') {
+                    badgeClass = 'bg-warning text-dark';
+                    statusLabel = 'Chờ duyệt';
+                } else if (booking.status === 'confirmed') {
+                    badgeClass = 'bg-primary';
+                    statusLabel = 'Đã duyệt';
+                } else if (booking.status === 'completed') {
+                    badgeClass = 'bg-success';
+                    statusLabel = 'Hoàn thành';
+                } else if (booking.status === 'cancelled') {
+                    badgeClass = 'bg-danger';
+                    statusLabel = 'Đã hủy';
+                }
+
+                recentHtml += `
+                    <tr>
+                        <td>#${booking.id}</td>
+                        <td><strong>${escapeHtml(booking.userName)}</strong></td>
+                        <td><strong>${escapeHtml(booking.tourTitle)}</strong></td>
+                        <td><strong class="text-primary">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(booking.totalPrice)}</strong></td>
+                        <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+                        <td>${booking.createdAt}</td>
+                    </tr>
+                `;
+            });
+            if (bookingStats.recent_bookings.length === 0) {
+                recentHtml = '<tr><td colspan="6" class="text-center text-muted">Chưa có giao dịch đặt tour nào</td></tr>';
+            }
+            $('#recentBookingsTableBody').html(recentHtml);
+
+            // Render/Update Booking Chart
+            initializeBookingChart();
+        }
+
     } catch (error) {
         console.error('Lỗi tải thống kê:', error);
     }
@@ -1631,3 +1671,325 @@ $(document).on('click', '.save-api-article', function () {
 
     openSaveExternalArticleModal(article);
 });
+
+// =========================
+// Bookings Manager
+// =========================
+
+async function loadBookings(status = 'all', search = '', page = 1) {
+    try {
+        const response = await fetch(`/admin/api/bookings?status=${status}&search=${encodeURIComponent(search)}&page=${page}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            let html = '';
+            result.data.forEach((booking) => {
+                let badgeClass = 'bg-secondary';
+                let statusLabel = booking.status;
+                if (booking.status === 'pending') {
+                    badgeClass = 'bg-warning text-dark';
+                    statusLabel = 'Chờ duyệt';
+                } else if (booking.status === 'confirmed') {
+                    badgeClass = 'bg-primary';
+                    statusLabel = 'Đã duyệt';
+                } else if (booking.status === 'completed') {
+                    badgeClass = 'bg-success';
+                    statusLabel = 'Hoàn thành';
+                } else if (booking.status === 'cancelled') {
+                    badgeClass = 'bg-danger';
+                    statusLabel = 'Đã hủy';
+                }
+                
+                let actionButtons = `
+                    <button class="btn btn-sm btn-info btn-view-booking" data-booking='${JSON.stringify(booking).replace(/'/g, "&#39;")}' title="Xem chi tiết">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                `;
+                
+                if (booking.status === 'pending') {
+                    actionButtons += `
+                        <button class="btn btn-sm btn-success btn-update-booking-status ms-1" data-id="${booking.id}" data-status="confirmed" title="Duyệt">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger btn-update-booking-status ms-1" data-id="${booking.id}" data-status="cancelled" title="Hủy">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                } else if (booking.status === 'confirmed') {
+                    actionButtons += `
+                        <button class="btn btn-sm btn-success btn-update-booking-status ms-1" data-id="${booking.id}" data-status="completed" title="Hoàn thành">
+                            <i class="fas fa-check-double"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger btn-update-booking-status ms-1" data-id="${booking.id}" data-status="cancelled" title="Hủy">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    `;
+                }
+                
+                const totalPriceFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(booking.totalPrice);
+                
+                html += `
+                    <tr>
+                        <td>#${booking.id}</td>
+                        <td>
+                            <strong>${escapeHtml(booking.userName)}</strong><br>
+                            <small class="text-muted"><i class="fas fa-envelope"></i> ${escapeHtml(booking.userEmail)}</small><br>
+                            <small class="text-muted"><i class="fas fa-phone"></i> ${escapeHtml(booking.userPhone)}</small>
+                        </td>
+                        <td>
+                            <strong>${escapeHtml(booking.tourTitle)}</strong><br>
+                            <small class="text-muted"><i class="far fa-calendar-alt"></i> Khởi hành: ${booking.departureDate}</small>
+                        </td>
+                        <td><strong class="text-primary">${totalPriceFormatted}</strong></td>
+                        <td><span class="badge ${badgeClass}">${statusLabel}</span></td>
+                        <td>${booking.createdAt}</td>
+                        <td>${actionButtons}</td>
+                    </tr>
+                `;
+            });
+            
+            if (result.data.length === 0) {
+                html = '<tr><td colspan="7" class="text-center text-muted">Không có booking nào</td></tr>';
+            }
+            
+            $('#bookingsTableBody').html(html);
+            renderBookingsPagination(result.pagination);
+        }
+    } catch (error) {
+        console.error('Lỗi tải danh sách bookings:', error);
+        $('#bookingsTableBody').html('<tr><td colspan="7" class="text-center text-danger">Lỗi tải dữ liệu</td></tr>');
+    }
+}
+
+function renderBookingsPagination(pagination) {
+    if (!pagination || pagination.pages <= 1) {
+        $('#bookingsPagination').html('');
+        return;
+    }
+    
+    let html = '';
+    const currentPage = pagination.page;
+    const totalPages = pagination.pages;
+    
+    // Previous button
+    html += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+    `;
+    
+    // Page numbers
+    for (let i = 1; i <= totalPages; i++) {
+        html += `
+            <li class="page-item ${currentPage === i ? 'active' : ''}">
+                <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+        `;
+    }
+    
+    // Next button
+    html += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    `;
+    
+    $('#bookingsPagination').html(html);
+}
+
+async function updateBookingStatus(bookingId, newStatus) {
+    try {
+        const response = await fetch(`/admin/api/bookings/${bookingId}/status`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        const result = await response.json();
+        if (result.success) {
+            alert(result.message || 'Cập nhật trạng thái thành công');
+            // Reload list
+            const status = $('#bookingsStatusFilter').val() || 'all';
+            const search = $('#bookingsSearchInput').val() || '';
+            const page = parseInt($('#bookingsPagination .active .page-link').data('page')) || 1;
+            loadBookings(status, search, page);
+            loadStatistics(); // Reload dashboard stats
+        } else {
+            alert(result.error || 'Có lỗi xảy ra');
+        }
+    } catch (error) {
+        console.error('Lỗi cập nhật trạng thái:', error);
+        alert('Không thể kết nối đến máy chủ.');
+    }
+}
+
+// Event handlers for Bookings Section
+$(document).on('click', '#bookingsPagination .page-link', function (e) {
+    e.preventDefault();
+    const page = parseInt($(this).data('page'));
+    if (page && page > 0) {
+        const status = $('#bookingsStatusFilter').val() || 'all';
+        const search = $('#bookingsSearchInput').val() || '';
+        loadBookings(status, search, page);
+    }
+});
+
+$(document).on('change', '#bookingsStatusFilter', function () {
+    const status = $(this).val();
+    const search = $('#bookingsSearchInput').val() || '';
+    loadBookings(status, search, 1);
+});
+
+$(document).on('submit', '#bookingsSearchForm', function (e) {
+    e.preventDefault();
+    const status = $('#bookingsStatusFilter').val() || 'all';
+    const search = $('#bookingsSearchInput').val().trim();
+    loadBookings(status, search, 1);
+});
+
+$(document).on('click', '.btn-update-booking-status', function () {
+    const bookingId = $(this).data('id');
+    const newStatus = $(this).data('status');
+    
+    let confirmMsg = 'Bạn có chắc chắn muốn thay đổi trạng thái booking này?';
+    if (newStatus === 'confirmed') {
+        confirmMsg = 'Bạn có chắc chắn muốn duyệt đơn đặt tour này?';
+    } else if (newStatus === 'completed') {
+        confirmMsg = 'Bạn có chắc chắn muốn đánh dấu hoàn thành tour này?';
+    } else if (newStatus === 'cancelled') {
+        confirmMsg = 'Bạn có chắc chắn muốn hủy đơn đặt tour này?';
+    }
+    
+    if (confirm(confirmMsg)) {
+        updateBookingStatus(bookingId, newStatus);
+    }
+});
+
+$(document).on('click', '.btn-view-booking', function () {
+    const booking = $(this).data('booking');
+    
+    $('#modalBookingId').text(booking.id);
+    $('#modalBookingCustomer').text(booking.userName);
+    $('#modalBookingEmail').text(booking.userEmail);
+    $('#modalBookingPhone').text(booking.userPhone || 'N/A');
+    $('#modalBookingTour').text(booking.tourTitle);
+    $('#modalBookingDeparture').text(booking.departureDate);
+    $('#modalBookingPrice').text(new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(booking.totalPrice));
+    
+    let badgeClass = 'bg-secondary';
+    let statusLabel = booking.status;
+    if (booking.status === 'pending') {
+        badgeClass = 'bg-warning text-dark';
+        statusLabel = 'Chờ duyệt';
+    } else if (booking.status === 'confirmed') {
+        badgeClass = 'bg-primary';
+        statusLabel = 'Đã duyệt';
+    } else if (booking.status === 'completed') {
+        badgeClass = 'bg-success';
+        statusLabel = 'Hoàn thành';
+    } else if (booking.status === 'cancelled') {
+        badgeClass = 'bg-danger';
+        statusLabel = 'Đã hủy';
+    }
+    
+    $('#modalBookingStatus').html(`<span class="badge ${badgeClass}">${statusLabel}</span>`);
+    $('#modalBookingCreated').text(booking.createdAt);
+    
+    const modal = new bootstrap.Modal(document.getElementById('viewBookingModal'));
+    modal.show();
+});
+
+let bookingChartInstance = null;
+
+async function initializeBookingChart() {
+    const ctx = document.getElementById('bookingChart');
+    if (!ctx) return;
+    
+    try {
+        const response = await fetch('/admin/api/bookings/statistics');
+        const result = await response.json();
+        
+        if (result.success && result.data && result.data.chart_data) {
+            const chartData = result.data.chart_data;
+            
+            if (bookingChartInstance) {
+                bookingChartInstance.destroy();
+            }
+            
+            bookingChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        {
+                            label: 'Doanh thu (VND)',
+                            data: chartData.revenue,
+                            borderColor: '#2ecc71',
+                            backgroundColor: 'rgba(46, 204, 113, 0.1)',
+                            yAxisID: 'yRevenue',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Số lượt đặt',
+                            data: chartData.bookings,
+                            borderColor: '#3498db',
+                            backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                            yAxisID: 'yBookings',
+                            type: 'bar',
+                            barThickness: 15
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        yRevenue: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Doanh thu (đ)'
+                            },
+                            beginAtZero: true
+                        },
+                        yBookings: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Lượt đặt'
+                            },
+                            grid: {
+                                drawOnChartArea: false,
+                            },
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Lỗi khởi tạo biểu đồ bookings:', error);
+    }
+}

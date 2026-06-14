@@ -1,4 +1,4 @@
-from database import get_session, Bookings, BookingTypeEnum, BookingStatusEnum, PaymentMethodEnum, Hotels, Tour
+from database import get_session, Bookings, BookingStatus, PaymentMethod, Hotels, Tour
 from command.component import DBTransactionInvoker
 from command.tour import CreateBookingCommand, ProcessPaymentCommand
 from composite.booking import BookingPackage
@@ -82,7 +82,7 @@ class BookingService:
             session.close()
 
     @staticmethod
-    def update_booking_status(booking_id: int, new_status: BookingStatusEnum):
+    def update_booking_status(booking_id: int, new_status: BookingStatus):
         """Cập nhật trạng thái Bookings thủ công (VD: từ pending sang completed)"""
         session = get_session()
         try:
@@ -102,7 +102,7 @@ class BookingService:
     @staticmethod
     def cancel_booking(booking_id: int):
         """Hủy Bookings (Soft logic) thay vì xóa khỏi CSDL"""
-        return BookingService.update_booking_status(booking_id, BookingStatusEnum.CANCELLED)
+        return BookingService.update_booking_status(booking_id, BookingStatus.CANCELLED)
 
     @staticmethod
     def get_bookings_by_user_id(user_id: int):
@@ -110,5 +110,23 @@ class BookingService:
         session = get_session()
         try:
             return session.query(Bookings).filter(Bookings.user_id == user_id).all()
+        finally:
+            session.close()
+
+    @staticmethod
+    def get_booking_status():
+        """Lấy số lượng booking theo trạng thái"""
+        session = get_session()
+        try:
+            return session.query(Bookings.booking_status).group_by(Bookings.booking_status).all()
+        finally:
+            session.close()
+
+    @staticmethod
+    def get_booking_total_price():
+        """Lấy tổng doanh thu từ booking"""
+        session = get_session()
+        try:
+            return session.query(Bookings.total_price).sum()
         finally:
             session.close()

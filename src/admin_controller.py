@@ -19,6 +19,9 @@ from database import (
     UserRole,
     Setting,
     User,
+    Bookings,
+    BookingStatus,
+    BookingType,
 )
 from models.tour_models import TourModel
 from models.user_models import AdminModel
@@ -1579,4 +1582,213 @@ class AdminController:
                 
         except Exception as e:
             print(f"Error in api_test_email: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    def api_bookings_list(self):
+        """API lấy danh sách bookings cho admin"""
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
+        
+        # Verify role admin
+        if session.get('role') != UserRole.ADMIN.value:
+            return jsonify({'success': False, 'error': 'Không có quyền truy cập'}), 403
+            
+        try:
+            status_str = request.args.get('status', 'all')
+            search = request.args.get('search', '').strip()
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 10, type=int)
+            
+            if page < 1:
+                page = 1
+            if per_page < 1 or per_page > 100:
+                per_page = 10
+                
+            offset = (page - 1) * per_page
+            
+            # Khởi tạo query kết nối với bảng User
+            query = self.db_session.query(Bookings).join(User, Bookings.user_id == User.user_id)
+            
+            # Tìm kiếm (tên khách hàng, email, sđt, hoặc tiêu đề tour)
+            if search:
+                # Join với Tour để search tiêu đề tour nếu booking_type là TOUR
+                query = query.outerjoin(Tour, (Bookings.reference_id == Tour.tour_id) & (Bookings.booking_type == BookingType.TOUR))
+                query = query.filter(
+                    or_(
+                        User.full_name.ilike(f"%{search}%"),
+                        User.email.ilike(f"%{search}%"),
+                        User.username.ilike(f"%{search}%"),
+                        User.phone_number.ilike(f"%{search}%"),
+                        Tour.title.ilike(f"%{search}%")
+                    )
+                )
+                
+            # Lọc theo trạng thái
+            if status_str and status_str != 'all':
+                try:
+                    status_enum = BookingStatus(status_str)
+                    query = query.filter(Bookings.booking_status == status_enum)
+                except ValueError:
+                    pass
+                    
+            # Sắp xếp mới nhất
+            query = query.order_by(Bookings.created_at.desc())
+            
+            # Count và lấy dữ liệu
+            total = query.count()
+            bookings_list = query.limit(per_page).offset(offset).all()
+            
+            data = []
+            for b in bookings_list:
+                tour_title = None
+                tour_image = None
+                tour_slug = None
+                if b.booking_type == BookingType.TOUR:
+                    tour = self.db_session.query(Tour).get(b.reference_id)
+                    if tour:
+                        tour_title = tour.title
+                        tour_image = tour.thumbnail
+                        tour_slug = tour.slug
+                        
+                data.append({
+                    'id': b.booking_id,
+                    'user_id': b.user_id,
+                    'userName': b.user.full_name or b.user.username,
+                    'userEmail': b.user.email,
+                    'userPhone': b.user.phone_number or '',
+                    'booking_type': b.booking_type.value if b.booking_type else None,
+                    'reference_id': b.reference_id,
+                    'tourId': b.reference_id if b.booking_type == BookingType.TOUR else None,
+                    'tourTitle': tour_title or 'N/A',
+                    'tourImage': tour_image,
+                    'tourSlug': tour_slug,
+                    'departureDate': b.check_in_date.strftime('%Y-%m-%d') if b.check_in_date else None,
+                    'check_in_date': b.check_in_date.strftime('%Y-%m-%d') if b.check_in_date else None,
+                    'check_out_date': b.check_out_date.strftime('%Y-%m-%d') if b.check_out_date else None,
+                    'totalPrice': float(b.total_price) if b.total_price else 0.0,
+                    'status': b.booking_status.value if b.booking_status else None,
+                    'booking_status': b.booking_status.value if b.booking_status else None,
+                    'createdAt': b.created_at.strftime('%Y-%m-%d %H:%M:%S') if b.created_at else None,
+                })
+                
+            total_pages = (total + per_page - 1) // per_page if total > 0 else 1
+            
+            return jsonify({
+                'success': True,
+                'data': data,
+                'pagination': {
+                    'page': page,
+                    'per_page': per_page,
+                    'total': total,
+                    'pages': total_pages
+                }
+            })
+        except Exception as e:
+            print(f"Error in api_bookings_list: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    def api_update_booking_status(self, booking_id):
+        """API cập nhật trạng thái booking cho admin"""
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
+            
+        if session.get('role') != UserRole.ADMIN.value:
+            return jsonify({'success': False, 'error': 'Không có quyền truy cập'}), 403
+            
+        try:
+            data = request.json if request.is_json else request.form
+            status_str = data.get('status')
+            if not status_str:
+                return jsonify({'success': False, 'error': 'Thiếu trạng thái mới'}), 400
+                
+            try:
+                new_status = BookingStatus(status_str)
+            except ValueError:
+                return jsonify({'success': False, 'error': 'Trạng thái không hợp lệ'}), 400
+                
+            booking = self.db_session.query(Bookings).filter(Bookings.booking_id == booking_id).first()
+            if not booking:
+                return jsonify({'success': False, 'error': 'Không tìm thấy booking'}), 404
+                
+            booking.booking_status = new_status
+            self.db_session.commit()
+            
+            return jsonify({
+                'success': True,
+                'message': f'Cập nhật trạng thái booking #{booking_id} thành {status_str} thành công'
+            })
+        except Exception as e:
+            self.db_session.rollback()
+            print(f"Error in api_update_booking_status: {str(e)}")
+            return jsonify({'success': False, 'error': str(e)}), 500
+
+    def api_bookings_statistics(self):
+        """API lấy thống kê đặt tour cho dashboard admin"""
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
+            
+        if session.get('role') != UserRole.ADMIN.value:
+            return jsonify({'success': False, 'error': 'Không có quyền truy cập'}), 403
+            
+        try:
+            end_date = datetime.now()
+            start_date = end_date - timedelta(days=7)
+            
+            # Gọi booking_model lấy thống kê qua Command Pattern
+            cmd_result = self.booking_model.get_bookings_statistics(start_date)
+            
+            # Chuẩn bị dữ liệu trả về theo format của frontend
+            stats = {
+                'total_bookings': cmd_result['total_bookings'],
+                'total_revenue': cmd_result['total_revenue'],
+                'pending_count': cmd_result['pending_count'],
+                'confirmed_count': cmd_result['confirmed_count'],
+                'completed_count': cmd_result['completed_count'],
+                'cancelled_count': cmd_result['cancelled_count'],
+            }
+            
+            # Xử lý dữ liệu biểu đồ xu hướng 7 ngày
+            daily_dict = cmd_result['daily_dict']
+            labels = []
+            booking_counts_data = []
+            revenue_data = []
+            
+            for i in range(7):
+                date = (start_date + timedelta(days=i)).date()
+                date_str = str(date)
+                labels.append(date.strftime('%d/%m'))
+                day_data = daily_dict.get(date_str, {'count': 0, 'revenue': 0.0})
+                booking_counts_data.append(day_data['count'])
+                revenue_data.append(day_data['revenue'])
+                
+            stats['chart_data'] = {
+                'labels': labels,
+                'bookings': booking_counts_data,
+                'revenue': revenue_data
+            }
+            
+            # Xử lý 5 Bookings gần nhất
+            stats['recent_bookings'] = []
+            for b in cmd_result['recent_bookings']:
+                tour_title = None
+                if b.booking_type == BookingType.TOUR:
+                    tour = self.db_session.query(Tour).get(b.reference_id)
+                    if tour:
+                        tour_title = tour.title
+                        
+                stats['recent_bookings'].append({
+                    'id': b.booking_id,
+                    'userName': b.user.full_name or b.user.username,
+                    'tourTitle': tour_title or 'N/A',
+                    'totalPrice': float(b.total_price) if b.total_price else 0.0,
+                    'status': b.booking_status.value if b.booking_status else None,
+                    'createdAt': b.created_at.strftime('%Y-%m-%d %H:%M:%S') if b.created_at else None,
+                })
+                
+            return jsonify({
+                'success': True,
+                'data': stats
+            })
+        except Exception as e:
+            print(f"Error in api_bookings_statistics: {str(e)}")
             return jsonify({'success': False, 'error': str(e)}), 500

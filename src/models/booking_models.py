@@ -30,7 +30,7 @@ class BookingModel:
 
         success = BookingService.create_combo_booking({
                     "user_id": user_id,
-                    "booking_type": db.BookingTypeEnum.TOUR,
+                    "booking_type": db.BookingType.TOUR,
                     "hotel_id": hotel_id,
                     "nights": nights,
                     "reference_id": tour_id,
@@ -39,7 +39,7 @@ class BookingModel:
                     "check_in_date": check_in_date,
                     "check_out_date": check_out_date,
                     "total_price": total_price,
-                    "booking_status": db.BookingStatusEnum.PENDING
+                    "booking_status": db.BookingStatus.PENDING
                 })
 
         return success
@@ -52,7 +52,7 @@ class BookingModel:
         """Đọc thông tin Bookings qua User ID"""
         return BookingService.get_bookings_by_user_id(user_id)
 
-    def update_status(self, booking_id: int, new_status: db.BookingStatusEnum) -> bool:
+    def update_status(self, booking_id: int, new_status: db.BookingStatus) -> bool:
         """Cập nhật trạng thái Bookings (VD: từ pending sang completed)"""
         return BookingService.update_booking_status(booking_id, new_status)
 
@@ -60,11 +60,22 @@ class BookingModel:
         """Hủy Bookings (Soft logic)"""
         return BookingService.cancel_booking(booking_id)
 
+    def get_booking_status(self):
+        """Lấy số lượng booking theo trạng thái"""
+        return BookingService.get_booking_status()
+
+    def get_bookings_statistics(self, start_date) -> dict:
+        """Lấy tất cả thống kê đặt tour sử dụng Command Pattern"""
+        from command.booking import GetBookingsStatisticsCommand
+        cmd = GetBookingsStatisticsCommand(start_date)
+        cmd.execute(self.db)
+        return cmd.result
+
     def _booking_to_dict(self, booking: db.Bookings):
         # Lấy thông tin tour để hiển thị đẹp ở frontend
         tour_title = None
         tour_image = None
-        if booking.booking_type == db.BookingTypeEnum.TOUR:
+        if booking.booking_type == db.BookingType.TOUR:
             tour = self.db.query(db.Tour).get(booking.reference_id)
             if tour:
                 tour_title = tour.title
@@ -82,7 +93,7 @@ class BookingModel:
             'created_at': booking.created_at.strftime('%Y-%m-%d %H:%M:%S') if booking.created_at else None,
             
             # Map sang các trường React frontend tương thích
-            'tourId': booking.reference_id if booking.booking_type == db.BookingTypeEnum.TOUR else None,
+            'tourId': booking.reference_id if booking.booking_type == db.BookingType.TOUR else None,
             'tourTitle': tour_title,
             'tourImage': tour_image,
             'departureDate': booking.check_in_date.strftime('%Y-%m-%d') if booking.check_in_date else None,

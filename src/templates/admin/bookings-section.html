@@ -1,0 +1,141 @@
+<div class="content-section" id="bookings">
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body">
+            <h5 class="card-title mb-4"><i class="fas fa-filter text-primary me-2"></i>Bộ lọc tìm kiếm</h5>
+            <div class="row align-items-end">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <form id="bookingsSearchForm">
+                        <label for="bookingsSearchInput" class="form-label font-bold text-muted small uppercase">Từ khóa tìm kiếm</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
+                            <input type="text" class="form-control bg-light border-start-0" id="bookingsSearchInput" placeholder="Tìm tên khách hàng, email, SĐT hoặc tên tour...">
+                            <button type="submit" class="btn btn-primary">Tìm kiếm</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-md-4 mb-3 mb-md-0">
+                    <label for="bookingsStatusFilter" class="form-label font-bold text-muted small uppercase">Trạng thái đặt tour</label>
+                    <select class="form-select bg-light" id="bookingsStatusFilter">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="pending">Chờ duyệt</option>
+                        <option value="confirmed">Đã duyệt / Xác nhận</option>
+                        <option value="completed">Đã hoàn thành</option>
+                        <option value="cancelled">Đã hủy</option>
+                    </select>
+                </div>
+                <div class="col-md-2 text-md-end">
+                    <button type="button" class="btn btn-outline-secondary w-100" id="btnResetBookingsFilters">
+                        <i class="fas fa-undo me-1"></i>Thiết lập lại
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="bookingsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="py-3 ps-4" style="width: 100px;">Mã Đơn</th>
+                            <th class="py-3">Khách Hàng</th>
+                            <th class="py-3">Thông Tin Tour</th>
+                            <th class="py-3">Tổng Tiền</th>
+                            <th class="py-3">Trạng Thái</th>
+                            <th class="py-3">Thời Gian Đặt</th>
+                            <th class="py-3 pe-4" style="width: 150px;">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody id="bookingsTableBody">
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fas fa-spinner fa-spin fa-2x mb-3 text-primary d-block"></i>
+                                Đang tải danh sách đặt tour...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div class="card-footer bg-white border-0 py-3 px-4">
+                <nav aria-label="Bookings navigation">
+                    <ul class="pagination pagination-sm justify-content-end mb-0" id="bookingsPagination">
+                        <!-- Rendered by admin.js -->
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- View Booking Detail Modal -->
+<div class="modal fade" id="viewBookingModal" tabindex="-1" aria-labelledby="viewBookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-light border-0 py-3 px-4">
+                <div>
+                    <h5 class="modal-title font-bold text-dark" id="viewBookingModalLabel">Chi Tiết Đơn Đặt Tour</h5>
+                    <p class="text-muted small mb-0">Xem đầy đủ thông tin giao dịch đặt tour</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded-3">
+                            <div>
+                                <small class="text-muted text-uppercase font-bold small">Mã booking</small>
+                                <h6 class="mb-0 font-bold text-dark">#<span id="modalBookingId"></span></h6>
+                            </div>
+                            <div class="text-end">
+                                <small class="text-muted text-uppercase font-bold small">Trạng thái</small>
+                                <div id="modalBookingStatus" class="mt-1"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <h6 class="font-bold border-bottom pb-2 mb-3"><i class="fas fa-user text-primary me-2"></i>Thông tin khách hàng</h6>
+                        <div class="ps-2 space-y-2">
+                            <p class="mb-1"><span class="text-muted me-2">Tên khách hàng:</span> <strong id="modalBookingCustomer" class="text-dark"></strong></p>
+                            <p class="mb-1"><span class="text-muted me-2">Địa chỉ Email:</span> <span id="modalBookingEmail"></span></p>
+                            <p class="mb-1"><span class="text-muted me-2">Số điện thoại:</span> <span id="modalBookingPhone"></span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-12">
+                        <h6 class="font-bold border-bottom pb-2 mb-3"><i class="fas fa-compass text-primary me-2"></i>Thông tin Tour đặt</h6>
+                        <div class="ps-2 space-y-2">
+                            <p class="mb-1"><span class="text-muted me-2">Tên Tour du lịch:</span> <strong id="modalBookingTour" class="text-dark"></strong></p>
+                            <p class="mb-1"><span class="text-muted me-2">Ngày khởi hành:</span> <span id="modalBookingDeparture" class="text-dark font-bold"></span></p>
+                            <p class="mb-1"><span class="text-muted me-2">Thời gian giao dịch:</span> <span id="modalBookingCreated"></span></p>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-3 text-center">
+                            <span class="text-muted uppercase font-bold small d-block mb-1">Tổng chi phí thanh toán</span>
+                            <h4 class="mb-0 font-bold text-primary" id="modalBookingPrice"></h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light border-0 py-3 px-4">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // Handle reset filter button click
+        $('#btnResetBookingsFilters').click(function() {
+            $('#bookingsSearchInput').val('');
+            $('#bookingsStatusFilter').val('all');
+            loadBookings('all', '', 1);
+        });
+    });
+</script>

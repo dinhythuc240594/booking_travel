@@ -1,37 +1,138 @@
 <div class="content-section active" id="dashboard">
-    <h5>Thống kê Tour</h5>
-    <div class="row">
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon bg-warning">
-                    <i class="fas fa-clock"></i>
+    <h5 class="mb-3"><i class="fas fa-chart-line text-primary me-2"></i>Thống kê Tour</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="stat-card bg-white p-3 rounded shadow-sm border d-flex align-items-center">
+                <div class="stat-icon bg-warning text-white rounded p-3 me-3"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-clock fa-lg"></i>
                 </div>
                 <div class="stat-details">
-                    <h3 id="statPending">0</h3>
-                    <p>Chờ duyệt</p>
+                    <h3 id="statPending" class="mb-0 font-bold">0</h3>
+                    <p class="text-muted small mb-0">Tour Chờ duyệt</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card bg-white p-3 rounded shadow-sm border d-flex align-items-center">
+                <div class="stat-icon bg-success text-white rounded p-3 me-3"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-check fa-lg"></i>
+                </div>
+                <div class="stat-details">
+                    <h3 id="statApproved" class="mb-0 font-bold">0</h3>
+                    <p class="text-muted small mb-0">Tour Đã duyệt</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card bg-white p-3 rounded shadow-sm border d-flex align-items-center">
+                <div class="stat-icon bg-danger text-white rounded p-3 me-3"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-times fa-lg"></i>
+                </div>
+                <div class="stat-details">
+                    <h3 id="statRejected" class="mb-0 font-bold">0</h3>
+                    <p class="text-muted small mb-0">Tour Bị từ chối</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h5 class="mb-3 mt-4"><i class="fas fa-calendar-alt text-primary me-2"></i>Thống kê Đặt Tour (Bookings)</h5>
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card bg-white p-3 rounded shadow-sm border d-flex align-items-center">
+                <div class="stat-icon bg-success text-white rounded p-3 me-3"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background-color: #2ecc71 !important;">
+                    <i class="fas fa-wallet fa-lg"></i>
+                </div>
+                <div class="stat-details">
+                    <h4 id="statBookingRevenue" class="mb-0 font-bold text-success text-truncate">0đ</h4>
+                    <p class="text-muted small mb-0">Doanh thu đạt</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon bg-success">
-                    <i class="fas fa-check"></i>
+            <div class="stat-card bg-white p-3 rounded shadow-sm border d-flex align-items-center">
+                <div class="stat-icon bg-primary text-white rounded p-3 me-3"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background-color: #3498db !important;">
+                    <i class="fas fa-shopping-cart fa-lg"></i>
                 </div>
                 <div class="stat-details">
-                    <h3 id="statApproved">0</h3>
-                    <p>Đã duyệt</p>
+                    <h3 id="statBookingTotal" class="mb-0 font-bold text-primary">0</h3>
+                    <p class="text-muted small mb-0">Tổng số đặt tour</p>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon bg-danger">
-                    <i class="fas fa-times"></i>
+            <div class="stat-card bg-white p-3 rounded shadow-sm border d-flex align-items-center">
+                <div class="stat-icon bg-warning text-white rounded p-3 me-3"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background-color: #f1c40f !important;">
+                    <i class="fas fa-spinner fa-lg"></i>
                 </div>
                 <div class="stat-details">
-                    <h3 id="statRejected">0</h3>
-                    <p>Từ chối</p>
+                    <h3 id="statBookingPending" class="mb-0 font-bold text-warning">0</h3>
+                    <p class="text-muted small mb-0">Đơn chờ duyệt</p>
                 </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card bg-white p-3 rounded shadow-sm border d-flex align-items-center">
+                <div class="stat-icon bg-info text-white rounded p-3 me-3"
+                    style="width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; background-color: #9b59b6 !important;">
+                    <i class="fas fa-check-double fa-lg"></i>
+                </div>
+                <div class="stat-details">
+                    <h3 id="statBookingCompleted" class="mb-0 font-bold" style="color: #9b59b6;">0</h3>
+                    <p class="text-muted small mb-0">Đơn hoàn thành</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div className="col-lg-8">
+            <div className="card shadow-sm border-0 h-100">
+                <div className="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h6 className="mb-0 font-bold text-dark"><i className="fas fa-chart-area text-primary me-2"></i>Biểu
+                        đồ Xu hướng Đặt Tour & Doanh thu (7 ngày)</h6>
+                </div>
+                <div className="card-body">
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="bookingChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div className="col-lg-4">
+            <div className="card shadow-sm border-0 h-100">
+                <div className="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+                    <h6 className="mb-0 font-bold text-dark"><i className="fas fa-history text-primary me-2"></i>Giao
+                        dịch đặt gần đây</h6>
+                    <a href="#" class="small text-decoration-none font-bold text-primary show-bookings-section"
+                        onclick="$('.sidebar-menu a[data-section=\'bookings\']').click();">Xem tất cả</a>
+                </div>
+                <!-- <div className="card-body p-0">
+                    <div className="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                        <table className="table table-hover table-sm align-middle mb-0" style="font-size: 12px;">
+                            <thead className="table-light sticky-top">
+                                <tr>
+                                    <th>Khách hàng</th>
+                                    <th>Tour</th>
+                                    <th>Tổng tiền</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentBookingsTableBody">
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">Đang tải giao dịch...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div> -->
             </div>
         </div>
     </div>

@@ -77,9 +77,9 @@ class TourStatusType(TypeDecorator):
         return None
 
 
-class BookingTypeEnum(enum.Enum):
-    HOTEL = "hotel"
+class BookingType(enum.Enum):
     TOUR = "tour"
+    HOTEL = "hotel"
 
     def __str__(self):
         return self.value
@@ -101,7 +101,46 @@ class BookingTypeEnum(enum.Enum):
         return None
 
 
-class BookingStatusEnum(enum.Enum):
+class BookingTypeType(TypeDecorator):
+    """Custom type decorator for TourStatus enum"""
+    impl = String(20)
+    cache_ok = True
+    
+    def __init__(self):
+        super(BookingTypeType, self).__init__(length=20)
+    
+    def process_bind_param(self, value, dialect):
+        """Convert enum to string when saving to database"""
+        if value is None:
+            return None
+        if isinstance(value, BookingType):
+            return value.value
+        if isinstance(value, str):
+            return value
+        return str(value)
+    
+    def process_result_value(self, value, dialect):
+        """Convert string to enum when reading from database"""
+        if value is None:
+            return None
+        if isinstance(value, BookingType):
+            return value
+        # Convert string to enum
+        if isinstance(value, str):
+            # Try to find enum by value
+            value_lower = value.lower()
+            for status in BookingType:
+                if status.value.lower() == value_lower:
+                    return status
+            # If not found, try BookingType.from_string
+            result = BookingType.from_string(value)
+            if result:
+                return result
+        # If all else fails, return None or raise error
+        return None
+
+
+class BookingStatus(enum.Enum):
     PENDING = "pending"
     CONFIRMED = "confirmed"
     CANCELLED = "cancelled"
@@ -127,7 +166,46 @@ class BookingStatusEnum(enum.Enum):
         return None
 
 
-class PaymentMethodEnum(enum.Enum):
+class BookingStatusType(TypeDecorator):
+    """Custom type decorator for TourStatus enum"""
+    impl = String(20)
+    cache_ok = True
+    
+    def __init__(self):
+        super(BookingStatusType, self).__init__(length=20)
+    
+    def process_bind_param(self, value, dialect):
+        """Convert enum to string when saving to database"""
+        if value is None:
+            return None
+        if isinstance(value, BookingStatus):
+            return value.value
+        if isinstance(value, str):
+            return value
+        return str(value)
+    
+    def process_result_value(self, value, dialect):
+        """Convert string to enum when reading from database"""
+        if value is None:
+            return None
+        if isinstance(value, BookingStatus):
+            return value
+        # Convert string to enum
+        if isinstance(value, str):
+            # Try to find enum by value
+            value_lower = value.lower()
+            for status in BookingStatus:
+                if status.value.lower() == value_lower:
+                    return status
+            # If not found, try BookingStatus.from_string
+            result = TourStatus.from_string(value)
+            if result:
+                return result
+        # If all else fails, return None or raise error
+        return None
+
+
+class PaymentMethod(enum.Enum):
     CREDIT_CARD = "credit_card"
     PAYPAL = "paypal"
     BANK_TRANSFER = "bank_transfer"
@@ -153,7 +231,46 @@ class PaymentMethodEnum(enum.Enum):
         return None
 
 
-class PaymentStatusEnum(enum.Enum):
+class PaymentMethodType(TypeDecorator):
+    """Custom type decorator for PaymentMethod enum"""
+    impl = String(20)
+    cache_ok = True
+    
+    def __init__(self):
+        super(PaymentMethodType, self).__init__(length=20)
+    
+    def process_bind_param(self, value, dialect):
+        """Convert enum to string when saving to database"""
+        if value is None:
+            return None
+        if isinstance(value, PaymentMethod):
+            return value.value
+        if isinstance(value, str):
+            return value
+        return str(value)
+    
+    def process_result_value(self, value, dialect):
+        """Convert string to enum when reading from database"""
+        if value is None:
+            return None
+        if isinstance(value, PaymentMethod):
+            return value
+        # Convert string to enum
+        if isinstance(value, str):
+            # Try to find enum by value
+            value_lower = value.lower()
+            for method in PaymentMethod:
+                if method.value.lower() == value_lower:
+                    return method
+            # If not found, try PaymentMethod.from_string
+            result = PaymentMethod.from_string(value)
+            if result:
+                return result
+        # If all else fails, return None or raise error
+        return None
+
+
+class PaymentStatus(enum.Enum):
     PENDING = "pending"
     SUCCESSFUL = "successful"
     FAILED = "failed"
@@ -178,6 +295,45 @@ class PaymentStatusEnum(enum.Enum):
             pass
         return None
 
+
+class PaymentStatusType(TypeDecorator):
+    """Custom type decorator for PaymentStatus enum"""
+    impl = String(20)
+    cache_ok = True
+    
+    def __init__(self):
+        super(PaymentStatusType, self).__init__(length=20)
+    
+    def process_bind_param(self, value, dialect):
+        """Convert enum to string when saving to database"""
+        if value is None:
+            return None
+        if isinstance(value, PaymentStatus):
+            return value.value
+        if isinstance(value, str):
+            return value
+        return str(value)
+    
+    def process_result_value(self, value, dialect):
+        """Convert string to enum when reading from database"""
+        if value is None:
+            return None
+        if isinstance(value, PaymentStatus):
+            return value
+        # Convert string to enum
+        if isinstance(value, str):
+            # Try to find enum by value
+            value_lower = value.lower()
+            for status in PaymentStatus:
+                if status.value.lower() == value_lower:
+                    return status
+            # If not found, try PaymentStatus.from_string
+            result = PaymentStatus.from_string(value)
+            if result:
+                return result
+        # If all else fails, return None or raise error
+        return None
+    
 
 class UserRole(enum.Enum):
 
@@ -316,12 +472,12 @@ class Bookings(Base):
     
     booking_id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
-    booking_type = Column(Enum(BookingTypeEnum), nullable=False)
+    booking_type = Column(BookingTypeType(), nullable=False)
     reference_id = Column(Integer, nullable=False) # Chứa ID của Hotels hoặc Tour
     check_in_date = Column(DateTime)
     check_out_date = Column(DateTime)
     total_price = Column(Numeric(10, 2), nullable=False)
-    booking_status = Column(Enum(BookingStatusEnum), default=BookingStatusEnum.PENDING)
+    booking_status = Column(BookingStatusType(), default=BookingStatus.PENDING)
     created_at = Column(DateTime, default=datetime.datetime.now)
 
     # Relationships
@@ -335,8 +491,8 @@ class Payment(Base):
     payment_id = Column(Integer, primary_key=True, autoincrement=True)
     booking_id = Column(Integer, ForeignKey('bookings.booking_id', ondelete="CASCADE"), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
-    payment_method = Column(Enum(PaymentMethodEnum), nullable=False)
-    payment_status = Column(Enum(PaymentStatusEnum), default=PaymentStatusEnum.PENDING)
+    payment_method = Column(PaymentMethodType(), nullable=False)
+    payment_status = Column(PaymentStatusType(), default=PaymentStatus.PENDING)
     payment_date = Column(DateTime, default=datetime.datetime.now)
 
     # Relationships

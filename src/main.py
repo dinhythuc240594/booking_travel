@@ -49,13 +49,13 @@ def create_app():
         # print(f">>> Endpoint: {request.endpoint}")
         # print(f">>> View args: {request.view_args}\n")
     
-    # Debug: In ra tất cả routes
-    print("\n" + "="*50)
-    print("REGISTERED ROUTES:")
-    print("="*50)
-    for rule in app.url_map.iter_rules():
-        print(f"{rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
-    print("="*50 + "\n")
+    # # Debug: In ra tất cả routes
+    # print("\n" + "="*50)
+    # print("REGISTERED ROUTES:")
+    # print("="*50)
+    # for rule in app.url_map.iter_rules():
+    #     print(f"{rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
+    # print("="*50 + "\n")
 
     # Đăng ký Jinja2 filters
     @app.template_filter('datetime_format')
