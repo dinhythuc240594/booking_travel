@@ -220,7 +220,8 @@ function updatePageTitle(section) {
         'location': 'Quản lý địa điểm',
         'users': 'Quản lý người dùng',
         'bookings': 'Quản lý Bookings',
-        'statistics': 'Thống kê'
+        'statistics': 'Thống kê',
+        'tour-tree': 'Sơ đồ Phân cấp Tour'
     };
     $('#pageTitle').text(titles[section] || 'Dashboard');
 }
@@ -242,6 +243,9 @@ async function loadSectionData(section) {
             break;
         case 'bookings':
             loadBookings();
+            break;
+        case 'tour-tree':
+            loadTourTree();
             break;
         case 'dashboard':
             loadStatistics();
@@ -517,14 +521,14 @@ async function loadStatistics() {
         // Fetch bookings statistics
         const bookingsResponse = await fetch('/admin/api/bookings/statistics');
         const bookingsResult = await bookingsResponse.json();
-        
+
         if (bookingsResult.success && bookingsResult.data) {
             const bookingStats = bookingsResult.data;
             $('#statBookingTotal').text(bookingStats.total_bookings);
             $('#statBookingRevenue').text(new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(bookingStats.total_revenue));
             $('#statBookingPending').text(bookingStats.pending_count);
             $('#statBookingCompleted').text(bookingStats.completed_count);
-            
+
             // Render Recent Bookings
             let recentHtml = '';
             bookingStats.recent_bookings.forEach(booking => {
@@ -1680,7 +1684,7 @@ async function loadBookings(status = 'all', search = '', page = 1) {
     try {
         const response = await fetch(`/admin/api/bookings?status=${status}&search=${encodeURIComponent(search)}&page=${page}`);
         const result = await response.json();
-        
+
         if (result.success && result.data) {
             let html = '';
             result.data.forEach((booking) => {
@@ -1699,13 +1703,13 @@ async function loadBookings(status = 'all', search = '', page = 1) {
                     badgeClass = 'bg-danger';
                     statusLabel = 'Đã hủy';
                 }
-                
+
                 let actionButtons = `
                     <button class="btn btn-sm btn-info btn-view-booking" data-booking='${JSON.stringify(booking).replace(/'/g, "&#39;")}' title="Xem chi tiết">
                         <i class="fas fa-eye"></i>
                     </button>
                 `;
-                
+
                 if (booking.status === 'pending') {
                     actionButtons += `
                         <button class="btn btn-sm btn-success btn-update-booking-status ms-1" data-id="${booking.id}" data-status="confirmed" title="Duyệt">
@@ -1725,9 +1729,9 @@ async function loadBookings(status = 'all', search = '', page = 1) {
                         </button>
                     `;
                 }
-                
+
                 const totalPriceFormatted = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(booking.totalPrice);
-                
+
                 html += `
                     <tr>
                         <td>#${booking.id}</td>
@@ -1747,11 +1751,11 @@ async function loadBookings(status = 'all', search = '', page = 1) {
                     </tr>
                 `;
             });
-            
+
             if (result.data.length === 0) {
                 html = '<tr><td colspan="7" class="text-center text-muted">Không có booking nào</td></tr>';
             }
-            
+
             $('#bookingsTableBody').html(html);
             renderBookingsPagination(result.pagination);
         }
@@ -1766,11 +1770,11 @@ function renderBookingsPagination(pagination) {
         $('#bookingsPagination').html('');
         return;
     }
-    
+
     let html = '';
     const currentPage = pagination.page;
     const totalPages = pagination.pages;
-    
+
     // Previous button
     html += `
         <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
@@ -1779,7 +1783,7 @@ function renderBookingsPagination(pagination) {
             </a>
         </li>
     `;
-    
+
     // Page numbers
     for (let i = 1; i <= totalPages; i++) {
         html += `
@@ -1788,7 +1792,7 @@ function renderBookingsPagination(pagination) {
             </li>
         `;
     }
-    
+
     // Next button
     html += `
         <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
@@ -1797,7 +1801,7 @@ function renderBookingsPagination(pagination) {
             </a>
         </li>
     `;
-    
+
     $('#bookingsPagination').html(html);
 }
 
@@ -1855,7 +1859,7 @@ $(document).on('submit', '#bookingsSearchForm', function (e) {
 $(document).on('click', '.btn-update-booking-status', function () {
     const bookingId = $(this).data('id');
     const newStatus = $(this).data('status');
-    
+
     let confirmMsg = 'Bạn có chắc chắn muốn thay đổi trạng thái booking này?';
     if (newStatus === 'confirmed') {
         confirmMsg = 'Bạn có chắc chắn muốn duyệt đơn đặt tour này?';
@@ -1864,7 +1868,7 @@ $(document).on('click', '.btn-update-booking-status', function () {
     } else if (newStatus === 'cancelled') {
         confirmMsg = 'Bạn có chắc chắn muốn hủy đơn đặt tour này?';
     }
-    
+
     if (confirm(confirmMsg)) {
         updateBookingStatus(bookingId, newStatus);
     }
@@ -1872,7 +1876,7 @@ $(document).on('click', '.btn-update-booking-status', function () {
 
 $(document).on('click', '.btn-view-booking', function () {
     const booking = $(this).data('booking');
-    
+
     $('#modalBookingId').text(booking.id);
     $('#modalBookingCustomer').text(booking.userName);
     $('#modalBookingEmail').text(booking.userEmail);
@@ -1880,7 +1884,7 @@ $(document).on('click', '.btn-view-booking', function () {
     $('#modalBookingTour').text(booking.tourTitle);
     $('#modalBookingDeparture').text(booking.departureDate);
     $('#modalBookingPrice').text(new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(booking.totalPrice));
-    
+
     let badgeClass = 'bg-secondary';
     let statusLabel = booking.status;
     if (booking.status === 'pending') {
@@ -1896,10 +1900,10 @@ $(document).on('click', '.btn-view-booking', function () {
         badgeClass = 'bg-danger';
         statusLabel = 'Đã hủy';
     }
-    
+
     $('#modalBookingStatus').html(`<span class="badge ${badgeClass}">${statusLabel}</span>`);
     $('#modalBookingCreated').text(booking.createdAt);
-    
+
     const modal = new bootstrap.Modal(document.getElementById('viewBookingModal'));
     modal.show();
 });
@@ -1909,18 +1913,18 @@ let bookingChartInstance = null;
 async function initializeBookingChart() {
     const ctx = document.getElementById('bookingChart');
     if (!ctx) return;
-    
+
     try {
         const response = await fetch('/admin/api/bookings/statistics');
         const result = await response.json();
-        
+
         if (result.success && result.data && result.data.chart_data) {
             const chartData = result.data.chart_data;
-            
+
             if (bookingChartInstance) {
                 bookingChartInstance.destroy();
             }
-            
+
             bookingChartInstance = new Chart(ctx, {
                 type: 'line',
                 data: {
@@ -1992,4 +1996,98 @@ async function initializeBookingChart() {
     } catch (error) {
         console.error('Lỗi khởi tạo biểu đồ bookings:', error);
     }
+}
+
+
+// Tour Tree View Manager
+async function loadTourTree() {
+    try {
+        const response = await fetch('/admin/api/tour/tree');
+        const result = await response.json();
+
+        if (result.success && result.tree) {
+            const treeContainer = $('#tourTreeContainer');
+            treeContainer.empty();
+
+            const html = renderTreeNode(result.tree);
+            treeContainer.html(html);
+
+            // Add click handlers for folder elements to toggle collapse
+            treeContainer.find('.tree-folder-header').click(function () {
+                const folder = $(this).parent();
+                folder.toggleClass('collapsed');
+                const icon = $(this).find('.folder-icon');
+                if (folder.hasClass('collapsed')) {
+                    icon.removeClass('fa-folder-open').addClass('fa-folder');
+                } else {
+                    icon.removeClass('fa-folder').addClass('fa-folder-open');
+                }
+            });
+        } else {
+            $('#tourTreeContainer').html('<div class="alert alert-danger">Không thể tải sơ đồ tour.</div>');
+        }
+    } catch (error) {
+        console.error('Error in loadTourTree:', error);
+        $('#tourTreeContainer').html('<div class="alert alert-danger">Lỗi kết nối máy chủ.</div>');
+    }
+}
+
+function renderTreeNode(node) {
+    if (node.type === 'leaf') {
+        let statusBadge = '';
+        if (node.status === 'published') {
+            statusBadge = '<span class="badge bg-success small me-1">Đã xuất bản</span>';
+        } else if (node.status === 'pending') {
+            statusBadge = '<span class="badge bg-warning text-dark small me-1">Chờ duyệt</span>';
+        } else {
+            statusBadge = '<span class="badge bg-secondary small me-1">Nháp</span>';
+        }
+
+        return `
+            <div class="tree-item py-1 px-3 d-flex align-items-center justify-content-between border-bottom border-light">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-umbrella-beach text-info me-2"></i>
+                    <span class="fw-semibold text-dark">${escapeHtml(node.title)}</span>
+                    <span class="text-muted ms-2" style="font-size: 11px;">(${node.duration_days} ngày)</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    ${statusBadge}
+                    <span class="text-primary fw-bold me-3" style="font-size: 13px;">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(node.price_per_adult)}</span>
+                    
+                </div>
+            </div>
+        `;
+    } else if (node.type === 'composite') {
+        let iconClass = 'fa-folder-open';
+        let folderTypeClass = 'bg-primary-light text-primary';
+        if (node.group_type === 'Địa điểm') {
+            folderTypeClass = 'bg-success-light text-success';
+        } else if (node.group_type === 'Danh mục') {
+            folderTypeClass = 'bg-info-light text-info';
+        }
+
+        let childrenHtml = '';
+        if (node.children && node.children.length > 0) {
+            childrenHtml = node.children.map(child => renderTreeNode(child)).join('');
+        } else {
+            childrenHtml = '<div class="text-muted py-2 px-4 small">Thư mục trống</div>';
+        }
+
+        return `
+            <div class="tree-folder my-2 shadow-sm rounded border border-light">
+                <div class="tree-folder-header p-3 d-flex align-items-center justify-content-between bg-light cursor-pointer select-none">
+                    <div class="d-flex align-items-center">
+                        <i class="fas ${iconClass} folder-icon me-2 text-warning"></i>
+                        <span class="fw-bold text-dark">${escapeHtml(node.group_name)}</span>
+                        <span class="badge ${folderTypeClass} rounded-pill ms-2 small" style="font-size: 10px;">${node.group_type}</span>
+                    </div>
+                    <span class="badge bg-secondary rounded-pill small">${node.tour_count} bài viết</span>
+                </div>
+                <div class="tree-folder-content p-2 bg-white">
+                    ${childrenHtml}
+                </div>
+            </div>
+        `;
+    }
+    return '';
 }

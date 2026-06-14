@@ -22,3 +22,7 @@ class AbstractTourNode(ABC):
     @abstractmethod
     def show_tours(self, indent: str = "") -> str:
         pass
+
+    @abstractmethod
+    def to_dict(self) -> dict:
+        pass

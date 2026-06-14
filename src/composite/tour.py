@@ -18,6 +18,17 @@ class TourBookingItem(AbstractBookingItem):
     def show_details(self, indent: str = "") -> str:
         return f"{indent}- 🚌 Tour: {self.tour.name} ({self.persons} người) - ${self.get_total_price()}"
 
+    def to_dict(self) -> dict:
+        return {
+            "type": "tour",
+            "tour_id": self.tour.tour_id,
+            "title": self.tour.title,
+            "persons": self.persons,
+            "price_per_adult": float(self.tour.price_per_adult),
+            "price_per_child": float(self.tour.price_per_child),
+            "total_price": self.get_total_price()
+        }
+
 
 class TourLeafNode(AbstractTourNode):
 
@@ -38,6 +49,20 @@ class TourLeafNode(AbstractTourNode):
             status_icon = "🔴"
             
         return f"{indent}- {status_icon} [ID: {self.tour.tour_id}] {self.tour.name} | Trạng thái: {self.tour.status.value}"
+
+    def to_dict(self) -> dict:
+        return {
+            "type": "leaf",
+            "tour_id": self.tour.tour_id,
+            "title": self.tour.title,
+            "slug": self.tour.slug,
+            "status": self.tour.status.value if self.tour.status else None,
+            "category": self.tour.category_name,
+            "price_per_adult": float(self.tour.price_per_adult),
+            "price_per_child": float(self.tour.price_per_child),
+            "duration_days": self.tour.duration_days,
+            "thumbnail": self.tour.thumbnail
+        }
 
 
 class TourGroupComposite(AbstractTourNode):
@@ -64,3 +89,12 @@ class TourGroupComposite(AbstractTourNode):
         for child in self.children:
             details += child.show_tours(indent + "   ") + "\n"
         return details.rstrip()
+
+    def to_dict(self) -> dict:
+        return {
+            "type": "composite",
+            "group_name": self.group_name,
+            "group_type": self.group_type,
+            "tour_count": self.get_tour_count(),
+            "children": [child.to_dict() for child in self.children]
+        }

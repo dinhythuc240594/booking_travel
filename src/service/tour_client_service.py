@@ -140,3 +140,64 @@ class TourClientService:
             }
         finally:
             session.close()
+
+    @staticmethod
+    def get_tours_tree(author_id=None):
+        """
+        Xây dựng cấu trúc cây Composite của các Tour đã xuất bản,
+        phục vụ cho việc thống kê hoặc sơ đồ thư mục trên giao diện client/admin.
+        Cây phân cấp: Địa điểm (Location) -> Danh mục (Category) -> Tour (Leaf)
+        """
+        from composite.tour import TourGroupComposite, TourLeafNode
+        from database import get_session, Tour, Location, TourStatus
+        
+        session = get_session()
+        try:
+            # Lấy tất cả locations và tours
+            locations = session.query(Location).filter(Location.is_deleted == False).all()
+            
+            query = session.query(Tour).filter(Tour.is_deleted == False)
+            if author_id is not None:
+                query = query.filter(Tour.author_id == author_id)
+            else:
+                query = query.filter(Tour.status == TourStatus.PUBLISHED)
+                
+            tours = query.all()
+            
+            # Gốc cây lớn
+            root = TourGroupComposite("Tất cả điểm đến", "Hệ thống")
+            
+            # Khởi tạo các nhóm theo địa điểm
+            location_groups = {}
+            for loc in locations:
+                group = TourGroupComposite(loc.city, "Địa điểm")
+                location_groups[loc.location_id] = group
+                root.add_child(group)
+                
+            # Tạo nhóm "Không xác định" cho tours không có location_id hoặc location_id không tìm thấy
+            unknown_location_group = TourGroupComposite("Địa điểm khác", "Địa điểm")
+            
+            # Đưa các tour vào đúng địa điểm và danh mục của chúng
+            for tour in tours:
+                loc_group = location_groups.get(tour.location_id, unknown_location_group)
+                if loc_group == unknown_location_group and unknown_location_group not in root.children:
+                    root.add_child(unknown_location_group)
+                
+                # Tìm hoặc tạo danh mục (Category) bên trong địa điểm đó
+                category_group = None
+                category_name = tour.category_name or "Khác"
+                for child in loc_group.children:
+                    if isinstance(child, TourGroupComposite) and child.group_name == category_name:
+                        category_group = child
+                        break
+                        
+                if not category_group:
+                    category_group = TourGroupComposite(category_name, "Danh mục")
+                    loc_group.add_child(category_group)
+                    
+                # Thêm tour đơn lẻ vào danh mục làm Leaf Node
+                category_group.add_child(TourLeafNode(tour))
+                
+            return root
+        finally:
+            session.close()

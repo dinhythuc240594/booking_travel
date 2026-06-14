@@ -589,3 +589,20 @@ class Controller():
                 'message': f'Lỗi hệ thống: {str(e)}'
             }), 500
 
+    def get_tours_tree(self):
+        """
+        Lấy cấu trúc cây phân cấp tour sử dụng Composite Pattern.
+        Route: GET /tours/tree
+        """
+        try:
+            tree_dict = self.tour_model.get_tours_tree()
+            return jsonify({
+                'success': True,
+                'tree': tree_dict
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500
+

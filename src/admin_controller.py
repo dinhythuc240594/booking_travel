@@ -241,6 +241,16 @@ class AdminController:
         if user.role != UserRole.ADMIN and tour.author_id != user_id:
             flash('Bạn không có quyền chỉnh sửa tour này', 'error')
             return redirect(url_for('admin.tours_list'))
+            
+        # Kiểm tra trạng thái bài viết theo quyền
+        if user.role == UserRole.STAFF:
+            if tour.status not in [TourStatus.DRAFT, TourStatus.REJECTED]:
+                flash('Bài viết đang trong trạng thái chờ duyệt hoặc đã xuất bản, bạn không thể chỉnh sửa', 'error')
+                return redirect(url_for('admin.editor_dashboard'))
+        elif user.role == UserRole.ADMIN:
+            if tour.status not in [TourStatus.PENDING, TourStatus.APPROVED, TourStatus.PUBLISHED]:
+                flash('Bài viết đang do nhân viên soạn thảo hoặc chỉnh sửa, admin không thể chỉnh sửa', 'error')
+                return redirect(url_for('admin.tours_list'))
         
         if request.method == 'POST':
 
@@ -824,7 +834,27 @@ class AdminController:
         user_id = session.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
-        
+            
+        user = self.admin_model.get_by_id(user_id)
+        if not user or user.role not in [UserRole.ADMIN, UserRole.STAFF]:
+            return jsonify({'success': False, 'error': 'Không có quyền thực hiện hành động này'}), 403
+
+        tour = self.tour_model.get_by_id(tour_id, include_deleted=True)
+        if not tour:
+            return jsonify({'success': False, 'error': 'Không tìm thấy bài viết'}), 404
+
+        # Kiểm tra quyền tác giả đối với staff
+        if user.role == UserRole.STAFF and tour.author_id != user_id:
+            return jsonify({'success': False, 'error': 'Bạn không có quyền chỉnh sửa bài viết này'}), 403
+
+        # Kiểm tra trạng thái bài viết theo quyền
+        if user.role == UserRole.STAFF:
+            if tour.status not in [TourStatus.DRAFT, TourStatus.REJECTED]:
+                return jsonify({'success': False, 'error': 'Bài viết đang trong trạng thái chờ duyệt hoặc đã xuất bản, bạn không thể chỉnh sửa'}), 403
+        elif user.role == UserRole.ADMIN:
+            if tour.status not in [TourStatus.PENDING, TourStatus.APPROVED, TourStatus.PUBLISHED]:
+                return jsonify({'success': False, 'error': 'Bài viết đang do nhân viên soạn thảo hoặc chỉnh sửa, admin không thể chỉnh sửa'}), 403
+
         data = dict(request.json if request.is_json else request.form)
 
         for field in ['is_hot', 'is_featured']:
@@ -1792,3 +1822,27 @@ class AdminController:
         except Exception as e:
             print(f"Error in api_bookings_statistics: {str(e)}")
             return jsonify({'success': False, 'error': str(e)}), 500
+
+    def api_tours_tree(self):
+        """API lấy cây thư mục cấu trúc các Tour theo Composite Pattern cho Admin hoặc Staff"""
+        if 'user_id' not in session:
+            return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
+            
+        role = session.get('role')
+        if role not in [UserRole.ADMIN.value, UserRole.STAFF.value]:
+            return jsonify({'success': False, 'error': 'Không có quyền truy cập'}), 403
+            
+        user_id = session.get('user_id')
+        author_id = user_id if role == UserRole.STAFF.value else None
+            
+        try:
+            tree_dict = self.tour_model.get_tours_tree(author_id)
+            return jsonify({
+                'success': True,
+                'tree': tree_dict
+            })
+        except Exception as e:
+            return jsonify({
+                'success': False,
+                'error': str(e)
+            }), 500

@@ -22,3 +22,11 @@ class BookingPackage(AbstractBookingItem):
         for item in self.items:
             details += item.show_details(indent + "  ") + "\n"
         return details.rstrip()
+
+    def to_dict(self) -> dict:
+        return {
+            "type": "package",
+            "package_name": self.package_name,
+            "total_price": self.get_total_price(),
+            "items": [item.to_dict() for item in self.items]
+        }

@@ -17,3 +17,7 @@ class AbstractBookingItem(ABC):
     @abstractmethod
     def show_details(self, indent: str = "") -> str:
         pass
+
+    @abstractmethod
+    def to_dict(self) -> dict:
+        pass

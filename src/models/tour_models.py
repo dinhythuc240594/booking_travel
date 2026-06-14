@@ -203,3 +203,7 @@ class TourModel:
         slug = re.sub(r'[^\w\s-]', '', slug)
         slug = re.sub(r'[-\s]+', '-', slug)
         return slug.strip('-')
+
+    def get_tours_tree(self, author_id=None) -> dict:
+        """Lấy cây thư mục cấu trúc các Tour theo Composite Pattern"""
+        return TourClientService.get_tours_tree(author_id).to_dict()

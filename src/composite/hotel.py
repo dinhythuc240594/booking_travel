@@ -15,3 +15,13 @@ class HotelsBookingItem(AbstractBookingItem):
 
     def show_details(self, indent: str = "") -> str:
         return f"{indent}- 🏨 Khách sạn: {self.hotels.name} ({self.nights} đêm) - ${self.get_total_price()}"
+
+    def to_dict(self) -> dict:
+        return {
+            "type": "hotel",
+            "hotel_id": self.hotels.hotel_id,
+            "name": self.hotels.name,
+            "nights": self.nights,
+            "price_per_night": float(self.hotels.price_per_night),
+            "total_price": self.get_total_price()
+        }

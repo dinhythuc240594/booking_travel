@@ -149,8 +149,15 @@ class Location(BaseClientView):
         return self.locations()
 
 
+class ToursTree(BaseClientView):
+
+    def get(self):
+        return self.get_tours_tree()
+
+
 client_bp.add_url_rule('/search', 'search', Search.as_view('search'))
 client_bp.add_url_rule('/tours', 'tours', Tours.as_view('tours'))
+client_bp.add_url_rule('/tours/tree', 'tours_tree', ToursTree.as_view('tours_tree'))
 client_bp.add_url_rule('/tours/<tours_slug>', 'tours_detail', ToursDetail.as_view('tours_detail'))
 client_bp.add_url_rule('/locations', 'locations', Location.as_view('locations'))
 client_bp.add_url_rule('/bookings', 'bookings', Bookings.as_view('bookings'))

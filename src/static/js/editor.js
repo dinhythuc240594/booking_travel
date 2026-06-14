@@ -309,6 +309,9 @@ async function loadSectionData(section) {
         case 'dashboard':
             refreshEditorStats();
             break;
+        case 'tour-tree':
+            loadTourTree();
+            break;
     }
 }
 
@@ -533,6 +536,7 @@ function updatePageTitle(section) {
         'drafts': 'Bản nháp',
         'pending': 'Chờ duyệt',
         'published': 'Đã xuất bản',
+        'tour-tree': 'Sơ đồ Phân cấp Tour',
     };
     $('#pageTitle').text(titles[section] || 'Dashboard');
 }
@@ -1259,6 +1263,12 @@ async function editArticle(articleId) {
         if (result.success) {
             const article = result.data;
 
+            // Kiểm tra trạng thái bài viết
+            if (article.status !== 'draft' && article.status !== 'rejected') {
+                showToast('Không thể chỉnh sửa', 'Bài viết đang trong trạng thái chờ duyệt hoặc đã xuất bản, bạn không thể chỉnh sửa', 'warning');
+                return;
+            }
+
             // Load categories if not already loaded
             if ($('#editArticleCategory option').length <= 1) {
                 try {
@@ -1841,4 +1851,96 @@ function insertTag($input, tagName) {
 // Hide tag suggestions
 function hideTagSuggestions($suggestions) {
     $suggestions.hide();
+}
+
+// Tour Tree View Manager
+async function loadTourTree() {
+    try {
+        const response = await fetch('/admin/api/tour/tree');
+        const result = await response.json();
+
+        if (result.success && result.tree) {
+            const treeContainer = $('#tourTreeContainer');
+            treeContainer.empty();
+
+            const html = renderTreeNode(result.tree);
+            treeContainer.html(html);
+
+            // Add click handlers for folder elements to toggle collapse
+            treeContainer.find('.tree-folder-header').click(function () {
+                const folder = $(this).parent();
+                folder.toggleClass('collapsed');
+                const icon = $(this).find('.folder-icon');
+                if (folder.hasClass('collapsed')) {
+                    icon.removeClass('fa-folder-open').addClass('fa-folder');
+                } else {
+                    icon.removeClass('fa-folder').addClass('fa-folder-open');
+                }
+            });
+        } else {
+            $('#tourTreeContainer').html('<div class="alert alert-danger">Không thể tải sơ đồ tour.</div>');
+        }
+    } catch (error) {
+        console.error('Error in loadTourTree:', error);
+        $('#tourTreeContainer').html('<div class="alert alert-danger">Lỗi kết nối máy chủ.</div>');
+    }
+}
+
+function renderTreeNode(node) {
+    if (node.type === 'leaf') {
+        let statusBadge = '';
+        if (node.status === 'published') {
+            statusBadge = '<span class="badge bg-success small me-1">Đã xuất bản</span>';
+        } else if (node.status === 'pending') {
+            statusBadge = '<span class="badge bg-warning text-dark small me-1">Chờ duyệt</span>';
+        } else {
+            statusBadge = '<span class="badge bg-secondary small me-1">Nháp</span>';
+        }
+
+        return `
+            <div class="tree-item py-1 px-3 d-flex align-items-center justify-content-between border-bottom border-light">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-umbrella-beach text-info me-2"></i>
+                    <span class="fw-semibold text-dark">${escapeHtml(node.title)}</span>
+                    <span class="text-muted ms-2" style="font-size: 11px;">(${node.duration_days} ngày)</span>
+                </div>
+                <div class="d-flex align-items-center">
+                    ${statusBadge}
+                    <span class="text-primary fw-bold me-3" style="font-size: 13px;">${new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(node.price_per_adult)}</span>
+                </div>
+            </div>
+        `;
+    } else if (node.type === 'composite') {
+        let iconClass = 'fa-folder-open';
+        let folderTypeClass = 'bg-primary-light text-primary';
+        if (node.group_type === 'Địa điểm') {
+            folderTypeClass = 'bg-success-light text-success';
+        } else if (node.group_type === 'Danh mục') {
+            folderTypeClass = 'bg-info-light text-info';
+        }
+
+        let childrenHtml = '';
+        if (node.children && node.children.length > 0) {
+            childrenHtml = node.children.map(child => renderTreeNode(child)).join('');
+        } else {
+            childrenHtml = '<div class="text-muted py-2 px-4 small">Thư mục trống</div>';
+        }
+
+        return `
+            <div class="tree-folder my-2 shadow-sm rounded border border-light">
+                <div class="tree-folder-header p-3 d-flex align-items-center justify-content-between bg-light cursor-pointer select-none">
+                    <div class="d-flex align-items-center">
+                        <i class="fas ${iconClass} folder-icon me-2 text-warning"></i>
+                        <span class="fw-bold text-dark">${escapeHtml(node.group_name)}</span>
+                        <span class="badge ${folderTypeClass} rounded-pill ms-2 small" style="font-size: 10px;">${node.group_type}</span>
+                    </div>
+                    <span class="badge bg-secondary rounded-pill small">${node.tour_count} bài viết</span>
+                </div>
+                <div class="tree-folder-content p-2 bg-white">
+                    ${childrenHtml}
+                </div>
+            </div>
+        `;
+    }
+    return '';
 }

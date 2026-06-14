@@ -320,6 +320,12 @@ class ApiBookingsStatistics(BaseAdminView):
         return self.api_bookings_statistics()
 
 
+class ApiToursTree(BaseAdminView):
+
+    def get(self):
+        return self.api_tours_tree()
+
+
 # Auth & Pages
 admin_bp.add_url_rule('/login', 'login', Login.as_view('login'))
 admin_bp.add_url_rule('/logout', 'logout', Logout.as_view('logout'))
@@ -344,6 +350,7 @@ admin_bp.add_url_rule('/api/bookings/statistics', 'api_bookings_statistics', Api
 
 # API Tours & Dashboards
 admin_bp.add_url_rule('/api/tour', 'api_tour_list', ApiTourList.as_view('api_tour_list'))
+admin_bp.add_url_rule('/api/tour/tree', 'api_tours_tree', ApiToursTree.as_view('api_tours_tree'))
 admin_bp.add_url_rule('/api/current-user', 'api_current_user', ApiCurrentUser.as_view('api_current_user'))
 admin_bp.add_url_rule('/api/editor-notifications', 'api_editor_notifications', ApiEditorNotifications.as_view('api_editor_notifications'))
 admin_bp.add_url_rule('/api/statistics', 'api_statistics', ApiStatistics.as_view('api_statistics'))
