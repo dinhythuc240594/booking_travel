@@ -676,10 +676,6 @@
                 if (response.success && response.settings) {
                     const settings = response.settings;
 
-                    // Load API settings
-                    $('#apiToken').val(settings.api_token?.value || '');
-                    $('#apiBaseUrl').val(settings.api_base_url?.value || 'https://news-api.techreview.pro');
-
                     // Load SMTP settings
                     $('#smtpServer').val(settings.smtp_server?.value || 'smtp.gmail.com');
                     $('#smtpPort').val(settings.smtp_port?.value || '587');
@@ -701,13 +697,6 @@
         // Validate required fields
         let isValid = true;
         $('.form-control').removeClass('is-invalid');
-
-        // Validate API Token
-        if (!$('#apiToken').val().trim()) {
-            $('#apiToken').addClass('is-invalid');
-            $('#apiToken').next('.invalid-feedback').text('API Token là bắt buộc');
-            isValid = false;
-        }
 
         // Validate SMTP required fields
         if (!$('#smtpServer').val().trim()) {
@@ -744,8 +733,6 @@
         btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Đang lưu...');
 
         const settings = {
-            api_token: $('#apiToken').val().trim(),
-            api_base_url: $('#apiBaseUrl').val().trim() || 'https://news-api.techreview.pro',
             smtp_server: $('#smtpServer').val().trim(),
             smtp_port: $('#smtpPort').val().trim(),
             smtp_username: $('#smtpUsername').val().trim(),
@@ -799,8 +786,6 @@
 
         // Save settings first, then test
         const settings = {
-            api_token: $('#apiToken').val().trim(),
-            api_base_url: $('#apiBaseUrl').val().trim() || 'https://news-api.techreview.pro',
             smtp_server: $('#smtpServer').val().trim(),
             smtp_port: $('#smtpPort').val().trim(),
             smtp_username: $('#smtpUsername').val().trim(),
@@ -818,7 +803,7 @@
                 if (response.success) {
                     // Test email sending
                     $.ajax({
-                        url: '/admin/api/test-email',
+                        url: '/admin/api/settings/test-email',
                         method: 'POST',
                         contentType: 'application/json',
                         data: JSON.stringify({ email: testEmail }),

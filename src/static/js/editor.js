@@ -224,14 +224,14 @@ $(document).ready(function () {
     $('#articleGallery').change(async function () {
         const files = this.files;
         if (!files || files.length === 0) return;
-        
+
         let urls = [];
         try {
             urls = JSON.parse($('#articleGalleryUrls').val() || '[]');
-        } catch(e) {}
-        
+        } catch (e) { }
+
         showSpinner();
-        
+
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const url = await uploadArticleImage(file, 'tour', $('#editArticleId').val());
@@ -239,11 +239,11 @@ $(document).ready(function () {
                 urls.push(url);
             }
         }
-        
+
         hideSpinner();
         $('#articleGalleryUrls').val(JSON.stringify(urls));
         renderGalleryPreview('#galleryPreview', '#articleGalleryUrls', urls);
-        
+
         $(this).val('');
     });
 
@@ -251,14 +251,14 @@ $(document).ready(function () {
     $('#editArticleGallery').change(async function () {
         const files = this.files;
         if (!files || files.length === 0) return;
-        
+
         let urls = [];
         try {
             urls = JSON.parse($('#editArticleGalleryUrls').val() || '[]');
-        } catch(e) {}
-        
+        } catch (e) { }
+
         showSpinner();
-        
+
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
             const url = await uploadArticleImage(file, 'tour', $('#editArticleId').val());
@@ -266,11 +266,11 @@ $(document).ready(function () {
                 urls.push(url);
             }
         }
-        
+
         hideSpinner();
         $('#editArticleGalleryUrls').val(JSON.stringify(urls));
         renderGalleryPreview('#editGalleryPreview', '#editArticleGalleryUrls', urls);
-        
+
         $(this).val('');
     });
 
@@ -781,14 +781,15 @@ function displayArticles(articles, tableBodyId) {
         html += '<td>';
         // Chỉ hiển thị nút edit và delete cho bài viết draft
         // Bài viết pending chỉ có quyền xem
-        if (article.status === 'draft' || article.status === 'rejected') {
-            html += '<button class="btn btn-sm btn-info btn-action btn-edit" data-id="' + article.tour_id + '" title="Chỉnh sửa">';
-            html += '<i class="fas fa-edit"></i>';
-            html += '</button>';
-            html += '<button class="btn btn-sm btn-danger btn-action btn-delete" data-id="' + article.tour_id + '" title="Xóa">';
-            html += '<i class="fas fa-trash"></i>';
-            html += '</button>';
-        } else if (article.status === 'pending') {
+        // if (article.status === 'draft' || article.status === 'rejected') {
+        html += '<button class="btn btn-sm btn-info btn-action btn-edit" data-id="' + article.tour_id + '" title="Chỉnh sửa">';
+        html += '<i class="fas fa-edit"></i>';
+        html += '</button>';
+        // html += '<button class="btn btn-sm btn-danger btn-action btn-delete" data-id="' + article.tour_id + '" title="Xóa">';
+        // html += '<i class="fas fa-trash"></i>';
+        // html += '</button>';
+        // } 
+        if (article.status === 'pending') {
             // Bài viết pending chỉ có quyền xem, không có nút action
             html += '<button class="btn btn-sm btn-info btn-action btn-view" data-id="' + article.tour_id + '" title="Xem bài viết">';
             html += '<i class="fas fa-eye"></i>';
@@ -1335,10 +1336,10 @@ async function editArticle(articleId) {
             const article = result.data;
 
             // Kiểm tra trạng thái bài viết
-            if (article.status !== 'draft' && article.status !== 'rejected') {
-                showToast('Không thể chỉnh sửa', 'Bài viết đang trong trạng thái chờ duyệt hoặc đã xuất bản, bạn không thể chỉnh sửa', 'warning');
-                return;
-            }
+            // // if (article.status !== 'draft' && article.status !== 'rejected') {
+            // showToast('Không thể chỉnh sửa', 'Bài viết đang trong trạng thái chờ duyệt hoặc đã xuất bản, bạn không thể chỉnh sửa', 'warning');
+            // return;
+            // // }
 
             // Load categories if not already loaded
             if ($('#editArticleCategory option').length <= 1) {
@@ -2040,12 +2041,12 @@ function renderGalleryPreview(containerId, hiddenInputId, urls) {
 }
 
 // Remove gallery image from the array and re-render
-window.removeGalleryImage = function(containerId, hiddenInputId, index) {
+window.removeGalleryImage = function (containerId, hiddenInputId, index) {
     const input = $(hiddenInputId);
     let urls = [];
     try {
         urls = JSON.parse(input.val() || '[]');
-    } catch(e) {}
+    } catch (e) { }
     urls.splice(index, 1);
     input.val(JSON.stringify(urls));
     renderGalleryPreview(containerId, hiddenInputId, urls);

@@ -242,15 +242,15 @@ class AdminController:
             flash('Bạn không có quyền chỉnh sửa tour này', 'error')
             return redirect(url_for('admin.tours_list'))
             
-        # Kiểm tra trạng thái bài viết theo quyền
-        if user.role == UserRole.STAFF:
-            if tour.status not in [TourStatus.DRAFT, TourStatus.REJECTED]:
-                flash('Bài viết đang trong trạng thái chờ duyệt hoặc đã xuất bản, bạn không thể chỉnh sửa', 'error')
-                return redirect(url_for('admin.editor_dashboard'))
-        elif user.role == UserRole.ADMIN:
-            if tour.status not in [TourStatus.PENDING, TourStatus.APPROVED, TourStatus.PUBLISHED]:
-                flash('Bài viết đang do nhân viên soạn thảo hoặc chỉnh sửa, admin không thể chỉnh sửa', 'error')
-                return redirect(url_for('admin.tours_list'))
+        # # Kiểm tra trạng thái bài viết theo quyền
+        # if user.role == UserRole.STAFF:
+        #     if tour.status not in [TourStatus.DRAFT, TourStatus.REJECTED]:
+        #         flash('Bài viết đang trong trạng thái chờ duyệt hoặc đã xuất bản, bạn không thể chỉnh sửa', 'error')
+        #         return redirect(url_for('admin.editor_dashboard'))
+        # elif user.role == UserRole.ADMIN:
+        #     if tour.status not in [TourStatus.PENDING, TourStatus.APPROVED, TourStatus.PUBLISHED]:
+        #         flash('Bài viết đang do nhân viên soạn thảo hoặc chỉnh sửa, admin không thể chỉnh sửa', 'error')
+        #         return redirect(url_for('admin.tours_list'))
         
         if request.method == 'POST':
 
@@ -833,13 +833,13 @@ class AdminController:
         if user.role == UserRole.STAFF and tour.author_id != user_id:
             return jsonify({'success': False, 'error': 'Bạn không có quyền chỉnh sửa bài viết này'}), 403
 
-        # Kiểm tra trạng thái bài viết theo quyền
-        if user.role == UserRole.STAFF:
-            if tour.status not in [TourStatus.DRAFT, TourStatus.REJECTED]:
-                return jsonify({'success': False, 'error': 'Bài viết đang trong trạng thái chờ duyệt hoặc đã xuất bản, bạn không thể chỉnh sửa'}), 403
-        elif user.role == UserRole.ADMIN:
-            if tour.status not in [TourStatus.PENDING, TourStatus.APPROVED, TourStatus.PUBLISHED]:
-                return jsonify({'success': False, 'error': 'Bài viết đang do nhân viên soạn thảo hoặc chỉnh sửa, admin không thể chỉnh sửa'}), 403
+        # # Kiểm tra trạng thái bài viết theo quyền
+        # if user.role == UserRole.STAFF:
+        #     if tour.status not in [TourStatus.DRAFT, TourStatus.REJECTED]:
+        #         return jsonify({'success': False, 'error': 'Bài viết đang trong trạng thái chờ duyệt hoặc đã xuất bản, bạn không thể chỉnh sửa'}), 403
+        # elif user.role == UserRole.ADMIN:
+        #     if tour.status not in [TourStatus.PENDING, TourStatus.APPROVED, TourStatus.PUBLISHED]:
+        #         return jsonify({'success': False, 'error': 'Bài viết đang do nhân viên soạn thảo hoặc chỉnh sửa, admin không thể chỉnh sửa'}), 403
 
         data = dict(request.json if request.is_json else request.form)
 
