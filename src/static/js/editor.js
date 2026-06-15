@@ -748,18 +748,7 @@ function displayArticles(articles, tableBodyId) {
     articles.forEach((article, index) => {
         const statusBadge = getStatusBadge(article.status);
         const checked = article.visible ? 'checked' : '';
-
-        const date = new Date(article.date + 'Z');
-
-        const dateVN = date.toLocaleString('sv-SE', {
-            timeZone: 'Asia/Ho_Chi_Minh', // Chuyển sang múi giờ VN
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false // Sử dụng định dạng 24h
-        });
+        const created_at = article.date;
 
         html += '';
         html += '<tr>';
@@ -777,7 +766,7 @@ function displayArticles(articles, tableBodyId) {
         html += '<span class="visibility-slider"></span>';
         html += '</label>';
         html += '</td>';
-        html += '<td>' + (dateVN) + '</td>';
+        html += '<td>' + (created_at) + '</td>';
         html += '<td>';
         // Chỉ hiển thị nút edit và delete cho bài viết draft
         // Bài viết pending chỉ có quyền xem

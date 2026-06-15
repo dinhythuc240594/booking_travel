@@ -747,38 +747,9 @@ class AdminController:
                 'message': 'Bài viết không tồn tại'
             }), 404
         
-        # Xác định author: nếu là bài từ API thì dùng author field, không thì dùng author.username hoặc author.full_name nếu có
-        author_name = tour.author if (hasattr(tour, 'is_api') and tour.is_api and hasattr(tour, 'author') and tour.author) else (tour.author.username if tour.author else 'N/A')
-        author_full_name = tour.author if (hasattr(tour, 'is_api') and tour.is_api and hasattr(tour, 'author') and tour.author) else (tour.author.full_name if tour.author and tour.author.full_name else tour.author.username if tour.author else 'N/A')
-        
         return jsonify({
             'success': True,
-            'data': {
-                'tour_id': tour.tour_id,
-                'title': tour.title,
-                'slug': tour.slug,
-                'summary': tour.summary or '',
-                'content': tour.content or '',
-                'thumbnail': tour.thumbnail or '',
-                'author': author_name,
-                'author_full_name': author_full_name,
-                'reviewer': tour.reviewer.username if tour.reviewer else None,
-                'reviewer_full_name': tour.reviewer.full_name if tour.reviewer and tour.reviewer.full_name else (tour.reviewer.username if tour.reviewer else None),
-                'is_api': tour.is_api if hasattr(tour, 'is_api') else False,
-                'status': tour.status.value,
-                'created_at': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
-                'published_at': tour.published_at.strftime('%d/%m/%Y %H:%M') if tour.published_at else '',
-                'updated_at': tour.updated_at.strftime('%d/%m/%Y %H:%M') if tour.updated_at else '',
-                'view_count': tour.view_count,
-                'is_featured': tour.is_featured if hasattr(tour, 'is_featured') else False,
-                'is_hot': tour.is_hot if hasattr(tour, 'is_hot') else False,
-                'is_deleted': tour.is_deleted if hasattr(tour, 'is_deleted') else False,
-                'category_name': tour.category_name,
-                'location_id': tour.location_id,
-                'price_per_adult': tour.price_per_adult,
-                'price_per_child': tour.price_per_child,
-                'duration_days': tour.duration_days,
-            }
+            'data': self.tour_model._tour_to_dict(tour)
         })
 
     def api_create_tour(self):

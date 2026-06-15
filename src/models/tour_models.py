@@ -171,32 +171,37 @@ class TourModel:
         effective_adult_price = disc_price if disc_price is not None else price_adult
         total_price = (effective_adult_price * adult) + (price_child * children)
 
+        # Xác định author: nếu là bài từ API thì dùng author field, không thì dùng author.username hoặc author.full_name nếu có
+        author_name = tour.author if (hasattr(tour, 'is_api') and tour.is_api and hasattr(tour, 'author') and tour.author) else (tour.author.username if tour.author else 'N/A')
+        author_full_name = tour.author if (hasattr(tour, 'is_api') and tour.is_api and hasattr(tour, 'author') and tour.author) else (tour.author.full_name if tour.author and tour.author.full_name else tour.author.username if tour.author else 'N/A')
+
         return {
-            "tour_id": tour.tour_id,
-            "location_id": tour.location_id,
-            "title": tour.title,
-            "slug": tour.slug,
-            "summary": tour.summary,
-            "content": tour.content,
-            "duration_days": tour.duration_days,
-            "price_per_adult": price_adult,
-            "price_per_child": price_child,
-            "discount_price": disc_price,
-            "total_price": total_price,
-            "thumbnail": tour.thumbnail,
-            "images": images_list, # Trả về list thay vì chuỗi JSON string
-            "is_hot": tour.is_hot,
-            "is_featured": tour.is_featured,
-            "view_count": tour.view_count,
-            "status": tour.status.value if tour.status else None, # Lấy giá trị của Enum
-            # Convert DateTime -> String
-            "published_at": tour.published_at.strftime('%Y-%m-%d %H:%M:%S') if tour.published_at else None,
-            "created_at": tour.created_at.strftime('%Y-%m-%d %H:%M:%S') if tour.created_at else None,
-            
-            # Nếu muốn lấy thêm thông tin từ bảng liên kết (Relationship)
-            "author_name": tour.author.username if tour.author else None,
-            "location_name": tour.location.city if getattr(tour, 'location', None) else None,
-            "country": tour.location.country if getattr(tour, 'location', None) else "Việt Nam"
+            'tour_id': tour.tour_id,
+            'title': tour.title,
+            'slug': tour.slug,
+            'summary': tour.summary or '',
+            'content': tour.content or '',
+            'thumbnail': tour.thumbnail or '',
+            'author': author_name,
+            'author_full_name': author_full_name,
+            'reviewer': tour.reviewer.username if tour.reviewer else None,
+            'reviewer_full_name': tour.reviewer.full_name if tour.reviewer and tour.reviewer.full_name else (tour.reviewer.username if tour.reviewer else None),
+            'is_api': tour.is_api if hasattr(tour, 'is_api') else False,
+            'status': tour.status.value,
+            'created_at': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
+            'published_at': tour.published_at.strftime('%d/%m/%Y %H:%M') if tour.published_at else '',
+            'updated_at': tour.updated_at.strftime('%d/%m/%Y %H:%M') if tour.updated_at else '',
+            'view_count': tour.view_count,
+            'is_featured': tour.is_featured if hasattr(tour, 'is_featured') else False,
+            'is_hot': tour.is_hot if hasattr(tour, 'is_hot') else False,
+            'is_deleted': tour.is_deleted if hasattr(tour, 'is_deleted') else False,
+            'category_name': tour.category_name,
+            'location_id': tour.location_id,
+            'price_per_adult': tour.price_per_adult,
+            'price_per_child': tour.price_per_child,
+            'duration_days': tour.duration_days,
+            'images': images_list,
+            'total_price': total_price,
         }
 
 
