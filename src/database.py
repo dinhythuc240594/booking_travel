@@ -479,6 +479,9 @@ class Bookings(Base):
     total_price = Column(Numeric(15, 2), nullable=False)
     booking_status = Column(BookingStatusType(), default=BookingStatus.PENDING)
     created_at = Column(DateTime, default=datetime.datetime.now)
+    persons = Column(Integer, default=1)
+    adults = Column(Integer, default=1)
+    children = Column(Integer, default=0)
 
     # Relationships
     user = relationship("User", back_populates="bookings")

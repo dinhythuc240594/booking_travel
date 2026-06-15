@@ -21,13 +21,19 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       isLoading: false,
 
-      login: (user, token) =>
+      login: (user, token) => {
+        const normalizedUser = { ...user };
+        if (normalizedUser.avatarUrl && !normalizedUser.avatarUrl.startsWith('http')) {
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
+          normalizedUser.avatarUrl = `${baseUrl}${normalizedUser.avatarUrl.startsWith('/') ? '' : '/'}${normalizedUser.avatarUrl}`;
+        }
         set({
-          user,
+          user: normalizedUser,
           token,
           isAuthenticated: true,
           isLoading: false,
-        }),
+        });
+      },
 
       logout: () =>
         set({
@@ -38,9 +44,16 @@ export const useAuthStore = create<AuthState>()(
         }),
 
       updateUser: (updatedUser) =>
-        set((state) => ({
-          user: state.user ? { ...state.user, ...updatedUser } : null,
-        })),
+        set((state) => {
+          const normalizedUpdate = { ...updatedUser };
+          if (normalizedUpdate.avatarUrl && !normalizedUpdate.avatarUrl.startsWith('http')) {
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "";
+            normalizedUpdate.avatarUrl = `${baseUrl}${normalizedUpdate.avatarUrl.startsWith('/') ? '' : '/'}${normalizedUpdate.avatarUrl}`;
+          }
+          return {
+            user: state.user ? { ...state.user, ...normalizedUpdate } : null,
+          };
+        }),
 
       setLoading: (isLoading) => set({ isLoading }),
     }),

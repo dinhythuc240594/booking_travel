@@ -14,7 +14,8 @@ class BookingModel:
     def create_combo_booking(
         self, 
         user_id: int, hotel_id: int, nights: int, 
-        tour_id: int, persons: int, payment_method_str: str,
+        tour_id: int, persons: int, adults: int, children: int,
+        payment_method_str: str,
         check_in_date: datetime,
         total_price: float,
         check_out_date: datetime
@@ -31,10 +32,12 @@ class BookingModel:
         success = BookingService.create_combo_booking({
                     "user_id": user_id,
                     "booking_type": db.BookingType.TOUR,
-                    "hotel_id": hotel_id,
-                    "nights": nights,
+                    # "hotel_id": hotel_id,
+                    # "nights": nights,
                     "tour_id": tour_id,
                     "persons": persons,
+                    "adults": adults,
+                    "children": children,
                     "payment_method": payment_method,
                     "check_in_date": check_in_date,
                     "check_out_date": check_out_date,
@@ -79,11 +82,22 @@ class BookingModel:
         # Lấy thông tin tour để hiển thị đẹp ở frontend
         tour_title = None
         tour_image = None
+        tour_slug = None
         if booking.booking_type == db.BookingType.TOUR:
             tour = self.db.query(db.Tour).get(booking.reference_id)
             if tour:
                 tour_title = tour.title
                 tour_image = tour.thumbnail
+                tour_slug = tour.slug
+
+        # Lấy thông tin thanh toán (nếu có)
+        payment_method = None
+        payment_status = None
+
+        payment = self.db.query(db.Payment).filter(db.Payment.booking_id == booking.booking_id).first()
+        if payment:
+            payment_method = payment.payment_method.value if payment.payment_method else None
+            payment_status = payment.payment_status.value if payment.payment_status else None
 
         booking_dict = {
             'id': booking.booking_id,
@@ -95,12 +109,17 @@ class BookingModel:
             'total_price': float(booking.total_price) if booking.total_price else 0.0,
             'booking_status': booking.booking_status.value if booking.booking_status else None,
             'created_at': booking.created_at.strftime('%Y-%m-%d %H:%M:%S') if booking.created_at else None,
+            'adults': booking.adults,
+            'children': booking.children,
             
             # Map sang các trường React frontend tương thích
             'tourId': booking.reference_id if booking.booking_type == db.BookingType.TOUR else None,
             'tourTitle': tour_title,
             'tourImage': tour_image,
+            'tourSlug': tour_slug,
             'departureDate': booking.check_in_date.strftime('%Y-%m-%d') if booking.check_in_date else None,
             'status': booking.booking_status.value if booking.booking_status else None,
+            'payment_method': payment_method,
+            'payment_status': payment_status,
         }
         return booking_dict

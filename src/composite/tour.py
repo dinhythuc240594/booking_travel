@@ -3,6 +3,7 @@ from composite.abstract_booking import AbstractBookingItem
 from composite.abstract_tour import AbstractTourNode
 from database import Tour, TourStatus
 from typing import List
+from utils import CATEGORY_NAME_DICT
 
 
 class TourBookingItem(AbstractBookingItem):
@@ -85,7 +86,7 @@ class TourGroupComposite(AbstractTourNode):
 
     def show_tours(self, indent: str = "") -> str:
         """In ra danh sách Nhóm và các Tour trực thuộc"""
-        details = f"{indent}📂 {self.group_type.upper()}: {self.group_name} | Tổng số Tour: {self.get_tour_count()}\n"
+        details = f"{indent}📂 {CATEGORY_NAME_DICT.get(self.group_name, self.group_type).upper()}: {self.group_name} | Tổng số Tour: {self.get_tour_count()}\n"
         for child in self.children:
             details += child.show_tours(indent + "   ") + "\n"
         return details.rstrip()
@@ -93,8 +94,7 @@ class TourGroupComposite(AbstractTourNode):
     def to_dict(self) -> dict:
         return {
             "type": "composite",
-            "group_name": self.group_name,
-            "group_type": self.group_type,
+            "group_name": CATEGORY_NAME_DICT.get(self.group_name, self.group_type) or self.group_name,
             "tour_count": self.get_tour_count(),
             "children": [child.to_dict() for child in self.children]
         }

@@ -116,6 +116,9 @@ class TourModel:
         self.db.commit()
         return True
     
+    def get_rejection_by_tour_id(self, tour_id: int) -> db.TourRejection:
+        return self.db.query(db.TourRejection).filter(db.TourRejection.tour_id == tour_id).all()
+
     def search(self, keyword: str, limit: int = None, offset: int = 0) -> list[db.Tour]:
         like_pattern = f"%{keyword}%"
         query = self.db.query(db.Tour).join(db.Location, isouter=True).filter(

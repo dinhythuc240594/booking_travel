@@ -55,6 +55,8 @@ class BookingService:
                     "check_in_date": data.get('check_in_date'),
                     "check_out_date": data.get('check_out_date'),
                     "persons": data.get('persons'),
+                    "adults": data.get('adults'),
+                    "children": data.get('children'),
                     "payment_method": data.get('payment_method'),
                     "nights": data.get('nights'),
                     "hotel_id": data.get('hotel_id'),

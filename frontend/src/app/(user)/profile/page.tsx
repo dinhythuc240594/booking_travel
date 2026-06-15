@@ -20,7 +20,8 @@ import {
   X,
   CheckCircle2,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Camera
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -45,6 +46,65 @@ export default function ProfilePage() {
   // Status state
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  // Avatar upload state & ref
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleAvatarClick = () => {
+    if (uploadingAvatar) return;
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      setMessage({ type: "error", text: "File không hợp lệ. Chỉ chấp nhận: png, jpg, jpeg, gif, webp" });
+      return;
+    }
+
+    // Validate size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage({ type: "error", text: "Kích thước ảnh không được vượt quá 2MB" });
+      return;
+    }
+
+    setUploadingAvatar(true);
+    setMessage(null);
+
+    const formData = new FormData();
+    formData.append("action", "update_avatar");
+    formData.append("avatar", file);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/profile`, {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+
+      const data = await response.json();
+
+      if (data.status === true) {
+        updateUser({ avatarUrl: data.avatar_url });
+        setMessage({ type: "success", text: "Cập nhật ảnh đại diện thành công!" });
+      } else {
+        setMessage({ type: "error", text: data.message || "Không thể cập nhật ảnh đại diện" });
+      }
+    } catch (err) {
+      console.error("Failed to upload avatar:", err);
+      setMessage({ type: "error", text: "Có lỗi xảy ra khi tải ảnh lên" });
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
 
   useEffect(() => {
     setIsMounted(true);
@@ -168,7 +228,7 @@ export default function ProfilePage() {
       // 1. save profile
 
       const saveProfileRes = async () => {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_ADMIN_BASE_URL}/profile_user`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/profile`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -224,7 +284,7 @@ export default function ProfilePage() {
       <Header />
 
       <main className="flex-grow pt-28 sm:pt-36 pb-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
@@ -232,14 +292,37 @@ export default function ProfilePage() {
             <div className="lg:col-span-1 space-y-6">
               {/* Profile Brief Card */}
               <div className="bg-white dark:bg-zinc-900 border border-zinc-200/50 dark:border-zinc-800/50 rounded-3xl p-6 text-center shadow-sm">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-md overflow-hidden">
+                <div
+                  onClick={handleAvatarClick}
+                  className="w-20 h-20 rounded-full bg-gradient-to-tr from-cyan-400 to-blue-500 flex items-center justify-center text-white text-3xl font-bold mx-auto mb-4 shadow-md overflow-hidden relative cursor-pointer group"
+                >
                   {user.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+                    <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300" />
                   ) : (
                     (user.name || "U").charAt(0).toUpperCase()
                   )}
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {uploadingAvatar ? (
+                      <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    ) : (
+                      <Camera className="w-5 h-5 text-white" />
+                    )}
+                  </div>
+                  {uploadingAvatar && (
+                    <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                      <Loader2 className="w-5 h-5 text-white animate-spin" />
+                    </div>
+                  )}
                 </div>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleAvatarChange}
+                  accept="image/*"
+                  className="hidden"
+                  disabled={uploadingAvatar}
+                />
                 <h2 className="text-xl font-bold text-zinc-900 dark:text-white line-clamp-1">{user.name || "Khách hàng"}</h2>
                 <p className="text-xs text-zinc-450 dark:text-zinc-500 mt-1 line-clamp-1">{user.email}</p>
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-500 text-[10px] font-bold uppercase tracking-wider mt-4">

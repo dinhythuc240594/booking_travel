@@ -234,6 +234,9 @@ class ApiApproveATour(BaseAdminView):
 
 class ApiRejectATour(BaseAdminView):
 
+    def get(self, tour_id):
+        return self.api_reject_atour(tour_id)
+
     def post(self, tour_id):
         return self.api_reject_atour(tour_id)
 

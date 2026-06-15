@@ -23,7 +23,8 @@ import {
   Heart,
   Star,
   Shield,
-  Calendar
+  Calendar,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -31,6 +32,7 @@ export default function BookingsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [confirmCancelBooking, setConfirmCancelBooking] = useState<Booking | null>(null);
+  const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [dbBookings, setDbBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,16 +64,18 @@ export default function BookingsPage() {
       const mapped: Booking[] = data.map((b: any) => ({
         id: String(b.id),
         tourId: String(b.tourId || b.reference_id),
+        tourSlug: b.tourSlug || "",
         tourTitle: b.tourTitle || "Hành trình du lịch",
         tourImage: b.tourImage || "",
         // userId: b.user_id,
         userName: user.name,
         departureDate: b.departureDate || b.check_in_date || new Date().toISOString(),
-        adults: 1,
-        children: 0,
+        adults: b.adults || 1,
+        children: b.children || 0,
         totalPrice: Number(b.total_price),
         status: b.status || b.booking_status,
-        paymentStatus: PaymentStatus.PAID,
+        paymentStatus: b.payment_status || PaymentStatus.PAID,
+        paymentMethod: b.payment_method || "credit_card",
         createdAt: b.created_at || new Date().toISOString(),
       }));
       setDbBookings(mapped);
@@ -257,7 +261,7 @@ export default function BookingsPage() {
       <Header />
 
       <main className="flex-grow pt-28 sm:pt-36 pb-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
@@ -305,8 +309,8 @@ export default function BookingsPage() {
               <div className="grid grid-cols-3 gap-4">
                 {[
                   { label: "Đặt chỗ hành trình", count: myBookings.length, link: "/bookings", icon: Calendar, color: "from-blue-500 to-cyan-500" },
-                  { label: "Yêu thích của bạn", count: wishlistCount, link: "/wishlist", icon: Heart, color: "from-pink-500 to-red-500" },
-                  { label: "Đánh giá đã viết", count: reviewsCount, link: "/reviews", icon: Star, color: "from-amber-500 to-orange-500" }
+                  // { label: "Yêu thích của bạn", count: wishlistCount, link: "/wishlist", icon: Heart, color: "from-pink-500 to-red-500" },
+                  // { label: "Đánh giá đã viết", count: reviewsCount, link: "/reviews", icon: Star, color: "from-amber-500 to-orange-500" }
                 ].map((statCard) => (
                   <Link
                     key={statCard.label}
@@ -372,11 +376,11 @@ export default function BookingsPage() {
                           <thead>
                             <tr className="border-b border-zinc-100 dark:border-zinc-800 text-[10px] font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-500 bg-zinc-50/50 dark:bg-zinc-950/20">
                               <th className="py-4 px-5">Tour</th>
-                              <th className="py-4 px-3">Khởi hành</th>
+                              {/* <th className="py-4 px-3">Khởi hành</th> */}
                               <th className="py-4 px-3">Hành khách</th>
                               <th className="py-4 px-3">Tổng chi phí</th>
                               <th className="py-4 px-3">Trạng thái</th>
-                              <th className="py-4 px-3">Thanh toán</th>
+                              {/* <th className="py-4 px-3">Thanh toán</th> */}
                               <th className="py-4 px-5 text-right">Thao tác</th>
                             </tr>
                           </thead>
@@ -396,25 +400,25 @@ export default function BookingsPage() {
                                     </div>
                                     <div className="min-w-0">
                                       <Link
-                                        href={booking.tourId ? `/tours/${booking.tourId}` : "/tours"}
+                                        href={booking.tourSlug ? `/tours/${booking.tourSlug}` : "/tours"}
                                         className="font-bold text-zinc-900 dark:text-zinc-100 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors line-clamp-1 text-xs sm:text-sm"
                                       >
                                         {booking.tourTitle}
                                       </Link>
-                                      <span className="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 block mt-0.5">
+                                      {/* <span className="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 block mt-0.5">
                                         Mã GD: {booking.id}
-                                      </span>
+                                      </span> */}
                                     </div>
                                   </div>
                                 </td>
                                 {/* Date */}
-                                <td className="py-4 px-3 font-semibold text-zinc-700 dark:text-zinc-300 text-xs">
+                                {/* <td className="py-4 px-3 font-semibold text-zinc-700 dark:text-zinc-300 text-xs">
                                   {new Date(booking.departureDate).toLocaleDateString("vi-VN", {
                                     year: "numeric",
                                     month: "short",
                                     day: "numeric",
                                   })}
-                                </td>
+                                </td> */}
                                 {/* Passengers */}
                                 <td className="py-4 px-3">
                                   <div className="flex flex-col gap-0.5 text-xs">
@@ -432,23 +436,27 @@ export default function BookingsPage() {
                                   {getStatusBadge(booking.status)}
                                 </td>
                                 {/* Payment status */}
-                                <td className="py-4 px-3">
+                                {/* <td className="py-4 px-3">
                                   {getPaymentBadge(booking.paymentStatus)}
-                                </td>
+                                </td> */}
                                 {/* Actions */}
                                 <td className="py-4 px-5 text-right">
-                                  {(booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CONFIRMED) ? (
+                                  <div className="flex items-center justify-end gap-2">
                                     <button
-                                      onClick={() => handleCancelClick(booking)}
-                                      className="px-3 py-1.5 text-xs font-bold text-red-500 hover:text-white border border-red-500/30 hover:border-red-600 bg-transparent hover:bg-red-600 rounded-lg transition-all cursor-pointer"
+                                      onClick={() => setSelectedBooking(booking)}
+                                      className="px-3 py-1.5 text-xs font-bold text-cyan-500 hover:text-white border border-cyan-500/30 hover:border-cyan-600 bg-transparent hover:bg-cyan-600 rounded-lg transition-all cursor-pointer"
                                     >
-                                      Hủy tour
+                                      Chi tiết
                                     </button>
-                                  ) : (
-                                    <span className="text-xs text-zinc-400 dark:text-zinc-500 font-semibold">
-                                      Không khả dụng
-                                    </span>
-                                  )}
+                                    {(booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CONFIRMED) ? (
+                                      <button
+                                        onClick={() => handleCancelClick(booking)}
+                                        className="px-3 py-1.5 text-xs font-bold text-red-500 hover:text-white border border-red-500/30 hover:border-red-600 bg-transparent hover:bg-red-600 rounded-lg transition-all cursor-pointer"
+                                      >
+                                        Hủy tour
+                                      </button>
+                                    ) : null}
+                                  </div>
                                 </td>
                               </tr>
                             ))}
@@ -481,9 +489,9 @@ export default function BookingsPage() {
                               >
                                 {booking.tourTitle}
                               </Link>
-                              <span className="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 block mt-0.5">
+                              {/* <span className="text-[9px] font-mono text-zinc-400 dark:text-zinc-500 block mt-0.5">
                                 Mã GD: {booking.id}
-                              </span>
+                              </span> */}
                               <span className="text-xs text-zinc-600 dark:text-zinc-450 font-semibold mt-1 block">
                                 Đi: {new Date(booking.departureDate).toLocaleDateString("vi-VN")}
                               </span>
@@ -517,16 +525,22 @@ export default function BookingsPage() {
                           </div>
 
                           {/* Bottom Action Button */}
-                          {(booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CONFIRMED) && (
-                            <div className="pt-2">
+                          <div className="pt-2 flex gap-2">
+                            <button
+                              onClick={() => setSelectedBooking(booking)}
+                              className="flex-1 py-2 text-xs font-bold text-cyan-500 hover:text-white border border-cyan-500/20 hover:border-cyan-650 bg-cyan-50/5 hover:bg-cyan-600 rounded-xl transition-all cursor-pointer text-center"
+                            >
+                              Xem chi tiết
+                            </button>
+                            {(booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CONFIRMED) && (
                               <button
                                 onClick={() => handleCancelClick(booking)}
-                                className="w-full py-2 text-xs font-bold text-red-500 hover:text-white border border-red-500/20 hover:border-red-600 bg-red-500/5 hover:bg-red-600 rounded-xl transition-all cursor-pointer"
+                                className="flex-1 py-2 text-xs font-bold text-red-500 hover:text-white border border-red-500/20 hover:border-red-600 bg-red-50/5 hover:bg-red-600 rounded-xl transition-all cursor-pointer"
                               >
-                                Hủy đặt tour này
+                                Hủy đặt
                               </button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -598,6 +612,160 @@ export default function BookingsPage() {
                   "Đồng ý hủy"
                 )}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ================= BOOKING DETAILS MODAL ================= */}
+      {selectedBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          {/* Backdrop */}
+          <div
+            onClick={() => setSelectedBooking(null)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+
+          {/* Modal Content */}
+          <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 max-w-lg w-full rounded-3xl p-6 sm:p-8 shadow-2xl animate-scale-up z-10 text-left">
+            <button
+              onClick={() => setSelectedBooking(null)}
+              className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-zinc-650 dark:hover:text-zinc-350 transition-colors bg-transparent border-0 cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-zinc-100 dark:border-zinc-800/80">
+              <div className="p-2.5 bg-gradient-to-tr from-cyan-400 to-blue-500 text-white rounded-2xl shadow-sm">
+                <Compass className="w-6 h-6 animate-spin-slow" />
+              </div>
+              <div>
+                <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white">
+                  Chi Tiết Đặt Chỗ
+                </h3>
+                <p className="text-xs text-zinc-450 mt-0.5">
+                  Mã giao dịch: <span className="font-mono font-bold text-zinc-650 dark:text-zinc-300">#{selectedBooking.id}</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Tour info snippet */}
+            <div className="flex gap-4 mb-6 bg-zinc-50 dark:bg-zinc-950 p-4 border border-zinc-200/50 dark:border-zinc-850/50 rounded-2xl">
+              <div className="w-20 h-20 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-855 flex-shrink-0">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={selectedBooking.tourImage.startsWith('http') ? selectedBooking.tourImage : (process.env.NEXT_PUBLIC_BASE_URL || "") + selectedBooking.tourImage}
+                  alt={selectedBooking.tourTitle}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-1 min-w-0 flex flex-col justify-center">
+                <Link
+                  href={selectedBooking.tourSlug ? `/tours/${selectedBooking.tourSlug}` : "/tours"}
+                  onClick={() => setSelectedBooking(null)}
+                  className="font-bold text-sm text-zinc-900 dark:text-zinc-100 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors line-clamp-2"
+                >
+                  {selectedBooking.tourTitle}
+                </Link>
+                <div className="mt-2 flex items-center gap-2">
+                  {getStatusBadge(selectedBooking.status)}
+                </div>
+              </div>
+            </div>
+
+            {/* Details Grid */}
+            <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-xs mb-6 border-b border-zinc-100 dark:border-zinc-800/80 pb-6">
+              <div>
+                <span className="text-zinc-450 dark:text-zinc-500 block mb-0.5 uppercase tracking-wider text-[10px] font-bold">Ngày khởi hành:</span>
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                  {new Date(selectedBooking.departureDate).toLocaleDateString("vi-VN", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </span>
+              </div>
+              <div>
+                <span className="text-zinc-450 dark:text-zinc-500 block mb-0.5 uppercase tracking-wider text-[10px] font-bold">Số lượng khách:</span>
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                  {selectedBooking.adults} Người lớn {selectedBooking.children > 0 && `, ${selectedBooking.children} Trẻ em`}
+                </span>
+              </div>
+              <div>
+                <span className="text-zinc-455 dark:text-zinc-500 block mb-0.5 uppercase tracking-wider text-[10px] font-bold">Thanh toán qua:</span>
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                  {selectedBooking.paymentMethod === 'credit_card' ? 'Thẻ tín dụng' :
+                    selectedBooking.paymentMethod === 'paypal' ? 'Paypal' :
+                      selectedBooking.paymentMethod === 'bank_transfer' ? 'Chuyển khoản' :
+                        selectedBooking.paymentMethod === 'cash' ? 'Tiền mặt' : selectedBooking.paymentMethod || 'Thẻ tín dụng'}
+                </span>
+              </div>
+              <div>
+                <span className="text-zinc-450 dark:text-zinc-500 block mb-0.5 uppercase tracking-wider text-[10px] font-bold">Tình trạng thanh toán:</span>
+                <div className="mt-0.5">{getPaymentBadge(selectedBooking.paymentStatus)}</div>
+              </div>
+              <div>
+                <span className="text-zinc-450 dark:text-zinc-500 block mb-0.5 uppercase tracking-wider text-[10px] font-bold">Tổng chi phí:</span>
+                <span className="font-extrabold text-sm text-cyan-500 dark:text-cyan-400">
+                  {formatCurrency(selectedBooking.totalPrice)}
+                </span>
+              </div>
+              <div>
+                <span className="text-zinc-450 dark:text-zinc-500 block mb-0.5 uppercase tracking-wider text-[10px] font-bold">Thời gian đặt:</span>
+                <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                  {new Date(selectedBooking.createdAt).toLocaleString("vi-VN", {
+                    year: "numeric",
+                    month: "numeric",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit"
+                  })}
+                </span>
+              </div>
+            </div>
+
+            {/* Customer Contact details */}
+            <div className="space-y-3 mb-6 bg-zinc-50 dark:bg-zinc-950 p-4 border border-zinc-200/50 dark:border-zinc-850/50 rounded-2xl">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-450 dark:text-zinc-500 mb-1">
+                Thông tin liên hệ đặt chỗ
+              </h4>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-zinc-400 block mb-0.5">Họ tên khách:</span>
+                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">{selectedBooking.userName || user.name}</span>
+                </div>
+                <div>
+                  <span className="text-zinc-400 block mb-0.5">Email liên lạc:</span>
+                  <span className="font-semibold text-zinc-800 dark:text-zinc-200 line-clamp-1">{user.email}</span>
+                </div>
+                {user.phoneNumber && (
+                  <div className="col-span-2 mt-1">
+                    <span className="text-zinc-400 block mb-0.5">Số điện thoại:</span>
+                    <span className="font-semibold text-zinc-800 dark:text-zinc-200">{user.phoneNumber}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setSelectedBooking(null)}
+                className="px-6 py-2.5 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-800 dark:text-zinc-200 font-bold rounded-xl text-xs transition-all cursor-pointer border-0"
+              >
+                Đóng
+              </button>
+              {(selectedBooking.status === BookingStatus.PENDING || selectedBooking.status === BookingStatus.CONFIRMED) && (
+                <button
+                  onClick={() => {
+                    handleCancelClick(selectedBooking);
+                    setSelectedBooking(null);
+                  }}
+                  className="px-6 py-2.5 bg-red-500 hover:bg-red-650 text-white font-bold rounded-xl text-xs transition-all shadow-md cursor-pointer border-0"
+                >
+                  Hủy đặt tour
+                </button>
+              )}
             </div>
           </div>
         </div>

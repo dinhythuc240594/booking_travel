@@ -18,6 +18,9 @@ class CreateBookingCommand(DatabaseCommand):
         self.reference_id = data.get('reference_id')
         self.check_in_date = data.get('check_in_date')
         self.check_out_date = data.get('check_out_date')
+        self.persons = data.get('persons')
+        self.adults = data.get('adults')
+        self.children = data.get('children')
         self.total_price = data.get('total_price')
 
     def execute(self, session) -> None:
@@ -27,6 +30,9 @@ class CreateBookingCommand(DatabaseCommand):
             reference_id=self.reference_id,
             check_in_date=self.check_in_date,
             check_out_date=self.check_out_date,
+            persons=self.persons,
+            adults=self.adults,
+            children=self.children,
             total_price=self.total_price,
             booking_status=BookingStatus.PENDING
         )

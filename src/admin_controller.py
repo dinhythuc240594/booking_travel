@@ -777,6 +777,7 @@ class AdminController:
                 'location_id': tour.location_id,
                 'price_per_adult': tour.price_per_adult,
                 'price_per_child': tour.price_per_child,
+                'duration_days': tour.duration_days,
             }
         })
 
@@ -879,12 +880,28 @@ class AdminController:
         user_id = session.get('user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
-            
-        data = request.form or request.json
-        reason = data.get('reason', '')
-        data = self.admin_model.reject_tour(tour_id, user_id, reason)
-        tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)
-        data['data'] = self.tour_model._tour_to_dict(tour_obj) if tour_obj else None
+        
+        if request.method == 'GET':
+            tour_reject = self.tour_model.get_rejection_by_tour_id(tour_id)
+            if not tour_reject:
+                return jsonify({'success': False, 'error': 'Không tìm thấy bài viết'}), 404
+            return jsonify({
+                'success': True,
+                'data': {
+                    'title': tour_reject[0].tour.title,
+                    'rejection_reason': tour_reject[0].reason,
+                    'rejected_by': self.admin_model.get_by_id(tour_reject[0].rejected_by).username if self.admin_model.get_by_id(tour_reject[0].rejected_by) else 'Unknown',
+                    'status': tour_reject[0].tour.status.value,
+                    'rejected_at': tour_reject[0].created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                }
+            })
+
+        if request.method == 'POST':            
+            data = request.form or request.json
+            reason = data.get('reason', '')
+            data = self.admin_model.reject_tour(tour_id, user_id, reason)
+            tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)
+            data['data'] = self.tour_model._tour_to_dict(tour_obj) if tour_obj else None
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
     def api_get_category(self):
@@ -969,7 +986,6 @@ class AdminController:
             return redirect(url_for('admin.login'))
         
         user = self.admin_model.get_by_id(session['user_id'])
-        print(user.avatar)
         if not user:
             flash('Không tìm thấy thông tin người dùng', 'error')
             session.clear()
@@ -1006,8 +1022,6 @@ class AdminController:
                     
                     # Lưu đường dẫn avatar (relative to static folder)
                     avatar_url = f"static/uploads/avatars/{filename}"
-                    # user.avatar = avatar_url
-                    # self.db_session.commit()
                     self.admin_model.update(user.user_id, {'avatar': avatar_url})
                     
                     # Cập nhật session
@@ -1020,18 +1034,10 @@ class AdminController:
             elif action == 'update_info':
                 data = request.json if request.is_json else request.form
                 full_name = data.get('full_name', '').strip()
-                email = data.get('email', '').strip()
                 phone = data.get('phone', '').strip()
-                
-                if email and email != user.email:
-                    existing_user = self.admin_model.get_by_email(email)
-                    if existing_user and existing_user.user_id != user.user_id:
-                        flash('Email này đã được sử dụng', 'error')
-                        return redirect(url_for('admin.profile'))
                 
                 self.admin_model.update(user.user_id, {
                     'full_name': full_name if full_name else None,
-                    'email': email,
                     'phone_number': phone if phone else None
                 })
                 
@@ -1058,8 +1064,9 @@ class AdminController:
                     flash('Mật khẩu phải có ít nhất 6 ký tự', 'error')
                     return redirect(url_for('admin.profile'))
                 
-                user.password_hash = hash_password(new_password)
-                self.db_session.commit()
+                password_hash = hash_password(new_password)
+
+                self.admin_model.update(user.user_id, {'password_hash': password_hash})
                 
                 flash('Đổi mật khẩu thành công', 'success')
                 return redirect(url_for('admin.profile'))

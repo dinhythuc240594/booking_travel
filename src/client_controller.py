@@ -107,7 +107,7 @@ class Controller():
                 session.permanent = False
 
             user = {
-                # "id": user.user_id,
+                "id": user.user_id,
                 "email": user.email,
                 "name": user.full_name,
                 "role": user.role.value,
@@ -117,6 +117,7 @@ class Controller():
                 "dateOfBirth": user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '',
                 "createdAt": user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
                 "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
+                "avatarUrl": f"/{user.avatar}" if user.avatar else None,
             }
 
             return jsonify({
@@ -211,7 +212,7 @@ class Controller():
                 
                 if user:
                     user = {
-                        # "id": user.user_id,
+                        "id": user.user_id,
                         "email": user.email,
                         "name": user.full_name,
                         "role": user.role.value,
@@ -221,6 +222,7 @@ class Controller():
                         "dateOfBirth": user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '',
                         "createdAt": user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
                         "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
+                        "avatarUrl": f"/{user.avatar}" if user.avatar else None,
                     }
                     return jsonify({
                         'status': True,
@@ -641,6 +643,7 @@ class Controller():
             departure_date_str = data.get('departureDate')
             adults = int(data.get('adults', 1))
             children = int(data.get('children', 0))
+            persons = adults + children
             total_price = float(data.get('totalPrice', 0))
 
             if not tour_id:
@@ -671,7 +674,9 @@ class Controller():
                 None,
                 None,
                 tour_id,
+                persons,
                 adults,
+                children,
                 data.get('paymentMethod', 'credit_card'),
                 departure_date,
                 total_price,
@@ -738,7 +743,7 @@ class Controller():
         if 'user_id' not in session:
             return jsonify({'status': False, 'code': 401, 'message': 'Chưa đăng nhập'}), 401
         
-        user = self.admin_model.get_by_id(session['user_id'])
+        user = self.customer_model.get_by_id(session['user_id'])
         if not user:
             return jsonify({'status': False, 'code': 404, 'message': 'Không tìm thấy thông tin người dùng'}), 404
 
@@ -793,11 +798,11 @@ class Controller():
                 address = data.get('address', '').strip()
                 
                 if email and email != user.email:
-                    existing_user = self.admin_model.get_by_email(email)
+                    existing_user = self.customer_model.get_by_email(email)
                     if existing_user and existing_user.user_id != user.user_id:
                         return jsonify({'status': False, 'message': 'Email này đã được sử dụng'}), 400
 
-                self.admin_model.update(user.user_id, {
+                self.customer_model.update(user.user_id, {
                     'full_name': full_name,
                     'email': email,
                     'phone_number': phone_number,
@@ -806,19 +811,21 @@ class Controller():
                     'address': address
                 })
                 
-                user = self.admin_model.get_by_id(session['user_id'])
+                user = self.customer_model.get_by_id(session['user_id'])
                 session['full_name'] = user.full_name or user.username
                 
                 return jsonify({
                     'status': True, 
                     'message': 'Cập nhật thông tin thành công', 
                     'user': {
+                        'id': user.user_id,
                         'full_name': user.full_name, 
                         'email': user.email, 
                         'phone_number': user.phone_number, 
                         'gender': user.gender, 
-                        'date_of_birth': user.date_of_birth, 
-                        'address': user.address
+                        'date_of_birth': user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '', 
+                        'address': user.address,
+                        'avatarUrl': f"/{user.avatar}" if user.avatar else None
                     }
                 })
             
@@ -842,4 +849,18 @@ class Controller():
                 
                 return jsonify({'status': True, 'code': 200, 'message': 'success'})
             
-        return jsonify({'status': False, 'code': 400, 'message': 'Thao tác thất bại. Vui lòng thử lại sau'})
+        # For GET request, return the user info
+        user_data = {
+            "id": user.user_id,
+            "email": user.email,
+            "name": user.full_name,
+            "role": user.role.value,
+            "phoneNumber": user.phone_number,
+            "address": user.address,
+            "gender": user.gender,
+            "dateOfBirth": user.date_of_birth.strftime('%Y-%m-%d') if user.date_of_birth else '',
+            "createdAt": user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else '',
+            "updatedAt": user.updated_at.strftime('%d/%m/%Y %H:%M') if user.updated_at else '',
+            "avatarUrl": f"/{user.avatar}" if user.avatar else None,
+        }
+        return jsonify({'status': True, 'code': 200, 'user': user_data})

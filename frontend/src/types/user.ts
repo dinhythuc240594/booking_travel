@@ -9,10 +9,13 @@ export interface User {
   phoneNumber?: string;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface UserProfile extends User {
   address?: string;
   dateOfBirth?: string;
   gender?: "male" | "female" | "other";
 }
+
+// export interface UserProfile extends User {
+//   address?: string;
+//   dateOfBirth?: string;
+//   gender?: "male" | "female" | "other";
+// }

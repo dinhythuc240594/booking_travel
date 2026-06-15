@@ -277,8 +277,8 @@ $(document).ready(function () {
     // Xem lý do từ chối
     $(document).on('click', '.btn-view-rejection', function () {
 
-        fetch(`/admin/api/rejected-article/${$(this).data('id')}`).then(response => response.json()).then(data => {
-            console.log(data);
+        fetch(`/admin/api/tour/article/${$(this).data('id')}/reject`).then(response => response.json()).then(jsondata => {
+            const data = jsondata.data;
             const title = data.title;
             const reason = data.rejection_reason;
             const rejectedBy = data.rejected_by;
@@ -590,7 +590,7 @@ function updatePageTitle(section) {
         'drafts': 'Bản nháp',
         'pending': 'Chờ duyệt',
         'published': 'Đã xuất bản',
-        'tour-tree': 'Sơ đồ Phân cấp Tour',
+        'tour-tree': 'Thư mục bài viết',
     };
     $('#pageTitle').text(titles[section] || 'Dashboard');
 }
@@ -1306,9 +1306,9 @@ async function viewArticle(articleId) {
                         ${article.status === 'rejected' ? `<span class="status-badge status-rejected">Đã từ chối</span>` : ''}
                         <h1>${escapeHtml(article.title || 'Không có tiêu đề')}</h1>
                         <div class="meta">
-                            <i class="fas fa-calendar"></i> Ngày tạo: ${article.created_at ? new Date(article.created_at + 'Z').toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : 'N/A'} 
+                            <i class="fas fa-calendar"></i> Ngày tạo: ${article.created_at || 'N/A'} 
                             ${article.updated_at && article.updated_at !== article.created_at ?
-                    ' | <i class="fas fa-edit"></i> Cập nhật: ' + new Date(article.updated_at + 'Z').toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' }) : ''}
+                    ' | <i class="fas fa-edit"></i> Cập nhật: ' + article.updated_at || 'N/A' : ''}
                         </div>
                         ${article.thumbnail ? `<img src="${escapeHtml(article.thumbnail)}" alt="${escapeHtml(article.title)}" onerror="this.style.display='none'">` : ''}
                         ${article.summary ? `<div class="summary"><strong>Tóm tắt:</strong> ${escapeHtml(article.summary)}</div>` : ''}
@@ -2009,7 +2009,6 @@ function renderTreeNode(node) {
                     <div class="d-flex align-items-center">
                         <i class="fas ${iconClass} folder-icon me-2 text-warning"></i>
                         <span class="fw-bold text-dark">${escapeHtml(node.group_name)}</span>
-                        <span class="badge ${folderTypeClass} rounded-pill ms-2 small" style="font-size: 10px;">${node.group_type}</span>
                     </div>
                     <span class="badge bg-secondary rounded-pill small">${node.tour_count} bài viết</span>
                 </div>

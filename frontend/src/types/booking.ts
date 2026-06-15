@@ -5,6 +5,7 @@ export interface Booking {
   tourId: string;
   tourTitle: string;
   tourImage: string;
+  tourSlug: string;
   userId: string;
   userName: string;
   departureDate: string;
@@ -14,4 +15,6 @@ export interface Booking {
   status: BookingStatus;
   paymentStatus: PaymentStatus;
   createdAt: string;
+  paymentMethod?: string;
+  checkOutDate?: string;
 }
