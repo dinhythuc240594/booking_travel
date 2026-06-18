@@ -26,6 +26,14 @@ const mapCategoryNameToId = (name: string): string => {
   return "culture"; // default fallback
 };
 
+const removeAccents = (str: string): string => {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+};
+
 export default function ToursListContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -141,8 +149,8 @@ export default function ToursListContent() {
         // Fallback to mock data matching search query
         const filteredMock = mockTours.filter((t) => {
           if (searchQuery.trim()) {
-            const term = searchQuery.toLowerCase();
-            return t.title.toLowerCase().includes(term) || t.location.toLowerCase().includes(term);
+            const term = removeAccents(searchQuery.toLowerCase());
+            return removeAccents(t.title.toLowerCase()).includes(term) || removeAccents(t.location.toLowerCase()).includes(term);
           }
           return true;
         });
@@ -175,9 +183,11 @@ export default function ToursListContent() {
   const filteredTours = tours.filter((tour) => {
     // 1. Lọc theo từ khóa tìm kiếm (tiêu đề hoặc địa điểm)
     if (searchQuery.trim()) {
-      const term = searchQuery.toLowerCase();
-      const inTitle = tour.title.toLowerCase().includes(term);
-      const inLocation = tour.location_name?.toLowerCase()?.includes(term) || tour.location?.toLowerCase()?.includes(term) || false;
+      const term = removeAccents(searchQuery.toLowerCase());
+      const inTitle = removeAccents(tour.title.toLowerCase()).includes(term);
+      const inLocation =
+        removeAccents((tour.location_name || "").toLowerCase()).includes(term) ||
+        removeAccents((tour.location || "").toLowerCase()).includes(term);
       if (!inTitle && !inLocation) return false;
     }
 

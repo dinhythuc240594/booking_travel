@@ -6,8 +6,17 @@ import { Search, MapPin, Calendar, Users, Plus, Minus, X, Loader2 } from "lucide
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const removeAccents = (str: string): string => {
+  return str
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+};
+
 interface LocationOption {
   name: string;
+  city: string;
   search_key: string;
 }
 
@@ -189,22 +198,34 @@ export default function TourSearch() {
                 </p>
                 <div className="flex flex-col gap-1 max-h-60 overflow-y-auto">
                   {!isFetchingLocations && locationsList
-                    .filter(dest => dest.name.toLowerCase().includes(destination.toLowerCase()))
+                    .filter(dest => {
+                      const q = removeAccents(destination.toLowerCase().trim());
+                      const name = removeAccents(dest.name.toLowerCase());
+                      const city = removeAccents((dest.city || "").toLowerCase());
+                      const searchKey = removeAccents((dest.search_key || "").toLowerCase());
+                      return name.includes(q) || city.includes(q) || searchKey.includes(q);
+                    })
                     .map((dest, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => {
-                          setDestination(dest.search_key);
+                          setDestination(dest.city || dest.name);
                           setIsDestDropdownOpen(false);
                         }}
                         className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors text-left cursor-pointer"
                       >
                         <MapPin className="w-4 h-4 text-zinc-400" />
-                        <span>{dest.name}</span>
+                        <span>{dest.city || dest.name}</span>
                       </button>
                     ))}
-                  {!isFetchingLocations && locationsList.filter(dest => dest.name.toLowerCase().includes(destination.toLowerCase())).length === 0 && (
+                  {!isFetchingLocations && locationsList.filter(dest => {
+                    const q = removeAccents(destination.toLowerCase().trim());
+                    const name = removeAccents(dest.name.toLowerCase());
+                    const city = removeAccents((dest.city || "").toLowerCase());
+                    const searchKey = removeAccents((dest.search_key || "").toLowerCase());
+                    return name.includes(q) || city.includes(q) || searchKey.includes(q);
+                  }).length === 0 && (
                     <div className="text-zinc-500 text-xs py-2 px-3">
                       Không tìm thấy gợi ý nào phù hợp.
                     </div>
