@@ -460,6 +460,7 @@ async function loadStatistics() {
             $('#apiRejected').text(stats.api_rejected);
             $('#apiPending').text(stats.api_pending);
             $('#pendingCount').text(stats.pending);
+            $('#rejectedCount').text(stats.rejected);
 
             // Update notification bell if elements exist
             const $notifCount = $('#notificationCount');

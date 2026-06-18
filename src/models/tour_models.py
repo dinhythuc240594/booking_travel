@@ -3,11 +3,10 @@ from sqlalchemy.orm import Session
 from sqlalchemy import desc, or_
 import database as db
 import datetime
-import utils
 import json
 from service.tour_admin_service import TourAdminService
 from service.tour_client_service import TourClientService
-
+from utils import CATEGORY_NAME_DICT
 
 class TourModel:
     """Model class managers Tours follow OOP"""
@@ -195,7 +194,7 @@ class TourModel:
             'is_featured': tour.is_featured if hasattr(tour, 'is_featured') else False,
             'is_hot': tour.is_hot if hasattr(tour, 'is_hot') else False,
             'is_deleted': tour.is_deleted if hasattr(tour, 'is_deleted') else False,
-            'category_name': tour.category_name,
+            'category_name': CATEGORY_NAME_DICT[tour.category_name] if tour.category_name else 'N/A',
             'location_id': tour.location_id,
             'price_per_adult': tour.price_per_adult,
             'price_per_child': tour.price_per_child,

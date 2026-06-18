@@ -109,6 +109,7 @@ class AdminController:
         published_tour = len(self.tour_model.get_all(status=TourStatus.PUBLISHED))
         pending_tour = len(self.tour_model.get_all(status=TourStatus.PENDING))
         draft_tour = len(self.tour_model.get_all(status=TourStatus.DRAFT))
+        rejected_tour = len(self.tour_model.get_all(status=TourStatus.REJECTED))
         
         # Tour chờ duyệt
         pending_list = self.tour_model.get_all(status=TourStatus.PENDING, limit=10)
@@ -126,6 +127,8 @@ class AdminController:
                              published_tours=published_tour,
                              pending_tours=pending_tour,
                              draft_tours=draft_tour,
+                             stat_pending=pending_tour,
+                             stat_rejected=rejected_tour,
                              pending_list=pending_list,
                              latest_tours=latest_tours,
                              user=user)
@@ -144,6 +147,7 @@ class AdminController:
         draft_tours = [t for t in my_tours if t.status == TourStatus.DRAFT]
         pending_tours = [t for t in my_tours if t.status == TourStatus.PENDING]
         published_tours = [t for t in my_tours if t.status == TourStatus.PUBLISHED]
+        rejected_tours = [t for t in my_tours if t.status == TourStatus.REJECTED]
         
         user = self.admin_model.get_by_id(user_id)
 
@@ -157,6 +161,7 @@ class AdminController:
                              stat_draft=len(draft_tours),
                              stat_pending=len(pending_tours),
                              stat_published=len(published_tours),
+                             stat_rejected=len(rejected_tours),
                              categories=CATEGORY_NAME,
                              locations=location_list,
                              user=user)
@@ -594,7 +599,10 @@ class AdminController:
                 'draft': data['draft_count'],
                 'tour_approved': data['tour_approved'].title if data['tour_approved'] else '',
                 'tour_update': data['tour_update'].title if data['tour_update'] else '',
-                'tour_newest': data['tour_newest'].title if data['tour_newest'] else ''
+                'tour_newest': data['tour_newest'].title if data['tour_newest'] else '',
+                'article_approved': data['tour_approved'].title if data['tour_approved'] else '',
+                'article_update': data['tour_update'].title if data['tour_update'] else '',
+                'article_newest': data['tour_newest'].title if data['tour_newest'] else ''
             }
         })
 

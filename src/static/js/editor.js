@@ -426,6 +426,7 @@ async function refreshEditorStats() {
         // Cập nhật badge menu trái
         $('#draftCount').text(result.data.draft);
         $('#pendingCount').text(result.data.pending);
+        $('#rejectedCount').text(result.data.rejected);
 
 
         $('#approvedNewsTitle').text(result.data.article_approved);
