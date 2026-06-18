@@ -35,17 +35,6 @@ class BookingService:
             invoker = DBTransactionInvoker()
             commands = []
 
-            # # Tạo danh sách các lệnh Bookings và Payment tương ứng
-            # if hotel:
-            #     hotel_cmd = CreateBookingCommand(
-            #         user_id=user_id, 
-            #         booking_type=BookingType.hotel, 
-            #         reference_id=hotel.hotel_id, 
-            #         total_price=float(hotel.price_per_night) * nights
-            #     )
-            #     commands.append(hotel_cmd)
-            #     commands.append(ProcessPaymentCommand(hotel_cmd, hotel_cmd.total_price, payment_method))
-
             if tour:
                 tour_cmd = CreateBookingCommand({
                     "user_id": data.get('user_id'), 
