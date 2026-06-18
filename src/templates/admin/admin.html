@@ -395,6 +395,8 @@
         $('#userModalLabel').html('<i class="fas fa-user-plus me-2"></i>Thêm người dùng mới');
         $('#userForm')[0].reset();
         $('#userId').val('');
+        $('#username').prop('disabled', false);
+        $('#email').prop('disabled', false);
         $('#passwordRequired').show();
         $('#passwordHint').hide();
         $('#password').prop('required', true);
@@ -412,7 +414,7 @@
                     $('#userModalLabel').html('<i class="fas fa-user-edit me-2"></i>Chỉnh sửa người dùng');
                     $('#userId').val(user.user_id);
                     $('#username').val(user.username).prop('disabled', true);
-                    $('#email').val(user.email);
+                    $('#email').val(user.email).prop('disabled', true);
                     $('#fullName').val(user.full_name || '');
                     $('#phone').val(user.phone_number || '');
                     $('#role').val(user.role);

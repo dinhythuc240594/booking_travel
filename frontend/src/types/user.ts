@@ -12,6 +12,7 @@ export interface User {
   address?: string;
   dateOfBirth?: string;
   gender?: "male" | "female" | "other";
+  username?: string;
 }
 
 // export interface UserProfile extends User {

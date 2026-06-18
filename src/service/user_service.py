@@ -47,6 +47,11 @@ class UserService:
             if not user:
                 return False
             
+            # Không cho phép cập nhật username và email
+            if isinstance(data_dict, dict):
+                data_dict.pop('username', None)
+                data_dict.pop('email', None)
+
             for key, value in data_dict.items():
                 if hasattr(user, key):
                     setattr(user, key, value)

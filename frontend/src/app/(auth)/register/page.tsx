@@ -28,6 +28,7 @@ function RegisterContent() {
   const searchParams = useSearchParams();
   const { login, isAuthenticated } = useAuthStore();
 
+  const [username, setUsername] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -55,8 +56,13 @@ function RegisterContent() {
     setError(null);
 
     // Kiểm tra đầu vào cơ bản
-    if (!name.trim() || !email.trim() || !phoneNumber.trim() || !password || !confirmPassword) {
+    if (!username.trim() || !name.trim() || !email.trim() || !phoneNumber.trim() || !password || !confirmPassword) {
       setError("Vui lòng điền đầy đủ tất cả các trường.");
+      return;
+    }
+
+    if (username.trim().length < 3) {
+      setError("Tên đăng nhập phải chứa ít nhất 3 ký tự.");
       return;
     }
 
@@ -93,6 +99,7 @@ function RegisterContent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          username: username,
           full_name: name,
           email: email,
           phone: phoneNumber,
@@ -173,6 +180,28 @@ function RegisterContent() {
 
         {/* Register Form */}
         <form onSubmit={handleRegister} className="space-y-4">
+          {/* Tên đăng nhập */}
+          <div>
+            <label htmlFor="username" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">
+              Tên đăng nhập
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-3 text-zinc-400">
+                <UserIcon className="w-4.5 h-4.5" />
+              </span>
+              <input
+                id="username"
+                type="text"
+                required
+                placeholder="username123"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={loading}
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-11 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-zinc-800 dark:text-zinc-100 transition-all disabled:opacity-50"
+              />
+            </div>
+          </div>
+
           {/* Họ và tên */}
           <div>
             <label htmlFor="name" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-1.5">

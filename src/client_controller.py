@@ -108,6 +108,7 @@ class Controller():
 
             user = {
                 "id": user.user_id,
+                "username": user.username,
                 "email": user.email,
                 "name": user.full_name,
                 "role": user.role.value,
@@ -153,7 +154,7 @@ class Controller():
         # Validation
         errors = []
         
-        username = data.get('email', '').strip()
+        username = data.get('username', data.get('email', '')).strip()
         email = data.get('email', '').strip()
         password = data.get('password', '')
         confirm_password = data.get('confirm_password', '')
@@ -213,6 +214,7 @@ class Controller():
                 if user:
                     user = {
                         "id": user.user_id,
+                        "username": user.username,
                         "email": user.email,
                         "name": user.full_name,
                         "role": user.role.value,
@@ -791,20 +793,13 @@ class Controller():
             elif action == 'update_info':
                 data = request.json if request.is_json else request.form
                 full_name = data.get('full_name', '').strip()
-                email = data.get('email', '').strip()
                 phone_number = data.get('phone_number', '').strip()
                 gender = data.get('gender', '').strip()
                 date_of_birth = data.get('date_of_birth', '').strip()
                 address = data.get('address', '').strip()
-                
-                if email and email != user.email:
-                    existing_user = self.customer_model.get_by_email(email)
-                    if existing_user and existing_user.user_id != user.user_id:
-                        return jsonify({'status': False, 'message': 'Email này đã được sử dụng'}), 400
 
                 self.customer_model.update(user.user_id, {
                     'full_name': full_name,
-                    'email': email,
                     'phone_number': phone_number,
                     'gender': gender,
                     'date_of_birth': date_of_birth,
@@ -819,6 +814,7 @@ class Controller():
                     'message': 'Cập nhật thông tin thành công', 
                     'user': {
                         'id': user.user_id,
+                        'username': user.username,
                         'full_name': user.full_name, 
                         'email': user.email, 
                         'phone_number': user.phone_number, 
@@ -852,6 +848,7 @@ class Controller():
         # For GET request, return the user info
         user_data = {
             "id": user.user_id,
+            "username": user.username,
             "email": user.email,
             "name": user.full_name,
             "role": user.role.value,

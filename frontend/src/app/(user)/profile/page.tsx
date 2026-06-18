@@ -423,19 +423,22 @@ export default function ProfilePage() {
                 <form onSubmit={handleSave} className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    {/* Full Name */}
+                    {/* Username */}
                     <div>
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2">
-                        Họ và tên
+                        Tên đăng nhập
                       </label>
-                      <input
-                        type="text"
-                        required
-                        disabled={!isEditing || saving}
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-850 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-zinc-800 dark:text-zinc-100 disabled:opacity-75 transition-all"
-                      />
+                      <div className="relative">
+                        <span className="absolute left-4 top-3.5 text-zinc-450">
+                          <UserIcon className="w-4 h-4" />
+                        </span>
+                        <input
+                          type="text"
+                          disabled
+                          value={user.username || ""}
+                          className="w-full bg-zinc-100 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-850 rounded-xl pl-11 pr-4 py-3 text-sm text-zinc-450 dark:text-zinc-500 cursor-not-allowed transition-all"
+                        />
+                      </div>
                     </div>
 
                     {/* Email */}
@@ -454,6 +457,21 @@ export default function ProfilePage() {
                           className="w-full bg-zinc-100 dark:bg-zinc-950/40 border border-zinc-200 dark:border-zinc-850 rounded-xl pl-11 pr-4 py-3 text-sm text-zinc-450 dark:text-zinc-500 cursor-not-allowed transition-all"
                         />
                       </div>
+                    </div>
+
+                    {/* Full Name */}
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2">
+                        Họ và tên
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        disabled={!isEditing || saving}
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-855 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-zinc-800 dark:text-zinc-100 disabled:opacity-75 transition-all"
+                      />
                     </div>
 
                     {/* Phone Number */}
@@ -508,7 +526,7 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Address */}
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="block text-[11px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2">
                         Địa chỉ cư trú
                       </label>
