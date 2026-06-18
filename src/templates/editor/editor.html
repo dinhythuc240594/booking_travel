@@ -329,6 +329,21 @@
                                 <small class="text-muted">Nhập số ngày đi của tour (ví dụ: 3)</small>
                             </div>
 
+                            <div class="mb-3">
+                                <label class="form-label">Ngày khởi hành</label>
+                                <div class="input-group mb-2">
+                                    <input type="date" class="form-control" id="edit_start_date_input">
+                                    <button class="btn btn-outline-secondary" type="button" id="editAddStartDateBtn">
+                                        <i class="fas fa-plus"></i> Thêm
+                                    </button>
+                                </div>
+                                <div id="editStartDatesList" class="d-flex flex-wrap gap-2 mb-2">
+                                    <!-- Dates will be listed here dynamically -->
+                                </div>
+                                <input type="hidden" id="editArticleStartDates" value="[]">
+                                <small class="text-muted">Chọn một hoặc nhiều ngày khởi hành cho tour</small>
+                            </div>
+
                             <!-- <div class="mb-3">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="editArticleIsHot">

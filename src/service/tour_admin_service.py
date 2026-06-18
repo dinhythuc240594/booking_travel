@@ -67,7 +67,8 @@ class TourAdminService:
             'category_name': data.get('category_name'),
             'status': data.get('status', TourStatus.DRAFT),
             'is_hot': data.get('is_hot', False),
-            'is_featured': data.get('is_featured', False)
+            'is_featured': data.get('is_featured', False),
+            'start_dates': data.get('start_dates')
         }
 
         command = CreateTourCommand(tour_data)
@@ -145,6 +146,7 @@ class TourAdminService:
             'is_hot': data.get('is_hot'),
             'is_featured': data.get('is_featured'),
             'category_name': data.get('category_name'),
+            'start_dates': data.get('start_dates'),
         }
         
         command = UpdateTourCommand(tour_id, update_data)

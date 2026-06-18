@@ -84,7 +84,11 @@ export default function DetailTour({ slug }: DetailTourProps) {
                 image_url: item.thumbnail || imagesList[0],
                 category: mapCategoryNameToId(item.category_name || "culture"),
                 maxGroupSize: item.maxGroupSize || 20,
-                startDates: ["2026-06-15", "2026-06-22", "2026-06-29"],
+                startDates: (Array.isArray(item.start_dates) && item.start_dates.length > 0)
+                  ? item.start_dates
+                  : (Array.isArray(item.startDates) && item.startDates.length > 0)
+                  ? item.startDates
+                  : ["2026-06-15", "2026-06-22", "2026-06-29"],
                 highlights: item.highlights || [
                   "Chuyến đi khám phá thắng cảnh nổi tiếng của địa phương.",
                   "Tìm hiểu văn hóa, lối sống và con người nơi đây.",

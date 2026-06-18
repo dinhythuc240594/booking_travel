@@ -558,15 +558,18 @@ class AdminController:
         
         # Đếm số lượng bài viết theo trạng thái
         pending_count = self.db_session.query(Tour).filter(
-            Tour.status == TourStatus.PENDING
+            Tour.status == TourStatus.PENDING,
+            Tour.is_deleted == False
         ).count() or 0
         
         approved_count = self.db_session.query(Tour).filter(
-            Tour.status == TourStatus.PUBLISHED
+            Tour.status == TourStatus.PUBLISHED,
+            Tour.is_deleted == False
         ).count() or 0
         
         rejected_count = self.db_session.query(Tour).filter(
-            Tour.status == TourStatus.REJECTED
+            Tour.status == TourStatus.REJECTED,
+            Tour.is_deleted == False
         ).count() or 0
         
         return jsonify({
@@ -617,7 +620,8 @@ class AdminController:
                 'title': tour.title,
                 'author': tour.author.username if tour.author else 'N/A',
                 'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
-                'category_name': CATEGORY_NAME_DICT[tour.category_name] if tour.category_name else 'N/A',
+                'category_name': tour.category_name or 'N/A',
+                'category_name_vi': CATEGORY_NAME_DICT.get(tour.category_name, tour.category_name) if tour.category_name else 'N/A',
                 'status': tour.status.value
             } for tour in tour]
         })
@@ -631,7 +635,8 @@ class AdminController:
             'data': [{
                 'tour_id': tour.tour_id,
                 'title': tour.title,
-                'category_name': CATEGORY_NAME_DICT[tour.category_name] if tour.category_name else 'N/A',
+                'category_name': tour.category_name or 'N/A',
+                'category_name_vi': CATEGORY_NAME_DICT.get(tour.category_name, tour.category_name) if tour.category_name else 'N/A',
                 'author': tour.author.username if tour.author else 'N/A',
                 'date': tour.published_at.strftime('%d/%m/%Y %H:%M') if tour.published_at else '',
                 'views': tour.view_count
@@ -672,6 +677,8 @@ class AdminController:
                 'title': tour.title,
                 'author': tour.author.username if tour.author else 'N/A',
                 'date': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
+                'category_name': tour.category_name or 'N/A',
+                'category_name_vi': CATEGORY_NAME_DICT.get(tour.category_name, tour.category_name) if tour.category_name else 'N/A',
                 'type': 'tour',
                 'rejection_reason': rejection_info.get('reason', ''),
                 'rejected_by': rejection_info.get('rejected_by', ''),
@@ -791,6 +798,14 @@ class AdminController:
         except (ValueError, TypeError):
             data_dict['duration_days'] = 1
 
+        import json
+        start_dates = data.get('start_dates')
+        if start_dates is not None:
+            if isinstance(start_dates, (list, tuple)):
+                data_dict['start_dates'] = json.dumps(start_dates)
+            else:
+                data_dict['start_dates'] = start_dates
+
         result = self.admin_model.create_tour(data_dict)
         tour_obj = self.tour_model.get_by_id(result['tour_id'])
         data = self.tour_model._tour_to_dict(tour_obj) if tour_obj else None
@@ -832,6 +847,14 @@ class AdminController:
                 data['duration_days'] = int(data['duration_days'] or '1')
             except (ValueError, TypeError):
                 data['duration_days'] = 1
+
+        import json
+        start_dates = data.get('start_dates')
+        if start_dates is not None:
+            if isinstance(start_dates, (list, tuple)):
+                data['start_dates'] = json.dumps(start_dates)
+            else:
+                data['start_dates'] = start_dates
 
         result = self.admin_model.edit_tour(tour_id, data)
         tour_obj = self.tour_model.get_by_id(tour_id, include_deleted=True)

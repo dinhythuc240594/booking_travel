@@ -294,6 +294,50 @@ $(document).ready(function () {
         });
     });
 
+    // Add start date for creation form
+    $('#addStartDateBtn').click(function () {
+        const dateVal = $('#start_date_input').val();
+        if (!dateVal) {
+            showToast('Cảnh báo', 'Vui lòng chọn ngày khởi hành!', 'warning');
+            return;
+        }
+        let dates = [];
+        try {
+            dates = JSON.parse($('#articleStartDates').val() || '[]');
+        } catch (e) {}
+        if (dates.includes(dateVal)) {
+            showToast('Cảnh báo', 'Ngày này đã có trong danh sách!', 'warning');
+            return;
+        }
+        dates.push(dateVal);
+        dates.sort();
+        $('#articleStartDates').val(JSON.stringify(dates));
+        renderStartDatesList('#startDatesList', '#articleStartDates', dates);
+        $('#start_date_input').val('');
+    });
+
+    // Add start date for edit form
+    $('#editAddStartDateBtn').click(function () {
+        const dateVal = $('#edit_start_date_input').val();
+        if (!dateVal) {
+            showToast('Cảnh báo', 'Vui lòng chọn ngày khởi hành!', 'warning');
+            return;
+        }
+        let dates = [];
+        try {
+            dates = JSON.parse($('#editArticleStartDates').val() || '[]');
+        } catch (e) {}
+        if (dates.includes(dateVal)) {
+            showToast('Cảnh báo', 'Ngày này đã có trong danh sách!', 'warning');
+            return;
+        }
+        dates.push(dateVal);
+        dates.sort();
+        $('#editArticleStartDates').val(JSON.stringify(dates));
+        renderStartDatesList('#editStartDatesList', '#editArticleStartDates', dates);
+        $('#edit_start_date_input').val('');
+    });
+
     // // Initialize tag autocomplete for all tag inputs
     // initTagAutocomplete('#articleTags', '#tagSuggestions');
     // initTagAutocomplete('#editArticleTags', '#editTagSuggestions');
@@ -619,9 +663,8 @@ async function loadMyArticles(page = 1, status = null, search = null) {
         const articles = (result.data || []).map(item => ({
             tour_id: item.tour_id,
             title: item.title,
-            // Ưu tiên tên danh mục lấy từ bảng categories (category_name / category_title...),
-            // fallback về slug hoặc chuỗi rỗng nếu không có
-            category_name: item.category_name || item.category_title || item.category || '',
+            // Ưu tiên tên danh mục tiếng Việt, fallback về slug hoặc chuỗi rỗng
+            category_name: item.category_name_vi || item.category_name || item.category_title || item.category || '',
             status: item.status, // ví dụ: 'draft' | 'pending' | 'published'
             visible: item.visible !== undefined ? item.visible : true,
             // Chuyển ngày về string hiển thị
@@ -702,7 +745,7 @@ async function fetchMyArticlesForSection(status, page, search, tableId, paginati
         const articles = (result.data || []).map(item => ({
             tour_id: item.tour_id,
             title: item.title,
-            category_name: item.category_name || (item.category && item.category.name) || '',
+            category_name: item.category_name_vi || item.category_name || (item.category && item.category.name) || '',
             status: item.status,
             visible: item.visible !== undefined ? item.visible : true,
             date: item.created_at || item.published_at || ''
@@ -977,7 +1020,8 @@ async function saveDraft() {
                 is_featured: isFeatured,
                 // tags: tags,
                 status: 'draft',
-                images: JSON.parse($('#articleGalleryUrls').val() || '[]')
+                images: JSON.parse($('#articleGalleryUrls').val() || '[]'),
+                start_dates: JSON.parse($('#articleStartDates').val() || '[]')
             })
         });
 
@@ -998,6 +1042,8 @@ async function saveDraft() {
             $('#articleIsHot').prop('checked', false);
             $('#articleIsFeatured').prop('checked', false);
             $('#articleDurationDays').val('1');
+            $('#articleStartDates').val('[]');
+            $('#startDatesList').empty();
 
             // Đồng bộ lại thống kê từ API
             refreshEditorStats(false);
@@ -1134,7 +1180,8 @@ async function submitArticle() {
                 is_featured: isFeatured,
                 // tags: tags,
                 status: 'pending',
-                images: JSON.parse($('#articleGalleryUrls').val() || '[]')
+                images: JSON.parse($('#articleGalleryUrls').val() || '[]'),
+                start_dates: JSON.parse($('#articleStartDates').val() || '[]')
             })
         });
 
@@ -1155,6 +1202,8 @@ async function submitArticle() {
             $('#articleIsHot').prop('checked', false);
             $('#articleIsFeatured').prop('checked', false);
             $('#articleDurationDays').val('1');
+            $('#articleStartDates').val('[]');
+            $('#startDatesList').empty();
 
             // Đồng bộ lại thống kê từ API
             refreshEditorStats(false);
@@ -1366,6 +1415,10 @@ async function editArticle(articleId) {
             $('#editArticleSlug').val(article.slug);
             // $('#editArticleTags').val(article.tags || '');
 
+            const startDates = article.start_dates || [];
+            $('#editArticleStartDates').val(JSON.stringify(startDates));
+            renderStartDatesList('#editStartDatesList', '#editArticleStartDates', startDates);
+
             const galleryUrls = article.images || [];
             $('#editArticleGalleryUrls').val(JSON.stringify(galleryUrls));
             renderGalleryPreview('#editGalleryPreview', '#editArticleGalleryUrls', galleryUrls);
@@ -1450,7 +1503,8 @@ async function saveEdit(newStatus = null) {
             price_per_child: price_per_child,
             slug: slug,
             duration_days: duration_days,
-            images: JSON.parse($('#editArticleGalleryUrls').val() || '[]')
+            images: JSON.parse($('#editArticleGalleryUrls').val() || '[]'),
+            start_dates: JSON.parse($('#editArticleStartDates').val() || '[]')
             // tags: tags
         };
         if (newStatus) {
@@ -1470,6 +1524,7 @@ async function saveEdit(newStatus = null) {
         if (result.success) {
             showToast('Thành công', 'Bài viết đã được cập nhật', 'success');
             bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+            refreshEditorStats(false);
             loadMyArticles(1, status, null);
         } else {
             showToast('Lỗi', result.error || 'Không thể cập nhật bài viết', 'warning');
@@ -2040,3 +2095,38 @@ window.removeGalleryImage = function (containerId, hiddenInputId, index) {
     input.val(JSON.stringify(urls));
     renderGalleryPreview(containerId, hiddenInputId, urls);
 };
+
+// Render start dates list inside a container
+function renderStartDatesList(containerSelector, hiddenInputSelector, dates) {
+    const $container = $(containerSelector);
+    $container.empty();
+    
+    dates.forEach(function (dateStr) {
+        let formattedDate = dateStr;
+        try {
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+        } catch(e) {}
+
+        const $badge = $(`
+            <span class="badge bg-primary d-flex align-items-center gap-2 px-3 py-2" style="font-size: 0.9rem;">
+                ${formattedDate}
+                <button type="button" class="btn-close btn-close-white" style="font-size: 0.6rem; padding: 0;" aria-label="Delete"></button>
+            </span>
+        `);
+
+        $badge.find('button').click(function () {
+            let currentDates = [];
+            try {
+                currentDates = JSON.parse($(hiddenInputSelector).val() || '[]');
+            } catch (e) {}
+            currentDates = currentDates.filter(d => d !== dateStr);
+            $(hiddenInputSelector).val(JSON.stringify(currentDates));
+            renderStartDatesList(containerSelector, hiddenInputSelector, currentDates);
+        });
+
+        $container.append($badge);
+    });
+}

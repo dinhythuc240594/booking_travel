@@ -577,6 +577,7 @@ class Tour(Base):
 
     thumbnail = Column(String(255), nullable=True)
     images = Column(Text, nullable=True)  # JSON Array lưu ảnh
+    start_dates = Column(Text, nullable=True)  # JSON Array lưu ngày đi (ví dụ: ["2026-06-15", "2026-06-20"])
     is_published = Column(Boolean, default=False)
     is_hot = Column(Boolean, default=False)
     is_featured = Column(Boolean, default=False)
@@ -600,9 +601,9 @@ class TourRejection(Base):
     __tablename__ = 'tour_rejections'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    tour_id = Column(Integer, ForeignKey('tour.tour_id'), nullable=False)
-    rejected_by = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    reason = Column(Text, nullable=False)
+    tour_id = Column(Integer, ForeignKey('tour.tour_id', ondelete="CASCADE"), nullable=False)
+    rejected_by = Column(Integer, ForeignKey('users.user_id', ondelete="SET NULL"), nullable=True)
+    reason = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.now())
     
     # Relationships
@@ -611,53 +612,48 @@ class TourRejection(Base):
 
 
 class TourComment(Base):
-    """Bảng bình luận cho tour"""
+    """table save comment of tour"""
     __tablename__ = 'tour_comments'
     
-    comment_id = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     tour_id = Column(Integer, ForeignKey('tour.tour_id', ondelete="CASCADE"), nullable=False)
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
-    parent_id = Column(Integer, ForeignKey('tour_comments.comment_id', ondelete="CASCADE"), nullable=True)
-    
     content = Column(Text, nullable=False)
-    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.now())
+    updated_at = Column(DateTime, default=datetime.datetime.now(), onupdate=datetime.datetime.now())
     
-    created_at = Column(DateTime, default=datetime.datetime.now)
-    updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
-    
+    # Relationships
     tour = relationship("Tour", back_populates="comments")
-    parent = relationship("TourComment", remote_side=[comment_id], backref="replies")
+    user = relationship("User")
 
 
 class Savedtour(Base):
-    """table saved tour of user"""
-    __tablename__ = 'saved_tour'
-
+    __tablename__ = 'saved_tours'
+    
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    tour_id = Column(Integer, ForeignKey('tour.tour_id'), nullable=True)
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
+    tour_id = Column(Integer, ForeignKey('tour.tour_id', ondelete="CASCADE"), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.now())
-
+    
     # Relationships
     user = relationship("User", back_populates="saved_tour")
-    tour = relationship("Tour", foreign_keys=[tour_id])
+    tour = relationship("Tour")
 
 
 class Viewedtour(Base):
-    """table viewed tour of user"""
-    __tablename__ = 'viewed_tour'
+    __tablename__ = 'viewed_tours'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey('users.user_id'), nullable=False)
-    tour_id = Column(Integer, ForeignKey('tour.tour_id'), nullable=True)
-    viewed_at = Column(DateTime, default=datetime.datetime.now())
-
+    user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
+    tour_id = Column(Integer, ForeignKey('tour.tour_id', ondelete="CASCADE"), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.now())
+    
     # Relationships
     user = relationship("User", back_populates="viewed_tour")
-    tour = relationship("Tour", foreign_keys=[tour_id])
+    tour = relationship("Tour")
 
 
-# Database connection
+# initialize engine local
 _engine = None
 _SessionLocal = None
 
@@ -689,29 +685,3 @@ def get_session():
 def init_db():
     engine = create_engine_instance()
     Base.metadata.create_all(engine)
-    
-    # Check if discount_price column exists in tour table, and add it if missing
-    from sqlalchemy import inspect, text
-    inspector = inspect(engine)
-    try:
-        columns = [col['name'] for col in inspector.get_columns('tour')]
-        if 'discount_price' not in columns:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE tour ADD COLUMN discount_price DECIMAL(15, 2) NULL"))
-                conn.commit()
-    except Exception as e:
-        print(f"Error checking/adding discount_price column: {e}")
-
-    # Alter column precisions to DECIMAL(15, 2) to prevent out of range errors for VND currency
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("ALTER TABLE bookings MODIFY COLUMN total_price DECIMAL(15, 2) NOT NULL"))
-            conn.execute(text("ALTER TABLE payments MODIFY COLUMN amount DECIMAL(15, 2) NOT NULL"))
-            conn.execute(text("ALTER TABLE tour MODIFY COLUMN price_per_adult DECIMAL(15, 2) NOT NULL DEFAULT 0.0"))
-            conn.execute(text("ALTER TABLE tour MODIFY COLUMN price_per_child DECIMAL(15, 2) NOT NULL DEFAULT 0.0"))
-            conn.execute(text("ALTER TABLE tour MODIFY COLUMN discount_price DECIMAL(15, 2) NULL"))
-            conn.execute(text("ALTER TABLE hotels MODIFY COLUMN price_per_night DECIMAL(15, 2) NOT NULL"))
-            conn.commit()
-            print("Successfully updated database columns to DECIMAL(15, 2)")
-    except Exception as e:
-        print(f"Error updating column precisions to DECIMAL(15, 2): {e}")

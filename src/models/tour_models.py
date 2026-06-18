@@ -127,7 +127,8 @@ class TourModel:
                 db.Tour.title.ilike(like_pattern),
                 db.Tour.summary.ilike(like_pattern),
                 db.Location.name.ilike(like_pattern),
-                db.Location.city.ilike(like_pattern)
+                db.Location.city.ilike(like_pattern),
+                db.Location.search_key.ilike(like_pattern)
             )
         ).order_by(desc(db.Tour.created_at))
         if limit:
@@ -150,6 +151,14 @@ class TourModel:
         if tour.images:
             try:
                 images_list = json.loads(tour.images)
+            except:
+                pass
+
+        # Parse start_dates JSON string nếu có
+        start_dates_list = []
+        if getattr(tour, 'start_dates', None):
+            try:
+                start_dates_list = json.loads(tour.start_dates)
             except:
                 pass
 
@@ -194,12 +203,15 @@ class TourModel:
             'is_featured': tour.is_featured if hasattr(tour, 'is_featured') else False,
             'is_hot': tour.is_hot if hasattr(tour, 'is_hot') else False,
             'is_deleted': tour.is_deleted if hasattr(tour, 'is_deleted') else False,
-            'category_name': CATEGORY_NAME_DICT[tour.category_name] if tour.category_name else 'N/A',
+            'category_name': tour.category_name,
+            'category_name_vi': CATEGORY_NAME_DICT.get(tour.category_name, tour.category_name) if tour.category_name else 'N/A',
             'location_id': tour.location_id,
             'price_per_adult': tour.price_per_adult,
             'price_per_child': tour.price_per_child,
             'duration_days': tour.duration_days,
             'images': images_list,
+            'start_dates': start_dates_list,
+            'startDates': start_dates_list,
             'total_price': total_price,
         }
 

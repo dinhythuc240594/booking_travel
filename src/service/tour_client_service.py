@@ -92,39 +92,56 @@ class TourClientService:
         session = get_session()
         try:
             total = session.query(Tour).filter(
-                Tour.author_id == user_id
+                Tour.author_id == user_id,
+                Tour.is_deleted == False
             ).count() or 0
             
             pending_count = session.query(Tour).filter(
-                Tour.author_id == user_id, Tour.status == TourStatus.PENDING
+                Tour.author_id == user_id,
+                Tour.status == TourStatus.PENDING,
+                Tour.is_deleted == False
             ).count() or 0
             
             approved_count = session.query(Tour).filter(
-                Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
+                Tour.author_id == user_id,
+                Tour.status == TourStatus.PUBLISHED,
+                Tour.is_deleted == False
             ).count() or 0
             
             published_count = session.query(Tour).filter(
-                Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
+                Tour.author_id == user_id,
+                Tour.status == TourStatus.PUBLISHED,
+                Tour.is_deleted == False
             ).count() or 0
             
             rejected_count = session.query(Tour).filter(
-                Tour.author_id == user_id, Tour.status == TourStatus.REJECTED
+                Tour.author_id == user_id,
+                Tour.status == TourStatus.REJECTED,
+                Tour.is_deleted == False
             ).count() or 0
             
             draft_count = session.query(Tour).filter(
-                Tour.author_id == user_id, Tour.status == TourStatus.DRAFT
+                Tour.author_id == user_id,
+                Tour.status == TourStatus.DRAFT,
+                Tour.is_deleted == False
             ).count() or 0
 
             tour_approved = session.query(Tour).filter(
-                Tour.author_id == user_id, Tour.status == TourStatus.PUBLISHED
+                Tour.author_id == user_id,
+                Tour.status == TourStatus.PUBLISHED,
+                Tour.is_deleted == False
             ).order_by(Tour.published_at.desc()).first()
 
             tour_update = session.query(Tour).filter(
-                Tour.author_id == user_id, Tour.status == TourStatus.DRAFT, Tour.updated_at > Tour.created_at
+                Tour.author_id == user_id,
+                Tour.status == TourStatus.DRAFT,
+                Tour.updated_at > Tour.created_at,
+                Tour.is_deleted == False
             ).order_by(Tour.created_at.desc()).first()
 
             tour_newest = session.query(Tour).filter(
-                Tour.author_id == user_id
+                Tour.author_id == user_id,
+                Tour.is_deleted == False
             ).order_by(Tour.created_at.desc()).first()
 
             return {
