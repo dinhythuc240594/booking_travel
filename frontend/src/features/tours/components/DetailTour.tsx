@@ -58,13 +58,20 @@ export default function DetailTour({ slug }: DetailTourProps) {
         if (isMounted) {
           if (data && data.tour) {
             const apiTour = data.tour;
-
             const normalizeTour = (item: any): Tour => {
               const durationDays = item.duration_days || 1;
               const durationStr = `${durationDays} ngày ${Math.max(0, durationDays - 1)} đêm`;
-              let imagesList = [item.thumbnail || item.featuredImage || "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop&q=80"];
-              if (Array.isArray(item.images) && item.images.length > 0) {
-                imagesList = item.images;
+              let imagesList: string[] = [];
+              if (Array.isArray(item.images)) {
+                imagesList = item.images.filter((img: any) => typeof img === "string" && img.trim() !== "");
+              }
+              if (imagesList.length === 0) {
+                const fallbackImg = item.thumbnail || item.featuredImage;
+                if (fallbackImg) {
+                  imagesList = [fallbackImg];
+                } else {
+                  imagesList = ["https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop&q=80"];
+                }
               }
               return {
                 id: String(item.tour_id),

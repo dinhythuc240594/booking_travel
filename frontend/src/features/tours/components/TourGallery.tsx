@@ -20,19 +20,27 @@ export default function TourGallery({ images, title }: TourGalleryProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Đảm bảo có đủ 5 ảnh để tạo grid Airbnb đẹp mắt bằng cách bù ảnh phong cảnh fallback
+  // Check if we have custom images (not the default Unsplash placeholder or empty)
+  const isDefaultImage = (url: string) => {
+    return !url || url.includes("photo-1500530855697-b586d89ba3ee");
+  };
+
+  const hasCustomImages = images.length > 0 && !images.every(isDefaultImage);
+
   const rawImages = [...images];
-  let fallbackIdx = 0;
-  while (rawImages.length < 5) {
-    rawImages.push(fallbackImages[fallbackIdx % fallbackImages.length]);
-    fallbackIdx++;
+  if (!hasCustomImages) {
+    let fallbackIdx = 0;
+    while (rawImages.length < 5) {
+      rawImages.push(fallbackImages[fallbackIdx % fallbackImages.length]);
+      fallbackIdx++;
+    }
   }
 
   const displayImages = rawImages.map(img => {
     if (!img) return "";
     if (img.startsWith("http")) return img;
     return (process.env.NEXT_PUBLIC_BASE_URL || "") + (img.startsWith("/") ? img : "/" + img);
-  });
+  }).filter(img => img !== "");
 
   const openLightbox = (index: number) => {
     setCurrentIndex(index);
@@ -51,9 +59,142 @@ export default function TourGallery({ images, title }: TourGalleryProps) {
     setCurrentIndex((prev) => (prev === displayImages.length - 1 ? 0 : prev + 1));
   };
 
-  return (
-    <div className="relative font-sans select-none">
-      {/* LƯỚI ẢNH AIRBNB-STYLE */}
+  const renderGrid = () => {
+    const len = displayImages.length;
+    if (len === 0) return null;
+
+    if (len === 1) {
+      return (
+        <div className="grid grid-cols-1 rounded-3xl overflow-hidden aspect-[2/1] min-h-[300px] md:min-h-[400px]">
+          <div
+            onClick={() => openLightbox(0)}
+            className="relative cursor-pointer overflow-hidden group bg-zinc-100 dark:bg-zinc-800"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={displayImages[0]}
+              alt={`${title} - 1`}
+              className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </div>
+      );
+    }
+
+    if (len === 2) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 rounded-3xl overflow-hidden aspect-[2/1] min-h-[300px] md:min-h-[400px]">
+          {displayImages.map((img, i) => (
+            <div
+              key={i}
+              onClick={() => openLightbox(i)}
+              className="relative cursor-pointer overflow-hidden group bg-zinc-100 dark:bg-zinc-800"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={img}
+                alt={`${title} - ${i + 1}`}
+                className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (len === 3) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3 rounded-3xl overflow-hidden aspect-[2/1] min-h-[300px] md:min-h-[400px]">
+          <div
+            onClick={() => openLightbox(0)}
+            className="md:col-span-2 md:row-span-2 relative cursor-pointer overflow-hidden group bg-zinc-100 dark:bg-zinc-800"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={displayImages[0]}
+              alt={`${title} - 1`}
+              className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          {displayImages.slice(1, 3).map((img, i) => (
+            <div
+              key={i}
+              onClick={() => openLightbox(i + 1)}
+              className="md:col-span-2 md:row-span-1 relative cursor-pointer overflow-hidden group bg-zinc-100 dark:bg-zinc-800"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={img}
+                alt={`${title} - ${i + 2}`}
+                className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+              />
+              <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (len === 4) {
+      return (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3 rounded-3xl overflow-hidden aspect-[2/1] min-h-[300px] md:min-h-[400px]">
+          <div
+            onClick={() => openLightbox(0)}
+            className="md:col-span-2 md:row-span-2 relative cursor-pointer overflow-hidden group bg-zinc-100 dark:bg-zinc-800"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={displayImages[0]}
+              alt={`${title} - 1`}
+              className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <div
+            onClick={() => openLightbox(1)}
+            className="relative cursor-pointer overflow-hidden group bg-zinc-100 dark:bg-zinc-800"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={displayImages[1]}
+              alt={`${title} - 2`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <div
+            onClick={() => openLightbox(2)}
+            className="relative cursor-pointer overflow-hidden group bg-zinc-100 dark:bg-zinc-800"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={displayImages[2]}
+              alt={`${title} - 3`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+          <div
+            onClick={() => openLightbox(3)}
+            className="md:col-span-2 relative cursor-pointer overflow-hidden group bg-zinc-100 dark:bg-zinc-800"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={displayImages[3]}
+              alt={`${title} - 4`}
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </div>
+        </div>
+      );
+    }
+
+    // len >= 5
+    return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2 md:gap-3 rounded-3xl overflow-hidden aspect-[2/1] min-h-[300px] md:min-h-[400px]">
         {/* Ảnh lớn bên trái */}
         <div
@@ -85,8 +226,16 @@ export default function TourGallery({ images, title }: TourGalleryProps) {
             <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
         ))}
+      </div>
+    );
+  };
 
-        {/* Nút Xem tất cả ảnh */}
+  return (
+    <div className="relative font-sans select-none">
+      {renderGrid()}
+
+      {/* Nút Xem tất cả ảnh */}
+      {displayImages.length > 1 && (
         <button
           onClick={() => openLightbox(0)}
           className="absolute bottom-4 right-4 flex items-center gap-2 px-4 py-2.5 bg-white/90 dark:bg-zinc-900/90 hover:bg-white dark:hover:bg-zinc-900 text-zinc-800 dark:text-zinc-100 rounded-xl shadow-md border border-zinc-200/50 dark:border-zinc-800/50 text-xs font-bold transition-all hover:scale-102 cursor-pointer"
@@ -94,10 +243,10 @@ export default function TourGallery({ images, title }: TourGalleryProps) {
           <ImageIcon className="w-4 h-4 text-cyan-500" />
           Xem tất cả hình ảnh
         </button>
-      </div>
+      )}
 
       {/* LIGHTBOX MODAL */}
-      {isOpen && (
+      {isOpen && displayImages.length > 0 && (
         <div className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center animate-fade-in">
           {/* Nút đóng */}
           <button
@@ -142,7 +291,7 @@ export default function TourGallery({ images, title }: TourGalleryProps) {
           </button>
 
           {/* Carousel thumbnails ở dưới cùng */}
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center space-x-2 px-4 max-w-xl mx-auto">
+          <div className="absolute bottom-6 left-0 right-0 flex justify-center space-x-2 px-4 max-w-xl mx-auto overflow-x-auto py-2">
             {displayImages.map((img, idx) => (
               <div
                 key={idx}

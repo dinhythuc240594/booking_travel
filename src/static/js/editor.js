@@ -1244,25 +1244,131 @@ async function viewArticle(articleId) {
             const article = result.data;
 
             // Prepare images
-            const images = Array.isArray(article.images) && article.images.length > 0
-                ? article.images
-                : [article.thumbnail || 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop&q=80'];
-
-            const fallbackImages = [
-                "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80",
-                "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop&q=80"
-            ];
-
-            let displayImages = [...images];
-            let fbIdx = 0;
-            while (displayImages.length < 5) {
-                displayImages.push(fallbackImages[fbIdx % fallbackImages.length]);
-                fbIdx++;
+            let images = [];
+            if (Array.isArray(article.images)) {
+                images = article.images.filter(img => typeof img === 'string' && img.trim() !== '');
+            }
+            if (images.length === 0) {
+                const fallbackImg = article.thumbnail;
+                if (fallbackImg) {
+                    images = [fallbackImg];
+                } else {
+                    images = ['https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop&q=80'];
+                }
             }
 
+            const isDefaultImage = (url) => {
+                return !url || url.includes("photo-1500530855697-b586d89ba3ee");
+            };
+
+            const hasCustomImages = images.length > 0 && !images.every(isDefaultImage);
+
+            let displayImages = [...images];
+            if (!hasCustomImages) {
+                const fallbackImages = [
+                    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80",
+                    "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop&q=80"
+                ];
+
+                let fbIdx = 0;
+                while (displayImages.length < 5) {
+                    displayImages.push(fallbackImages[fbIdx % fallbackImages.length]);
+                    fbIdx++;
+                }
+            }
+
+            displayImages = displayImages.filter(img => img !== "");
             const displayImagesJson = JSON.stringify(displayImages);
+
+            // Generate gallery HTML dynamically based on displayImages count
+            const len = displayImages.length;
+            let galleryHtml = '';
+            
+            if (len === 1) {
+                galleryHtml = `
+                    <div class="gallery-grid" style="grid-template-columns: 1fr;">
+                        <div class="gallery-item gallery-large" onclick="openLightbox(0)">
+                            <img src="${escapeHtml(displayImages[0])}" alt="Image 1">
+                        </div>
+                    </div>
+                `;
+            } else if (len === 2) {
+                galleryHtml = `
+                    <div class="gallery-grid" style="grid-template-columns: 1fr 1fr;">
+                        <div class="gallery-item" onclick="openLightbox(0)">
+                            <img src="${escapeHtml(displayImages[0])}" alt="Image 1">
+                        </div>
+                        <div class="gallery-item" onclick="openLightbox(1)">
+                            <img src="${escapeHtml(displayImages[1])}" alt="Image 2">
+                        </div>
+                        <button class="gallery-btn-all" onclick="openLightbox(0)">
+                            <i class="fas fa-images text-cyan"></i> Xem tất cả hình ảnh
+                        </button>
+                    </div>
+                `;
+            } else if (len === 3) {
+                galleryHtml = `
+                    <div class="gallery-grid">
+                        <div class="gallery-item gallery-large" onclick="openLightbox(0)">
+                            <img src="${escapeHtml(displayImages[0])}" alt="Image 1">
+                        </div>
+                        <div class="gallery-item" onclick="openLightbox(1)" style="grid-column: span 2;">
+                            <img src="${escapeHtml(displayImages[1])}" alt="Image 2">
+                        </div>
+                        <div class="gallery-item" onclick="openLightbox(2)" style="grid-column: span 2;">
+                            <img src="${escapeHtml(displayImages[2])}" alt="Image 3">
+                        </div>
+                        <button class="gallery-btn-all" onclick="openLightbox(0)">
+                            <i class="fas fa-images text-cyan"></i> Xem tất cả hình ảnh
+                        </button>
+                    </div>
+                `;
+            } else if (len === 4) {
+                galleryHtml = `
+                    <div class="gallery-grid">
+                        <div class="gallery-item gallery-large" onclick="openLightbox(0)">
+                            <img src="${escapeHtml(displayImages[0])}" alt="Image 1">
+                        </div>
+                        <div class="gallery-item" onclick="openLightbox(1)">
+                            <img src="${escapeHtml(displayImages[1])}" alt="Image 2">
+                        </div>
+                        <div class="gallery-item" onclick="openLightbox(2)">
+                            <img src="${escapeHtml(displayImages[2])}" alt="Image 3">
+                        </div>
+                        <div class="gallery-item" onclick="openLightbox(3)" style="grid-column: span 2;">
+                            <img src="${escapeHtml(displayImages[3])}" alt="Image 4">
+                        </div>
+                        <button class="gallery-btn-all" onclick="openLightbox(0)">
+                            <i class="fas fa-images text-cyan"></i> Xem tất cả hình ảnh
+                        </button>
+                    </div>
+                `;
+            } else if (len >= 5) {
+                galleryHtml = `
+                    <div class="gallery-grid">
+                        <div class="gallery-item gallery-large" onclick="openLightbox(0)">
+                            <img src="${escapeHtml(displayImages[0])}" alt="Image 1">
+                        </div>
+                        <div class="gallery-item" onclick="openLightbox(1)">
+                            <img src="${escapeHtml(displayImages[1])}" alt="Image 2">
+                        </div>
+                        <div class="gallery-item" onclick="openLightbox(2)">
+                            <img src="${escapeHtml(displayImages[2])}" alt="Image 3">
+                        </div>
+                        <div class="gallery-item" onclick="openLightbox(3)">
+                            <img src="${escapeHtml(displayImages[3])}" alt="Image 4">
+                        </div>
+                        <div class="gallery-item" onclick="openLightbox(4)">
+                            <img src="${escapeHtml(displayImages[4])}" alt="Image 5">
+                        </div>
+                        <button class="gallery-btn-all" onclick="openLightbox(0)">
+                            <i class="fas fa-images text-cyan"></i> Xem tất cả hình ảnh
+                        </button>
+                    </div>
+                `;
+            }
 
             // Prepare start dates
             const startDates = Array.isArray(article.start_dates) && article.start_dates.length > 0
@@ -1863,26 +1969,7 @@ async function viewArticle(articleId) {
                         </div>
 
                         <!-- Airbnb Gallery -->
-                        <div class="gallery-grid">
-                            <div class="gallery-item gallery-large" onclick="openLightbox(0)">
-                                <img src="${escapeHtml(displayImages[0])}" alt="Image 1">
-                            </div>
-                            <div class="gallery-item" onclick="openLightbox(1)">
-                                <img src="${escapeHtml(displayImages[1])}" alt="Image 2">
-                            </div>
-                            <div class="gallery-item" onclick="openLightbox(2)">
-                                <img src="${escapeHtml(displayImages[2])}" alt="Image 3">
-                            </div>
-                            <div class="gallery-item" onclick="openLightbox(3)">
-                                <img src="${escapeHtml(displayImages[3])}" alt="Image 4">
-                            </div>
-                            <div class="gallery-item" onclick="openLightbox(4)">
-                                <img src="${escapeHtml(displayImages[4])}" alt="Image 5">
-                            </div>
-                            <button class="gallery-btn-all" onclick="openLightbox(0)">
-                                <i class="fas fa-images text-cyan"></i> Xem tất cả hình ảnh
-                            </button>
-                        </div>
+                        ${galleryHtml}
 
                         <!-- Split columns -->
                         <div class="main-layout">
