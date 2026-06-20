@@ -96,6 +96,13 @@ class Controller():
         user = self.customer_model.authenticate(email, password)
         
         if user and user.is_active and user.role == UserRole.CUSTOMER:
+            # Clear previous customer session keys to reset cookie and session data
+            session.pop('customer_user_id', None)
+            session.pop('customer_username', None)
+            session.pop('customer_full_name', None)
+            session.pop('customer_role', None)
+            session.pop('customer_avatar', None)
+
             session['customer_user_id'] = user.user_id
             session['customer_username'] = user.username
             session['customer_full_name'] = user.full_name or user.username
@@ -768,11 +775,11 @@ class Controller():
                     filepath = os.path.join(upload_folder, filename)
                     file.save(filepath)
                     
-                    # Xóa avatar cũ nếu có
+                    # Xóa avatar cũ nếu có (chỉ xóa nếu đường dẫn khác với file mới)
                     if user.avatar:
                         old_path = user.avatar.lstrip('/')
                         old_path = os.path.join('src', old_path) if not old_path.startswith('src') else old_path
-                        if os.path.exists(old_path):
+                        if os.path.abspath(old_path) != os.path.abspath(filepath) and os.path.exists(old_path):
                             try:
                                 os.remove(old_path)
                             except:
@@ -780,15 +787,13 @@ class Controller():
                     
                     # Lưu đường dẫn avatar (relative to static folder)
                     avatar_url = f"static/uploads/avatars/{filename}"
-                    user.avatar = avatar_url
-                    self.db_session.commit()
+                    self.customer_model.update(user.user_id, {'avatar': avatar_url})
                     
                     # Cập nhật session
                     session['customer_avatar'] = avatar_url
-                    
                     return jsonify({'status': True, 'code': 200, 'message': 'Cập nhật avatar thành công', 'avatar_url': f'/{avatar_url}'})
                 else:
-                    return jsonify({'status': False, 'code': 400, 'message': 'File không hợp lệ. Chỉ chấp nhận: png, jpg, jpeg, gif, webp'})
+                    return jsonify({'status': False, 'code': 400, 'message': 'File không hợp lệ. Chỉ chấp nhận: png, jpg, jpeg, gif, webp'}), 400
             
             elif action == 'update_info':
                 data = request.json if request.is_json else request.form

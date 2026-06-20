@@ -73,6 +73,13 @@ class AdminController:
             user = self.admin_model.authenticate(username, password)
             
             if user and user.is_active and user.role in [UserRole.ADMIN, UserRole.STAFF]:
+                # Clear previous admin session keys to reset cookie and session data
+                session.pop('admin_user_id', None)
+                session.pop('admin_username', None)
+                session.pop('admin_role', None)
+                session.pop('admin_avatar', None)
+                session.pop('admin_full_name', None)
+
                 # Lưu session đăng nhập
                 session['admin_user_id'] = user.user_id
                 session['admin_username'] = user.username
@@ -1024,11 +1031,11 @@ class AdminController:
                     filepath = os.path.join(upload_folder, filename)
                     file.save(filepath)
                     
-                    # Xóa avatar cũ nếu có
+                    # Xóa avatar cũ nếu có (chỉ xóa nếu đường dẫn khác với file mới)
                     if user.avatar:
                         old_path = user.avatar.lstrip('/')
                         old_path = os.path.join('src', old_path) if not old_path.startswith('src') else old_path
-                        if os.path.exists(old_path):
+                        if os.path.abspath(old_path) != os.path.abspath(filepath) and os.path.exists(old_path):
                             try:
                                 os.remove(old_path)
                             except:
