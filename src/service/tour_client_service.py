@@ -5,15 +5,14 @@ import re
 import json
 import shutil
 from flask import jsonify
-
+from composite.tour import TourGroupComposite, TourLeafNode
+from database import get_session, Tour, Location, TourStatus
 from database import (
     UserRole, 
     get_session, 
     Tour, 
     TourStatus
 )
-from command.component import DBTransactionInvoker
-from command.tour import CreateTourCommand, UpdateTourCommand, SoftDeleteTourCommand, ApproveTourCommand, RejectTourCommand
 
 
 class TourClientService:
@@ -165,8 +164,6 @@ class TourClientService:
         phục vụ cho việc thống kê hoặc sơ đồ thư mục trên giao diện client/admin.
         Cây phân cấp: Địa điểm (Location) -> Danh mục (Category) -> Tour (Leaf)
         """
-        from composite.tour import TourGroupComposite, TourLeafNode
-        from database import get_session, Tour, Location, TourStatus
         
         session = get_session()
         try:

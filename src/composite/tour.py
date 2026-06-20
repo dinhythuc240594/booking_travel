@@ -94,7 +94,8 @@ class TourGroupComposite(AbstractTourNode):
     def to_dict(self) -> dict:
         return {
             "type": "composite",
-            "group_name": CATEGORY_NAME_DICT.get(self.group_name, self.group_type) or self.group_name,
+            "group_name": self.group_name if self.group_name not in CATEGORY_NAME_DICT else CATEGORY_NAME_DICT.get(self.group_name),
+            "group_type": self.group_type,
             "tour_count": self.get_tour_count(),
             "children": [child.to_dict() for child in self.children]
         }

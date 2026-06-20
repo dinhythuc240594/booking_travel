@@ -55,7 +55,7 @@
         <li>
             <a href="#" data-section="rejected">
                 <i class="fas fa-times-circle"></i> Bài từ chối
-                <span class="badge bg-danger" id="rejectedCount">{{ stat_rejected }}</span>
+                <!-- <span class="badge bg-danger" id="rejectedCount">{{ stat_rejected }}</span> -->
             </a>
         </li>
         <li class="nav-divider">
@@ -398,9 +398,8 @@
         $('#userId').val('');
         $('#username').prop('disabled', false);
         $('#email').prop('disabled', false);
-        $('#passwordRequired').show();
-        $('#passwordHint').hide();
         $('#password').prop('required', true);
+        $('.field-password').show();
         $('#userModal').modal('show');
     });
 
@@ -419,9 +418,8 @@
                     $('#fullName').val(user.full_name || '');
                     $('#phone').val(user.phone_number || '');
                     $('#role').val(user.role);
-                    $('#passwordRequired').hide();
-                    $('#passwordHint').show();
-                    $('#password').prop('required', false).val('');
+                    $('.field-password').hide();
+                    $('#password').prop('required', false);
                     $('#userModal').modal('show');
                 }
             }
@@ -462,6 +460,7 @@
                     $('#userModal').modal('hide');
                     loadUsers(currentUserPage);
                     alert(response.message || 'Thành công');
+                    $("#userForm")[0].reset();
                 } else {
                     alert(response.error || 'Có lỗi xảy ra');
                 }
