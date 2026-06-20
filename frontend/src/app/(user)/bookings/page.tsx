@@ -74,7 +74,7 @@ export default function BookingsPage() {
         children: b.children || 0,
         totalPrice: Number(b.total_price),
         status: b.status || b.booking_status,
-        paymentStatus: b.payment_status || PaymentStatus.PAID,
+        paymentStatus: b.payment_status || PaymentStatus.PENDING,
         paymentMethod: b.payment_method || "credit_card",
         createdAt: b.created_at || new Date().toISOString(),
       }));
@@ -153,7 +153,7 @@ export default function BookingsPage() {
       case BookingStatus.COMPLETED:
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-900/30">
-            <ShieldCheck className="w-3.5 h-3.5" /> Hoàn thành tour
+            <ShieldCheck className="w-3.5 h-3.5" /> Hoàn thành
           </span>
         );
       case BookingStatus.CANCELLED:
@@ -175,7 +175,7 @@ export default function BookingsPage() {
             Chưa thanh toán
           </span>
         );
-      case PaymentStatus.PAID:
+      case PaymentStatus.SUCCESSFUL:
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-cyan-500/10 text-cyan-600 dark:text-cyan-400">
             Đã thanh toán

@@ -34,7 +34,7 @@ class ProcessPaymentCommand(DatabaseCommand):
             booking_id=booking_id,
             amount=self.amount,
             payment_method=self.payment_method,
-            payment_status=PaymentStatus.SUCCESSFUL
+            payment_status=PaymentStatus.PENDING
         )
         session.add(self.payment_record)
         session.flush()

@@ -22,7 +22,11 @@ from database import (
     Bookings,
     BookingStatus,
     BookingType,
+    Payment,
+    PaymentMethod,
+    PaymentStatus
 )
+
 from models.tour_models import TourModel
 from models.user_models import AdminModel
 from models.booking_models import BookingModel
@@ -1632,6 +1636,35 @@ class AdminController:
                 
             old_status = booking.booking_status
             booking.booking_status = new_status
+            
+            # Cập nhật tình trạng thanh toán nếu trạng thái đổi sang CONFIRMED (Đã duyệt)
+            if new_status == BookingStatus.CONFIRMED:
+                
+                # Tìm thanh toán liên quan đến booking này
+                payment = self.db_session.query(Payment).filter(Payment.booking_id == booking_id).first()
+                
+                # Random hình thức thanh toán từ các member của PaymentMethod
+                import random as rand_module
+                random_method = rand_module.choice([
+                    PaymentMethod.CREDIT_CARD,
+                    PaymentMethod.PAYPAL,
+                    PaymentMethod.BANK_TRANSFER,
+                    PaymentMethod.CASH
+                ])
+                
+                if payment:
+                    payment.payment_status = PaymentStatus.SUCCESSFUL
+                    payment.payment_method = random_method
+                else:
+                    # Tạo mới payment nếu chưa có
+                    payment = Payment(
+                        booking_id=booking_id,
+                        amount=booking.total_price,
+                        payment_method=random_method,
+                        payment_status=PaymentStatus.SUCCESSFUL
+                    )
+                    self.db_session.add(payment)
+            
             self.db_session.commit()
             
             # Gửi email thông báo tự động khi thay đổi trạng thái
@@ -1661,7 +1694,6 @@ class AdminController:
                             total_price=total_price_formatted
                         )
                     elif new_status == BookingStatus.COMPLETED:
-                        from database import Payment
                         payment = self.db_session.query(Payment).filter(Payment.booking_id == booking.booking_id).first()
                         payment_method = payment.payment_method.value if (payment and payment.payment_method) else 'credit_card'
                         
