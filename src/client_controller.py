@@ -96,10 +96,10 @@ class Controller():
         user = self.customer_model.authenticate(email, password)
         
         if user and user.is_active and user.role == UserRole.CUSTOMER:
-            session['user_id'] = user.user_id
-            session['username'] = user.username
-            session['full_name'] = user.full_name or user.username
-            session['role'] = user.role.value
+            session['customer_user_id'] = user.user_id
+            session['customer_username'] = user.username
+            session['customer_full_name'] = user.full_name or user.username
+            session['customer_role'] = user.role.value
 
             if remember:
                 session.permanent = True
@@ -435,8 +435,8 @@ class Controller():
             is_saved = False
             user_id = None
 
-            if 'user_id' in session:
-                user_id = session['user_id']
+            if 'customer_user_id' in session:
+                user_id = session['customer_user_id']
 
                 existing_viewed = self.db_session.query(Viewedtour).filter(
                     Viewedtour.user_id == user_id,
@@ -567,7 +567,7 @@ class Controller():
 
     def bookings(self):
         try:
-            user_id = session.get('user_id')
+            user_id = session.get('customer_user_id')
             print(f"User ID: {user_id}")
             if not user_id:
                 return jsonify([])
@@ -632,7 +632,7 @@ class Controller():
             data = request.get_json()
             
             # Lấy user_id từ session hoặc request body
-            user_id = session.get('user_id')
+            user_id = session.get('customer_user_id')
             print(f"user_id: {user_id}")
             if not user_id:
                 return jsonify({
@@ -742,10 +742,10 @@ class Controller():
         Trang thông tin cá nhân của user
         Route: GET POST /profile
         """
-        if 'user_id' not in session:
+        if 'customer_user_id' not in session:
             return jsonify({'status': False, 'code': 401, 'message': 'Chưa đăng nhập'}), 401
         
-        user = self.customer_model.get_by_id(session['user_id'])
+        user = self.customer_model.get_by_id(session['customer_user_id'])
         if not user:
             return jsonify({'status': False, 'code': 404, 'message': 'Không tìm thấy thông tin người dùng'}), 404
 
@@ -784,7 +784,7 @@ class Controller():
                     self.db_session.commit()
                     
                     # Cập nhật session
-                    session['avatar'] = avatar_url
+                    session['customer_avatar'] = avatar_url
                     
                     return jsonify({'status': True, 'code': 200, 'message': 'Cập nhật avatar thành công', 'avatar_url': f'/{avatar_url}'})
                 else:
@@ -806,8 +806,8 @@ class Controller():
                     'address': address
                 })
                 
-                user = self.customer_model.get_by_id(session['user_id'])
-                session['full_name'] = user.full_name or user.username
+                user = self.customer_model.get_by_id(session['customer_user_id'])
+                session['customer_full_name'] = user.full_name or user.username
                 
                 return jsonify({
                     'status': True, 

@@ -48,10 +48,10 @@ class AdminController:
         Route: POST /admin/login
         """
         # Nếu đã đăng nhập, redirect đến dashboard tương ứng
-        if 'user_id' in session and 'role' in session:
-            if session['role'] == UserRole.ADMIN.value:
+        if 'admin_user_id' in session and 'admin_role' in session:
+            if session['admin_role'] == UserRole.ADMIN.value:
                 return redirect(url_for('admin.dashboard'))
-            elif session['role'] == UserRole.STAFF.value:
+            elif session['admin_role'] == UserRole.STAFF.value:
                 return redirect(url_for('admin.editor_dashboard'))
         
         if request.method == 'POST':
@@ -70,9 +70,9 @@ class AdminController:
             
             if user and user.is_active and user.role in [UserRole.ADMIN, UserRole.STAFF]:
                 # Lưu session đăng nhập
-                session['user_id'] = user.user_id
-                session['username'] = user.username
-                session['role'] = user.role.value
+                session['admin_user_id'] = user.user_id
+                session['admin_username'] = user.username
+                session['admin_role'] = user.role.value
                 
                 # Nếu chọn "Ghi nhớ đăng nhập", set session permanent
                 if remember:
@@ -94,8 +94,12 @@ class AdminController:
     
     def logout(self):
         """Đăng xuất - Xóa session đăng nhập"""
-        # Xóa toàn bộ session
-        session.clear()
+        # Xóa các key liên quan đến admin session
+        session.pop('admin_user_id', None)
+        session.pop('admin_username', None)
+        session.pop('admin_role', None)
+        session.pop('admin_avatar', None)
+        session.pop('admin_full_name', None)
         flash('Đã đăng xuất', 'success')
         return redirect(url_for('admin.login'))
     
@@ -117,10 +121,10 @@ class AdminController:
         # Tour mới nhất
         latest_tours = self.tour_model.get_all(limit=10)
         
-        if 'user_id' not in session:
+        if 'admin_user_id' not in session:
             return redirect(url_for('admin.login'))
 
-        user = self.admin_model.get_by_id(session['user_id'])
+        user = self.admin_model.get_by_id(session['admin_user_id'])
 
         return render_template('admin/admin.html',
                              total_tours=total_tour,
@@ -138,7 +142,7 @@ class AdminController:
         Dashboard editor - Quản lý bài viết của biên tập viên
         Route: GET /admin/editor-dashboard
         """
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         
         # Lấy tour của editor (chỉ dùng để thống kê nhanh)
         all_tours = self.tour_model.get_all()
@@ -209,7 +213,7 @@ class AdminController:
             thumbnail = data.get('thumbnail')
             status = data.get('status', TourStatus.DRAFT.value)
             
-            user_id = session.get('user_id')
+            user_id = session.get('admin_user_id')
             
             try:
                 tour_status = TourStatus(status)
@@ -240,7 +244,7 @@ class AdminController:
             return redirect(url_for('admin.tours_list'))
         
         # Kiểm tra quyền
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         user = self.admin_model.get_by_id(user_id)
         
         if user.role != UserRole.ADMIN and tour.author_id != user_id:
@@ -291,7 +295,7 @@ class AdminController:
         Duyệt tour
         Route: POST /admin/tour/<tour_id>/approve
         """
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         tour = self.tour_model.approve(tour_id, user_id)
         
         if request.is_json or request.headers.get('Content-Type') == 'application/json':
@@ -312,7 +316,7 @@ class AdminController:
         Từ chối tour và gửi email cho tác giả
         Route: POST /admin/tour/<tour_id>/reject
         """
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         
         # Lấy lý do từ chối từ request body
         data = request.json if request.is_json else request.form
@@ -429,10 +433,10 @@ class AdminController:
             per_page: số bài mỗi trang (mặc định: 10)
             search: từ khóa tìm kiếm
         """
-        if "user_id" not in session:
+        if "admin_user_id" not in session:
             return jsonify({"success": False, "error": "Chưa đăng nhập"}), 401
 
-        user_id = session["user_id"]
+        user_id = session["admin_user_id"]
 
         status_str = request.args.get("status", "all")
         page = request.args.get("page", 1, type=int)
@@ -482,13 +486,13 @@ class AdminController:
         API lấy thông tin user hiện tại từ session (JSON)
         Route: GET /admin/api/current-user
         """
-        if 'user_id' not in session:
+        if 'admin_user_id' not in session:
             return jsonify({
                 'success': False,
                 'error': 'Chưa đăng nhập'
             }), 401
         
-        user = self.admin_model.get_by_id(session['user_id'])
+        user = self.admin_model.get_by_id(session['admin_user_id'])
         if not user:
             return jsonify({
                 'success': False,
@@ -514,10 +518,10 @@ class AdminController:
         Query params:
             limit: số lượng bài viết tối đa (mặc định: 20)
         """
-        if "user_id" not in session:
+        if "admin_user_id" not in session:
             return jsonify({"success": False, "error": "Chưa đăng nhập"}), 401
 
-        user_id = session["user_id"]
+        user_id = session["admin_user_id"]
         limit = request.args.get("limit", 20, type=int)
         
         if limit < 1 or limit > 100:
@@ -584,7 +588,7 @@ class AdminController:
     def api_statistics_editor(self):
         """API lấy thống kê dashboard của editor"""
         
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
@@ -696,7 +700,7 @@ class AdminController:
         """API lấy danh sách bài viết từ API bên ngoài (chỉ hiển thị, không lưu)"""
         # Lấy dữ liệu từ session hoặc cache (tạm thời lưu trong session)
         # Hoặc fetch lại từ API nếu cần
-        api_tour = session.get('api_tour_cache', [])
+        api_tour = session.get('admin_api_tour_cache', [])
         
         return jsonify({
             'success': True,
@@ -768,7 +772,7 @@ class AdminController:
         })
 
     def api_create_tour(self):
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
             
@@ -812,7 +816,7 @@ class AdminController:
         return jsonify({'success': result.get('success'), 'message': result.get('message'), 'data': data})
 
     def api_edit_tour(self, tour_id: int):
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
             
@@ -869,7 +873,7 @@ class AdminController:
         return jsonify({'success': result.get('success'), 'message': result.get('message'), 'data': data})
 
     def api_approve_atour(self, tour_id: int):
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
 
@@ -879,7 +883,7 @@ class AdminController:
         return jsonify({'success': data.get('success'), 'message': data.get('message'), 'data': data.get('data')})
 
     def api_reject_atour(self, tour_id: int):
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
@@ -934,7 +938,7 @@ class AdminController:
 
     def api_upload_image(self):
         """API upload ảnh cho bài viết"""
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         if not user_id:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
@@ -983,14 +987,18 @@ class AdminController:
         Trang thông tin cá nhân của user
         Route: GET POST /profile
         """
-        if 'user_id' not in session:
+        if 'admin_user_id' not in session:
             flash('Vui lòng đăng nhập để xem thông tin cá nhân', 'error')
             return redirect(url_for('admin.login'))
         
-        user = self.admin_model.get_by_id(session['user_id'])
+        user = self.admin_model.get_by_id(session['admin_user_id'])
         if not user:
             flash('Không tìm thấy thông tin người dùng', 'error')
-            session.clear()
+            session.pop('admin_user_id', None)
+            session.pop('admin_username', None)
+            session.pop('admin_role', None)
+            session.pop('admin_avatar', None)
+            session.pop('admin_full_name', None)
             return redirect(url_for('admin.login'))
 
         if request.method == 'POST':
@@ -1027,7 +1035,7 @@ class AdminController:
                     self.admin_model.update(user.user_id, {'avatar': avatar_url})
                     
                     # Cập nhật session
-                    session['avatar'] = avatar_url
+                    session['admin_avatar'] = avatar_url
                     
                     return jsonify({'success': True, 'message': 'Cập nhật avatar thành công', 'avatar_url': f'/{avatar_url}'})
                 else:
@@ -1043,7 +1051,7 @@ class AdminController:
                     'phone_number': phone if phone else None
                 })
                 
-                session['full_name'] = user.full_name or user.username
+                session['admin_full_name'] = user.full_name or user.username
                 
                 flash('Cập nhật thông tin thành công', 'success')
                 return redirect(url_for('admin.profile'))
@@ -1146,10 +1154,10 @@ class AdminController:
     
     def api_create_user(self):
         """API tạo user mới"""
-        if 'user_id' not in session:
+        if 'admin_user_id' not in session:
             return jsonify({'success': False, 'error': 'Unauthorized'}), 401
         
-        current_user = self.admin_model.get_by_id(session['user_id'])
+        current_user = self.admin_model.get_by_id(session['admin_user_id'])
         if not current_user or current_user.role != UserRole.ADMIN:
             return jsonify({'success': False, 'error': 'Permission denied'}), 403
         
@@ -1210,9 +1218,10 @@ class AdminController:
     def api_update_user(self, user_id):
         """API cập nhật user hoặc lấy thông tin user"""
 
-        current_user_id = session['user_id']
-        if 'user_id' not in session:
+        if 'admin_user_id' not in session:
             return jsonify({'success': False, 'error': 'Bạn không có quyền truy cập'}), 401
+
+        current_user_id = session['admin_user_id']
 
         try:
             user = self.admin_model.get_by_id(user_id)
@@ -1260,10 +1269,10 @@ class AdminController:
     def api_create_location(self):
         """API tạo danh sách địa điểm"""
         try:
-            if 'user_id' not in session:
+            if 'admin_user_id' not in session:
                 return jsonify({'success': False, 'error': 'Unauthorized'}), 401
             
-            current_user = self.admin_model.get_by_id(session['user_id'])
+            current_user = self.admin_model.get_by_id(session['admin_user_id'])
             if not current_user or current_user.role != UserRole.ADMIN:
                 return jsonify({'success': False, 'error': 'Permission denied'}), 403
             
@@ -1299,10 +1308,10 @@ class AdminController:
     def api_update_location(self, location_id):
         """API cập nhật danh sách địa điểm"""
         try:
-            if 'user_id' not in session:
+            if 'admin_user_id' not in session:
                 return jsonify({'success': False, 'error': 'Unauthorized'}), 401
             
-            current_user = self.admin_model.get_by_id(session['user_id'])
+            current_user = self.admin_model.get_by_id(session['admin_user_id'])
             if not current_user or current_user.role != UserRole.ADMIN:
                 return jsonify({'success': False, 'error': 'Permission denied'}), 403
             
@@ -1339,10 +1348,10 @@ class AdminController:
 
     def api_delete_location(self, location_id):
         try:
-            if 'user_id' not in session:
+            if 'admin_user_id' not in session:
                 return jsonify({'success': False, 'error': 'Unauthorized'}), 401
             
-            current_user = self.admin_model.get_by_id(session['user_id'])
+            current_user = self.admin_model.get_by_id(session['admin_user_id'])
             if not current_user or current_user.role != UserRole.ADMIN:
                 return jsonify({'success': False, 'error': 'Permission denied'}), 403
             
@@ -1440,10 +1449,10 @@ class AdminController:
     
     def api_test_email(self):
         """API test gửi email"""
-        if 'user_id' not in session:
+        if 'admin_user_id' not in session:
             return jsonify({'success': False, 'error': 'Unauthorized'}), 401
         
-        current_user = self.admin_model.get_by_id(session['user_id'])
+        current_user = self.admin_model.get_by_id(session['admin_user_id'])
         if not current_user or current_user.role != UserRole.ADMIN:
             return jsonify({'success': False, 'error': 'Permission denied'}), 403
         
@@ -1497,11 +1506,11 @@ class AdminController:
 
     def api_bookings_list(self):
         """API lấy danh sách bookings cho admin"""
-        if 'user_id' not in session:
+        if 'admin_user_id' not in session:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
         
         # Verify role admin
-        if session.get('role') != UserRole.ADMIN.value:
+        if session.get('admin_role') != UserRole.ADMIN.value:
             return jsonify({'success': False, 'error': 'Không có quyền truy cập'}), 403
             
         try:
@@ -1600,10 +1609,10 @@ class AdminController:
 
     def api_update_booking_status(self, booking_id):
         """API cập nhật trạng thái booking cho admin"""
-        if 'user_id' not in session:
+        if 'admin_user_id' not in session:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
             
-        if session.get('role') != UserRole.ADMIN.value:
+        if session.get('admin_role') != UserRole.ADMIN.value:
             return jsonify({'success': False, 'error': 'Không có quyền truy cập'}), 403
             
         try:
@@ -1681,10 +1690,10 @@ class AdminController:
 
     def api_bookings_statistics(self):
         """API lấy thống kê đặt tour cho dashboard admin"""
-        if 'user_id' not in session:
+        if 'admin_user_id' not in session:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
             
-        if session.get('role') != UserRole.ADMIN.value:
+        if session.get('admin_role') != UserRole.ADMIN.value:
             return jsonify({'success': False, 'error': 'Không có quyền truy cập'}), 403
             
         try:
@@ -1752,14 +1761,14 @@ class AdminController:
 
     def api_tours_tree(self):
         """API lấy cây thư mục cấu trúc các Tour theo Composite Pattern cho Admin hoặc Staff"""
-        if 'user_id' not in session:
+        if 'admin_user_id' not in session:
             return jsonify({'success': False, 'error': 'Chưa đăng nhập'}), 401
             
-        role = session.get('role')
+        role = session.get('admin_role')
         if role not in [UserRole.ADMIN.value, UserRole.STAFF.value]:
             return jsonify({'success': False, 'error': 'Không có quyền truy cập'}), 403
             
-        user_id = session.get('user_id')
+        user_id = session.get('admin_user_id')
         author_id = user_id if role == UserRole.STAFF.value else None
             
         try:
