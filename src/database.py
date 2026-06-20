@@ -198,7 +198,7 @@ class BookingStatusType(TypeDecorator):
                 if status.value.lower() == value_lower:
                     return status
             # If not found, try BookingStatus.from_string
-            result = TourStatus.from_string(value)
+            result = BookingStatus.from_string(value)
             if result:
                 return result
         # If all else fails, return None or raise error

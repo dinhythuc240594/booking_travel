@@ -39,8 +39,8 @@ class ProcessPaymentCommand(DatabaseCommand):
         session.add(self.payment_record)
         session.flush()
         
-        # Cập nhật trạng thái Bookings thành confirmed
-        self.booking_command.booking_record.booking_status = BookingStatus.CONFIRMED
+        # Giữ trạng thái của Booking là PENDING (chờ duyệt) sau khi thanh toán, đợi admin phê duyệt.
+        self.booking_command.booking_record.booking_status = BookingStatus.PENDING
 
     def undo(self, session) -> None:
         if self.payment_record:
