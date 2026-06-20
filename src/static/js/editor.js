@@ -1243,131 +1243,889 @@ async function viewArticle(articleId) {
         if (result.success) {
             const article = result.data;
 
+            // Prepare images
+            const images = Array.isArray(article.images) && article.images.length > 0
+                ? article.images
+                : [article.thumbnail || 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&auto=format&fit=crop&q=80'];
+
+            const fallbackImages = [
+                "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&auto=format&fit=crop&q=80",
+                "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800&auto=format&fit=crop&q=80"
+            ];
+
+            let displayImages = [...images];
+            let fbIdx = 0;
+            while (displayImages.length < 5) {
+                displayImages.push(fallbackImages[fbIdx % fallbackImages.length]);
+                fbIdx++;
+            }
+
+            const displayImagesJson = JSON.stringify(displayImages);
+
+            // Prepare start dates
+            const startDates = Array.isArray(article.start_dates) && article.start_dates.length > 0
+                ? article.start_dates
+                : ["2026-06-25", "2026-07-02", "2026-07-09", "2026-07-16"];
+
+            const startDatesJson = JSON.stringify(startDates);
+
+            // Prepare categories, location, status
+            const categoryName = article.category_name_vi || article.category_name || 'N/A';
+            const locationName = article.location_name || 'Việt Nam';
+            const durationDays = parseInt(article.duration_days || 1);
+            const durationStr = `${durationDays} ngày ${Math.max(0, durationDays - 1)} đêm`;
+
+            let statusBadge = '';
+            if (article.status === 'draft') {
+                statusBadge = '<span class="status-badge status-draft"><i class="fas fa-file-alt"></i> Bản nháp</span>';
+            } else if (article.status === 'pending') {
+                statusBadge = '<span class="status-badge status-pending"><i class="fas fa-clock"></i> Chờ duyệt</span>';
+            } else if (article.status === 'approved' || article.status === 'published') {
+                statusBadge = '<span class="status-badge status-approved"><i class="fas fa-check-circle"></i> Đã duyệt</span>';
+            } else if (article.status === 'rejected') {
+                statusBadge = '<span class="status-badge status-rejected"><i class="fas fa-times-circle"></i> Đã từ chối</span>';
+            }
+
+            const hotBadge = article.is_hot ? '<span class="status-badge status-hot"><i class="fas fa-fire"></i> Tin nóng</span>' : '';
+            const featuredBadge = article.is_featured ? '<span class="status-badge status-featured"><i class="fas fa-star"></i> Nổi bật</span>' : '';
+
+            // Calculate prices
+            const pricePerAdult = parseFloat(article.discount_price || article.price_per_adult || 0);
+            const originalPrice = parseFloat(article.price_per_adult || 0);
+            const hasDiscount = article.discount_price && parseFloat(article.discount_price) < originalPrice;
+            const pricePerChild = parseFloat(article.price_per_child || Math.round(pricePerAdult * 0.7));
+
             // Open preview in new window
-            const previewWindow = window.open('', 'Xem bài viết', 'width=1000,height=700,scrollbars=yes');
+            const previewWindow = window.open('', 'Xem bài viết', 'width=1100,height=800,scrollbars=yes');
             previewWindow.document.write(`
                 <!DOCTYPE html>
-                <html>
+                <html lang="vi">
                 <head>
                     <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>${escapeHtml(article.title || 'Xem bài viết')}</title>
+                    <link rel="preconnect" href="https://fonts.googleapis.com">
+                    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+                    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+                    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
                     <style>
                         * { margin: 0; padding: 0; box-sizing: border-box; }
-                        body { 
-                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-                            padding: 40px; 
-                            max-width: 900px; 
-                            margin: 0 auto; 
-                            background: #f5f5f5;
+                        body {
+                            font-family: 'Outfit', sans-serif;
+                            background: #f8fafc;
+                            color: #0f172a;
                             line-height: 1.6;
+                            padding: 32px 0;
                         }
-                        .article-container {
-                            background: white;
-                            padding: 40px;
-                            border-radius: 8px;
-                            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        .container {
+                            max-width: 1200px;
+                            margin: 0 auto;
+                            padding: 0 24px;
                         }
-                        h1 { 
-                            color: #333; 
-                            margin-bottom: 15px; 
-                            font-size: 28px;
-                            line-height: 1.3;
+                        .breadcrumb {
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            font-size: 13px;
+                            color: #64748b;
+                            margin-bottom: 16px;
                         }
-                        .meta { 
-                            color: #666; 
-                            font-size: 14px; 
-                            margin-bottom: 20px; 
-                            padding-bottom: 15px;
-                            border-bottom: 1px solid #eee;
+                        .breadcrumb span {
+                            transition: color 0.2s;
                         }
-                        .category { 
-                            background: #0066cc; 
-                            color: white; 
-                            padding: 5px 12px; 
-                            border-radius: 4px; 
-                            font-size: 12px; 
-                            display: inline-block; 
-                            margin-bottom: 15px; 
+                        .breadcrumb span.active {
+                            color: #0f172a;
                             font-weight: 500;
+                        }
+                        .breadcrumb i {
+                            font-size: 10px;
+                            color: #cbd5e1;
+                        }
+                        .header-section {
+                            margin-bottom: 24px;
+                        }
+                        .badges-row {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 8px;
+                            margin-bottom: 12px;
                         }
                         .status-badge {
-                            display: inline-block;
-                            padding: 5px 12px;
-                            border-radius: 4px;
+                            display: inline-flex;
+                            align-items: center;
+                            gap: 6px;
+                            padding: 6px 14px;
+                            border-radius: 9999px;
                             font-size: 12px;
-                            font-weight: 500;
-                            margin-left: 10px;
+                            font-weight: 700;
+                            letter-spacing: 0.02em;
                         }
-                        .status-pending {
-                            background: #ffc107;
-                            color: #000;
+                        .status-draft { background: #f1f5f9; color: #64748b; }
+                        .status-pending { background: #fef3c7; color: #d97706; }
+                        .status-approved { background: #d1fae5; color: #059669; }
+                        .status-rejected { background: #fee2e2; color: #dc2626; }
+                        .status-hot { background: #ffe4e6; color: #e11d48; }
+                        .status-featured { background: #e0f2fe; color: #0284c7; }
+                        .status-preview { background: #ecfeff; color: #0891b2; border: 1px dashed #22d3ee; }
+                        .tour-title {
+                            font-size: 32px;
+                            font-weight: 800;
+                            color: #0f172a;
+                            line-height: 1.25;
+                            letter-spacing: -0.02em;
+                            margin-bottom: 16px;
                         }
-                        .status-hot {
-                            background: #ff0000;
-                            color: #000;
+                        .meta-row {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 24px;
+                            font-size: 14px;
+                            color: #475569;
                         }
-                        .status-featured {
-                            background: #ffa500;
-                            color: #000;
+                        .meta-item {
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
                         }
-                        .content { 
-                            line-height: 1.8; 
-                            color: #444; 
-                            margin-top: 25px;
-                            font-size: 16px;
+                        .text-cyan { color: #06b6d4; }
+                        
+                        /* Airbnb Gallery Grid */
+                        .gallery-grid {
+                            display: grid;
+                            grid-template-columns: repeat(4, 1fr);
+                            grid-template-rows: repeat(2, 1fr);
+                            gap: 12px;
+                            height: 420px;
+                            border-radius: 24px;
+                            overflow: hidden;
+                            margin-bottom: 32px;
+                            position: relative;
                         }
-                        .summary { 
-                            background: #f8f9fa; 
-                            padding: 20px; 
-                            border-left: 4px solid #0066cc; 
-                            margin-bottom: 25px; 
-                            border-radius: 4px;
+                        .gallery-item {
+                            position: relative;
+                            cursor: pointer;
+                            overflow: hidden;
+                            background: #e2e8f0;
                         }
-                        .summary strong {
-                            color: #333;
-                            display: block;
+                        .gallery-item img {
+                            width: 100%;
+                            height: 100%;
+                            object-fit: cover;
+                            transition: transform 0.5s ease;
+                        }
+                        .gallery-item:hover img {
+                            transform: scale(1.03);
+                        }
+                        .gallery-item::after {
+                            content: '';
+                            position: absolute;
+                            inset: 0;
+                            background: rgba(0, 0, 0, 0.05);
+                            opacity: 0;
+                            transition: opacity 0.3s;
+                        }
+                        .gallery-item:hover::after {
+                            opacity: 1;
+                        }
+                        .gallery-large {
+                            grid-column: span 2;
+                            grid-row: span 2;
+                        }
+                        .gallery-btn-all {
+                            position: absolute;
+                            bottom: 20px;
+                            right: 20px;
+                            background: rgba(255, 255, 255, 0.9);
+                            border: 1px solid #e2e8f0;
+                            color: #0f172a;
+                            padding: 10px 18px;
+                            border-radius: 12px;
+                            font-size: 13px;
+                            font-weight: 700;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            gap: 8px;
+                            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+                            transition: all 0.2s;
+                        }
+                        .gallery-btn-all:hover {
+                            background: #ffffff;
+                            transform: scale(1.02);
+                        }
+
+                        /* Split Columns */
+                        .main-layout {
+                            display: grid;
+                            grid-template-columns: 2fr 1fr;
+                            gap: 32px;
+                            margin-bottom: 48px;
+                        }
+                        .left-col {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 32px;
+                        }
+                        .card-box {
+                            background: white;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 24px;
+                            padding: 32px;
+                            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.01);
+                        }
+                        .section-title {
+                            font-size: 18px;
+                            font-weight: 800;
+                            color: #0f172a;
+                            margin-bottom: 20px;
+                            padding-bottom: 12px;
+                            border-bottom: 1px solid #f1f5f9;
+                        }
+                        .content-area {
+                            font-size: 15px;
+                            line-height: 1.8;
+                            color: #334155;
+                        }
+                        .content-area img {
+                            max-width: 100%;
+                            height: auto;
+                            border-radius: 12px;
+                            margin: 20px 0;
+                        }
+                        .right-col {
+                            position: sticky;
+                            top: 24px;
+                        }
+                        .booking-widget {
+                            background: white;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 24px;
+                            padding: 24px;
+                            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+                        }
+                        .widget-label {
+                            font-size: 11px;
+                            font-weight: 700;
+                            text-transform: uppercase;
+                            letter-spacing: 0.05em;
+                            color: #94a3b8;
                             margin-bottom: 8px;
                         }
-                        img { 
-                            max-width: 100%; 
-                            height: auto; 
-                            margin: 25px 0; 
-                            border-radius: 8px;
-                            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                        }
-                        .view-info {
-                            background: #e7f3ff;
-                            padding: 15px;
-                            border-radius: 4px;
+                        .price-container {
+                            display: flex;
+                            align-items: baseline;
+                            gap: 8px;
+                            padding-bottom: 20px;
+                            border-bottom: 1px solid #f1f5f9;
                             margin-bottom: 20px;
-                            border-left: 4px solid #0066cc;
                         }
-                        .view-info strong {
-                            color: #0066cc;
+                        .price-current {
+                            font-size: 28px;
+                            font-weight: 800;
+                            color: #06b6d4;
+                        }
+                        .price-original {
+                            font-size: 14px;
+                            color: #94a3b8;
+                            text-decoration: line-through;
+                        }
+                        .price-unit {
+                            font-size: 12px;
+                            color: #94a3b8;
+                        }
+                        .form-group {
+                            margin-bottom: 20px;
+                        }
+                        .select-input {
+                            width: 100%;
+                            background: #f8fafc;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 12px;
+                            padding: 12px 16px;
+                            font-size: 14px;
+                            font-weight: 600;
+                            color: #0f172a;
+                            outline: none;
+                            cursor: pointer;
+                            transition: border-color 0.2s;
+                        }
+                        .select-input:focus {
+                            border-color: #06b6d4;
+                        }
+                        .passenger-row {
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            padding: 12px 0;
+                        }
+                        .passenger-info {
+                            display: flex;
+                            flex-direction: column;
+                        }
+                        .passenger-title {
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #0f172a;
+                        }
+                        .passenger-price {
+                            font-size: 12px;
+                            color: #64748b;
+                        }
+                        .counter-control {
+                            display: flex;
+                            align-items: center;
+                            gap: 16px;
+                        }
+                        .counter-btn {
+                            width: 32px;
+                            height: 32px;
+                            border-radius: 50%;
+                            border: 1px solid #e2e8f0;
+                            background: white;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 14px;
+                            font-weight: 600;
+                            color: #64748b;
+                            transition: all 0.2s;
+                        }
+                        .counter-btn:hover:not(:disabled) {
+                            border-color: #06b6d4;
+                            color: #06b6d4;
+                        }
+                        .counter-btn:disabled {
+                            opacity: 0.3;
+                            cursor: not-allowed;
+                        }
+                        .counter-val {
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: #0f172a;
+                            min-width: 16px;
+                            text-align: center;
+                        }
+                        .total-box {
+                            margin-top: 24px;
+                            padding-top: 20px;
+                            border-top: 1px solid #f1f5f9;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            margin-bottom: 24px;
+                        }
+                        .total-title {
+                            font-size: 15px;
+                            font-weight: 700;
+                            color: #0f172a;
+                        }
+                        .total-price {
+                            font-size: 22px;
+                            font-weight: 850;
+                            color: #06b6d4;
+                        }
+                        .btn-submit {
+                            width: 100%;
+                            background: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%);
+                            border: none;
+                            color: white;
+                            padding: 14px;
+                            border-radius: 16px;
+                            font-size: 14px;
+                            font-weight: 700;
+                            cursor: pointer;
+                            box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
+                            transition: all 0.2s;
+                        }
+                        .btn-submit:hover {
+                            transform: translateY(-1px);
+                            box-shadow: 0 6px 16px rgba(6, 182, 212, 0.25);
+                        }
+                        .btn-submit:active {
+                            transform: translateY(0);
+                        }
+                        .disclaimer {
+                            margin-top: 16px;
+                            font-size: 11px;
+                            color: #94a3b8;
+                            text-align: center;
+                            line-height: 1.5;
+                        }
+
+                        /* Lightbox */
+                        .lightbox-modal {
+                            position: fixed;
+                            top: 0; left: 0; right: 0; bottom: 0;
+                            background: rgba(9, 9, 11, 0.95);
+                            backdrop-filter: blur(12px);
+                            z-index: 9999;
+                            display: none;
+                            align-items: center;
+                            justify-content: center;
+                            user-select: none;
+                        }
+                        .lightbox-content {
+                            max-width: 90%;
+                            max-height: 80%;
+                            position: relative;
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                        }
+                        .lightbox-img {
+                            max-width: 100%;
+                            max-height: 70vh;
+                            object-fit: contain;
+                            border-radius: 12px;
+                            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                        }
+                        .lightbox-btn {
+                            position: absolute;
+                            top: 50%;
+                            transform: translateY(-50%);
+                            background: rgba(255, 255, 255, 0.1);
+                            color: white;
+                            border: none;
+                            width: 48px;
+                            height: 48px;
+                            border-radius: 50%;
+                            cursor: pointer;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            font-size: 20px;
+                            transition: background 0.2s, transform 0.2s;
+                        }
+                        .lightbox-btn:hover {
+                            background: rgba(255, 255, 255, 0.2);
+                            transform: translateY(-50%) scale(1.05);
+                        }
+                        .lightbox-prev { left: -72px; }
+                        .lightbox-next { right: -72px; }
+                        .lightbox-close {
+                            position: absolute;
+                            top: 24px; right: 24px;
+                            background: rgba(255, 255, 255, 0.1);
+                            color: white;
+                            border: none;
+                            width: 40px; height: 40px;
+                            border-radius: 50%;
+                            cursor: pointer;
+                            font-size: 18px;
+                            display: flex; align-items: center; justify-content: center;
+                            transition: background 0.2s;
+                        }
+                        .lightbox-close:hover { background: rgba(255, 255, 255, 0.2); }
+                        .lightbox-counter {
+                            position: absolute;
+                            top: 24px; left: 24px;
+                            color: #a1a1aa;
+                            font-size: 14px;
+                            font-weight: 500;
+                        }
+                        .lightbox-thumbnails {
+                            margin-top: 24px;
+                            display: flex;
+                            gap: 8px;
+                            overflow-x: auto;
+                            max-width: 100%;
+                            padding: 4px;
+                        }
+                        .lightbox-thumb {
+                            width: 60px; height: 40px;
+                            object-fit: cover;
+                            border-radius: 6px;
+                            cursor: pointer;
+                            border: 2px solid transparent;
+                            opacity: 0.6;
+                            transition: all 0.2s;
+                        }
+                        .lightbox-thumb.active {
+                            border-color: #06b6d4;
+                            opacity: 1;
+                            transform: scale(1.05);
+                        }
+
+                        /* Alert Modal */
+                        .preview-alert-overlay {
+                            position: fixed;
+                            inset: 0;
+                            background: rgba(9, 9, 11, 0.6);
+                            backdrop-filter: blur(4px);
+                            display: none;
+                            align-items: center;
+                            justify-content: center;
+                            z-index: 10000;
+                        }
+                        .preview-alert-box {
+                            background: white;
+                            border-radius: 24px;
+                            padding: 32px;
+                            max-width: 440px;
+                            width: 90%;
+                            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                            text-align: center;
+                            animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                        }
+                        @keyframes scaleIn {
+                            from { transform: scale(0.9); opacity: 0; }
+                            to { transform: scale(1); opacity: 1; }
+                        }
+                        .preview-alert-icon {
+                            font-size: 48px;
+                            color: #10b981;
+                            margin-bottom: 16px;
+                        }
+                        .preview-alert-box h3 {
+                            font-size: 18px;
+                            font-weight: 800;
+                            color: #0f172a;
+                            margin-bottom: 8px;
+                        }
+                        .preview-alert-box p {
+                            font-size: 14px;
+                            color: #64748b;
+                            margin-bottom: 12px;
+                        }
+                        .preview-alert-details {
+                            background: #f8fafc;
+                            border: 1px solid #e2e8f0;
+                            border-radius: 12px;
+                            padding: 16px;
+                            font-size: 13px !important;
+                            text-align: left;
+                            color: #334155 !important;
+                            margin-bottom: 16px !important;
+                            line-height: 1.6;
+                        }
+                        .preview-alert-details span {
+                            font-weight: 700;
+                            color: #0f172a;
+                        }
+                        .preview-alert-info {
+                            font-size: 11px;
+                            color: #1e3a8a;
+                            background: #eff6ff;
+                            padding: 12px;
+                            border-radius: 12px;
+                            border-left: 3px solid #3b82f6;
+                            text-align: left;
+                            margin-bottom: 24px;
+                            line-height: 1.4;
+                        }
+                        .preview-alert-close-btn {
+                            width: 100%;
+                            background: #0f172a;
+                            color: white;
+                            border: none;
+                            padding: 12px;
+                            border-radius: 12px;
+                            font-size: 14px;
+                            font-weight: 700;
+                            cursor: pointer;
+                            transition: background 0.2s;
+                        }
+                        .preview-alert-close-btn:hover {
+                            background: #1e293b;
                         }
                     </style>
                 </head>
                 <body>
-                    <div class="article-container">
-                        <div class="view-info">
-                            <strong><i class="fas fa-info-circle"></i> Chế độ xem:</strong> Bạn đang xem bài viết ở chế độ chỉ đọc (read-only)
+                    <div class="container">
+                        <!-- Breadcrumbs -->
+                        <div class="breadcrumb">
+                            <span>Trang chủ</span>
+                            <i class="fas fa-chevron-right"></i>
+                            <span>Tours</span>
+                            <i class="fas fa-chevron-right"></i>
+                            <span>${escapeHtml(categoryName)}</span>
+                            <i class="fas fa-chevron-right"></i>
+                            <span class="active">${escapeHtml(article.title || 'Không có tiêu đề')}</span>
                         </div>
-                        <span class="category">${escapeHtml(article.category_name || article.category || 'N/A')}</span>
-                        ${article.is_hot ? `<span class="status-badge status-hot"><i class="fas fa-fire text-danger"></i> Tin nóng</span>` : ''}
-                        ${article.is_featured ? `<span class="status-badge status-featured"><i class="fas fa-star text-warning"></i> Tin nổi bật</span>` : ''}
-                        ${article.status === 'pending' ? `<span class="status-badge status-pending">Chờ duyệt</span>` : ''}
-                        ${article.status === 'approved' ? `<span class="status-badge status-approved">Đã duyệt</span>` : ''}
-                        ${article.status === 'rejected' ? `<span class="status-badge status-rejected">Đã từ chối</span>` : ''}
-                        <h1>${escapeHtml(article.title || 'Không có tiêu đề')}</h1>
-                        <div class="meta">
-                            <i class="fas fa-calendar"></i> Ngày tạo: ${article.created_at || 'N/A'} 
-                            ${article.updated_at && article.updated_at !== article.created_at ?
-                    ' | <i class="fas fa-edit"></i> Cập nhật: ' + article.updated_at || 'N/A' : ''}
+
+                        <!-- Header -->
+                        <div class="header-section">
+                            <div class="badges-row">
+                                ${statusBadge}
+                                ${hotBadge}
+                                ${featuredBadge}
+                                <span class="status-badge status-preview"><i class="fas fa-eye"></i> Chế độ xem trước</span>
+                            </div>
+                            <h1 class="tour-title">${escapeHtml(article.title || 'Không có tiêu đề')}</h1>
+                            <div class="meta-row">
+                                <div class="meta-item"><i class="fas fa-map-marker-alt text-cyan"></i> <span>${escapeHtml(locationName)}</span></div>
+                                <div class="meta-item"><i class="fas fa-clock"></i> <span>${escapeHtml(durationStr)}</span></div>
+                                <div class="meta-item"><i class="fas fa-user"></i> <span>Người viết: ${escapeHtml(article.author_full_name || article.author || 'N/A')}</span></div>
+                            </div>
                         </div>
-                        ${article.thumbnail ? `<img src="${escapeHtml(article.thumbnail)}" alt="${escapeHtml(article.title)}" onerror="this.style.display='none'">` : ''}
-                        ${article.summary ? `<div class="summary"><strong>Tóm tắt:</strong> ${escapeHtml(article.summary)}</div>` : ''}
-                        <div class="content">${article.content || 'Không có nội dung'}</div>
+
+                        <!-- Airbnb Gallery -->
+                        <div class="gallery-grid">
+                            <div class="gallery-item gallery-large" onclick="openLightbox(0)">
+                                <img src="${escapeHtml(displayImages[0])}" alt="Image 1">
+                            </div>
+                            <div class="gallery-item" onclick="openLightbox(1)">
+                                <img src="${escapeHtml(displayImages[1])}" alt="Image 2">
+                            </div>
+                            <div class="gallery-item" onclick="openLightbox(2)">
+                                <img src="${escapeHtml(displayImages[2])}" alt="Image 3">
+                            </div>
+                            <div class="gallery-item" onclick="openLightbox(3)">
+                                <img src="${escapeHtml(displayImages[3])}" alt="Image 4">
+                            </div>
+                            <div class="gallery-item" onclick="openLightbox(4)">
+                                <img src="${escapeHtml(displayImages[4])}" alt="Image 5">
+                            </div>
+                            <button class="gallery-btn-all" onclick="openLightbox(0)">
+                                <i class="fas fa-images text-cyan"></i> Xem tất cả hình ảnh
+                            </button>
+                        </div>
+
+                        <!-- Split columns -->
+                        <div class="main-layout">
+                            <!-- Left Col -->
+                            <div class="left-col">
+                                <div class="card-box">
+                                    <h2 class="section-title">Mô tả chi tiết</h2>
+                                    <div class="content-area">
+                                        ${article.content || '<p>Không có nội dung chi tiết cho tour này.</p>'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Col (Widget) -->
+                            <div class="right-col">
+                                <div class="booking-widget">
+                                    <div class="widget-label">Giá chỉ từ</div>
+                                    <div class="price-container">
+                                        <span class="price-current" id="widget-display-price"></span>
+                                        ${hasDiscount ? `<span class="price-original">${formatVND(originalPrice)}</span>` : ''}
+                                        <span class="price-unit">/ khách</span>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="widget-label">Chọn ngày khởi hành</div>
+                                        <select class="select-input" id="select-departure">
+                                            <!-- Hydrated dynamically -->
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="widget-label">Số lượng hành khách</div>
+                                        
+                                        <div class="passenger-row">
+                                            <div class="passenger-info">
+                                                <span class="passenger-title">Người lớn</span>
+                                                <span class="passenger-price" id="price-adult-label"></span>
+                                            </div>
+                                            <div class="counter-control">
+                                                <button class="counter-btn" id="btn-minus-adult" onclick="updateAdults(-1)">-</button>
+                                                <span class="counter-val" id="val-adults">1</span>
+                                                <button class="counter-btn" id="btn-plus-adult" onclick="updateAdults(1)">+</button>
+                                            </div>
+                                        </div>
+
+                                        <div class="passenger-row">
+                                            <div class="passenger-info">
+                                                <span class="passenger-title">Trẻ em</span>
+                                                <span class="passenger-price" id="price-child-label"></span>
+                                            </div>
+                                            <div class="counter-control">
+                                                <button class="counter-btn" id="btn-minus-child" onclick="updateChildren(-1)" disabled>-</button>
+                                                <span class="counter-val" id="val-children">0</span>
+                                                <button class="counter-btn" id="btn-plus-child" onclick="updateChildren(1)">+</button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="total-box">
+                                        <span class="total-title">Tổng cộng</span>
+                                        <span class="total-price" id="val-total-price"></span>
+                                    </div>
+
+                                    <button class="btn-submit" onclick="submitBookingMock()">Đặt Tour Ngay</button>
+                                    <div class="disclaimer">
+                                        Nhân viên hỗ trợ sẽ liên hệ với quý khách qua số điện thoại để xác nhận hành trình sau khi đăng ký.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Lightbox Modal -->
+                    <div id="lightbox-modal" class="lightbox-modal">
+                        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+                        <div class="lightbox-counter" id="lightbox-counter">1 / 5</div>
+                        <div class="lightbox-content">
+                            <button class="lightbox-btn lightbox-prev" onclick="changeImage(-1)"><i class="fas fa-chevron-left"></i></button>
+                            <img id="lightbox-img" class="lightbox-img" src="" alt="Lightbox Image">
+                            <button class="lightbox-btn lightbox-next" onclick="changeImage(1)"><i class="fas fa-chevron-right"></i></button>
+                            <div class="lightbox-thumbnails" id="lightbox-thumbnails"></div>
+                        </div>
+                    </div>
+
+                    <!-- Alert Modal -->
+                    <div id="preview-alert-modal" class="preview-alert-overlay" onclick="closeAlertModal()">
+                        <div class="preview-alert-box" onclick="event.stopPropagation()">
+                            <div class="preview-alert-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h3>Đặt Tour Giả Lập Thành Công!</h3>
+                            <p>Đây là <strong>giao diện xem trước (preview)</strong> nội dung bài viết.</p>
+                            <div class="preview-alert-details">
+                                <div>Tour: <span id="alert-tour-title"></span></div>
+                                <div>Ngày đi: <span id="alert-tour-date"></span></div>
+                                <div>Hành khách: <span id="alert-tour-people"></span></div>
+                                <div>Tổng tiền: <span id="alert-tour-price"></span></div>
+                            </div>
+                            <div class="preview-alert-info">
+                                <i class="fas fa-info-circle"></i> Trên môi trường thực tế, hệ thống sẽ mở popup xác nhận thông tin, gửi yêu cầu đặt tour về hệ thống (trạng thái Chờ duyệt) và gửi email thông báo tự động.
+                            </div>
+                            <button class="preview-alert-close-btn" onclick="closeAlertModal()">Đóng xem trước</button>
+                        </div>
+                    </div>
+
+                    <script>
+                        // Injected state variables
+                        const displayImages = ${displayImagesJson};
+                        const startDates = ${startDatesJson};
+                        const pricePerAdult = ${pricePerAdult};
+                        const pricePerChild = ${pricePerChild};
+                        const tourTitle = "${escapeHtml(article.title || 'Không có tiêu đề')}";
+
+                        let adults = 1;
+                        let children = 0;
+                        let currentImageIndex = 0;
+
+                        function formatVND(value) {
+                            return new Intl.NumberFormat('vi-VN', {
+                                style: 'currency',
+                                currency: 'VND',
+                                maximumFractionDigits: 0
+                            }).format(value);
+                        }
+
+                        // Init static strings
+                        document.getElementById('widget-display-price').textContent = formatVND(pricePerAdult);
+                        document.getElementById('price-adult-label').textContent = formatVND(pricePerAdult) + ' / khách';
+                        document.getElementById('price-child-label').textContent = 'Trẻ em: ' + formatVND(pricePerChild) + ' / khách';
+
+                        // Populate start dates
+                        const dateSelect = document.getElementById('select-departure');
+                        startDates.forEach(dateStr => {
+                            const option = document.createElement('option');
+                            option.value = dateStr;
+                            try {
+                                const dObj = new Date(dateStr);
+                                if (!isNaN(dObj)) {
+                                    option.textContent = dObj.toLocaleDateString('vi-VN', {
+                                        weekday: 'long',
+                                        year: 'numeric',
+                                        month: 'long',
+                                        day: 'numeric'
+                                    });
+                                } else {
+                                    option.textContent = dateStr;
+                                }
+                            } catch (err) {
+                                option.textContent = dateStr;
+                            }
+                            dateSelect.appendChild(option);
+                        });
+
+                        function updateAdults(change) {
+                            adults = Math.max(1, adults + change);
+                            document.getElementById('val-adults').textContent = adults;
+                            document.getElementById('btn-minus-adult').disabled = (adults <= 1);
+                            calculateTotal();
+                        }
+
+                        function updateChildren(change) {
+                            children = Math.max(0, children + change);
+                            document.getElementById('val-children').textContent = children;
+                            document.getElementById('btn-minus-child').disabled = (children <= 0);
+                            calculateTotal();
+                        }
+
+                        function calculateTotal() {
+                            const total = (adults * pricePerAdult) + (children * pricePerChild);
+                            document.getElementById('val-total-price').textContent = formatVND(total);
+                        }
+
+                        // Lightbox Actions
+                        function openLightbox(index) {
+                            currentImageIndex = index;
+                            document.getElementById('lightbox-modal').style.display = 'flex';
+                            updateLightboxContent();
+
+                            const thumbContainer = document.getElementById('lightbox-thumbnails');
+                            thumbContainer.innerHTML = '';
+                            displayImages.forEach((imgSrc, idx) => {
+                                const img = document.createElement('img');
+                                img.src = imgSrc;
+                                img.className = 'lightbox-thumb' + (idx === currentImageIndex ? ' active' : '');
+                                img.onclick = () => {
+                                    currentImageIndex = idx;
+                                    updateLightboxContent();
+                                };
+                                thumbContainer.appendChild(img);
+                            });
+                        }
+
+                        function closeLightbox() {
+                            document.getElementById('lightbox-modal').style.display = 'none';
+                        }
+
+                        function changeImage(direction) {
+                            currentImageIndex = (currentImageIndex + direction + displayImages.length) % displayImages.length;
+                            updateLightboxContent();
+                        }
+
+                        function updateLightboxContent() {
+                            document.getElementById('lightbox-img').src = displayImages[currentImageIndex];
+                            document.getElementById('lightbox-counter').textContent = (currentImageIndex + 1) + ' / ' + displayImages.length;
+
+                            const thumbs = document.querySelectorAll('.lightbox-thumb');
+                            thumbs.forEach((thumb, idx) => {
+                                if (idx === currentImageIndex) {
+                                    thumb.classList.add('active');
+                                    thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                                } else {
+                                    thumb.classList.remove('active');
+                                }
+                            });
+                        }
+
+                        document.addEventListener('keydown', (e) => {
+                            const modal = document.getElementById('lightbox-modal');
+                            if (modal.style.display === 'flex') {
+                                if (e.key === 'ArrowRight') changeImage(1);
+                                else if (e.key === 'ArrowLeft') changeImage(-1);
+                                else if (e.key === 'Escape') closeLightbox();
+                            }
+                        });
+
+                        function submitBookingMock() {
+                            const selectedDate = document.getElementById('select-departure').value || 'Chưa chọn';
+                            const totalVal = (adults * pricePerAdult) + (children * pricePerChild);
+
+                            document.getElementById('alert-tour-title').textContent = tourTitle;
+                            document.getElementById('alert-tour-date').textContent = selectedDate;
+                            document.getElementById('alert-tour-people').textContent = adults + ' Người lớn, ' + children + ' Trẻ em';
+                            document.getElementById('alert-tour-price').textContent = formatVND(totalVal);
+
+                            document.getElementById('preview-alert-modal').style.display = 'flex';
+                        }
+
+                        function closeAlertModal() {
+                            document.getElementById('preview-alert-modal').style.display = 'none';
+                        }
+
+                        calculateTotal();
+                    </script>
                 </body>
                 </html>
             `);
@@ -1655,182 +2413,6 @@ $(document).on('click', '.rss-preset', function (e) {
     e.preventDefault();
     $('#rssFeedUrl').val($(this).data('url'));
 });
-
-// $('#fetchRssBtn').click(function () {
-//     const rssUrl = $('#rssFeedUrl').val().trim();
-//     const limit = $('#rssLimit').val() || 20;
-
-//     if (!rssUrl) {
-//         alert('Vui lòng nhập URL RSS feed');
-//         return;
-//     }
-
-//     $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
-
-//     $.ajax({
-//         url: '/admin/api/fetch-api-news',
-//         method: 'POST',
-//         contentType: 'application/json',
-//         data: JSON.stringify({
-//             source_type: 'rss',
-//             rss_url: rssUrl,
-//             limit: parseInt(limit)
-//         }),
-//         success: function (response) {
-//             if (response.success) {
-//                 displayRssArticles(response.data);
-//                 showToast('Thành công', `Đã tải ${response.count} bài viết từ RSS`, 'success');
-//             } else {
-//                 alert('Lỗi: ' + response.error);
-//             }
-//         },
-//         error: function (xhr) {
-//             const error = xhr.responseJSON ? xhr.responseJSON.error : 'Không thể kết nối đến server';
-//             alert('Lỗi: ' + error);
-//         },
-//         complete: function () {
-//             $('#fetchRssBtn').prop('disabled', false).html('<i class="fas fa-download"></i> Tải bài');
-//         }
-//     });
-// });
-
-// function displayRssArticles(articles) {
-//     if (!articles || articles.length === 0) {
-//         $('#rssArticlesList').html('<p class="text-muted text-center">Không có bài viết nào</p>');
-//         return;
-//     }
-
-//     let html = '<div class="row">';
-//     articles.forEach((article, index) => {
-//         html += `
-//             <div class="col-md-6 mb-3">
-//                 <div class="card">
-//                     <div class="card-body">
-//                         <h6 class="card-title">${article.title}</h6>
-//                         <p class="card-text small text-muted">${article.summary.substring(0, 150)}...</p>
-//                         <div class="d-flex justify-content-between align-items-center">
-//                             <small class="text-muted"><i class="fas fa-calendar"></i> ${new Date(article.published_at).toLocaleString('vi-VN')}</small>
-//                             <button class="btn btn-sm btn-primary save-rss-article" data-index="${index}">
-//                                 <i class="fas fa-save"></i> Lưu
-//                             </button>
-//                         </div>
-//                     </div>
-//                 </div>
-//             </div>
-//         `;
-//     });
-//     html += '</div>';
-
-//     $('#rssArticlesList').html(html);
-//     window.rssArticlesData = articles;
-// }
-
-// API News handlers
-// $('#fetchApiBtn').click(function () {
-//     const apiUrl = $('#apiUrl').val().trim();
-//     const apiKey = $('#apiKey').val().trim();
-//     const country = $('#apiCountry').val();
-//     const category = $('#apiCategory').val();
-//     const limit = $('#apiLimit').val() || 20;
-
-//     if (!apiKey) {
-//         alert('Vui lòng nhập API key');
-//         return;
-//     }
-
-//     $(this).prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Đang tải...');
-
-//     $.ajax({
-//         url: '/admin/api/fetch-api-news',
-//         method: 'POST',
-//         contentType: 'application/json',
-//         data: JSON.stringify({
-//             source_type: 'api',
-//             api_url: apiUrl,
-//             api_key: apiKey,
-//             country: country,
-//             category: category,
-//             limit: parseInt(limit)
-//         }),
-//         success: function (response) {
-//             if (response.success) {
-//                 displayApiArticles(response.data);
-//                 showToast('Thành công', `Đã tải ${response.count} bài viết từ API`, 'success');
-//             } else {
-//                 alert('Lỗi: ' + response.error);
-//             }
-//         },
-//         error: function (xhr) {
-//             const error = xhr.responseJSON ? xhr.responseJSON.error : 'Không thể kết nối đến server';
-//             alert('Lỗi: ' + error);
-//         },
-//         complete: function () {
-//             $('#fetchApiBtn').prop('disabled', false).html('<i class="fas fa-download"></i> Tải bài từ API');
-//         }
-//     });
-// });
-
-// function displayApiArticles(articles) {
-//     if (!articles || articles.length === 0) {
-//         $('#apiArticlesList').html('<p class="text-muted text-center">Không có bài viết nào</p>');
-//         return;
-//     }
-
-//     let html = '<div class="row">';
-//     articles.forEach((article, index) => {
-//         html += `
-//             <div class="col-md-6 mb-3">
-//                 <div class="card">
-//                     ${article.thumbnail ? `<img src="${article.thumbnail}" class="card-img-top" alt="thumbnail" style="height: 200px; object-fit: cover;">` : ''}
-//                     <div class="card-body">
-//                         <h6 class="card-title">${article.title}</h6>
-//                         <p class="card-text small text-muted">${article.summary.substring(0, 150)}...</p>
-//                         <div class="d-flex justify-content-between align-items-center">
-//                             <small class="text-muted"><i class="fas fa-calendar"></i> ${new Date(article.published_at).toLocaleString('vi-VN')}</small>
-//                             <button class="btn btn-sm btn-primary save-api-article" data-index="${index}">
-//                                 <i class="fas fa-save"></i> Lưu
-//                             </button>
-//                         </div>
-//                     </div>
-//                 </div>
-//             </div>
-//         `;
-//     });
-//     html += '</div>';
-
-//     $('#apiArticlesList').html(html);
-//     window.apiArticlesData = articles;
-// }
-
-// Save RSS article
-// $(document).on('click', '.save-rss-article', function () {
-//     const index = $(this).data('index');
-//     const article = window.rssArticlesData[index];
-
-//     if (!article) {
-//         alert('Không tìm thấy bài viết');
-//         return;
-//     }
-
-//     // TODO: Show modal to select category and status, then save
-//     console.log('Save RSS article:', article);
-//     alert('Chức năng lưu bài sẽ được hoàn thiện sau. Bài viết: ' + article.title);
-// });
-
-// // Save API article
-// $(document).on('click', '.save-api-article', function () {
-//     const index = $(this).data('index');
-//     const article = window.apiArticlesData[index];
-
-//     if (!article) {
-//         alert('Không tìm thấy bài viết');
-//         return;
-//     }
-
-//     // TODO: Show modal to select category and status, then save
-//     console.log('Save API article:', article);
-//     alert('Chức năng lưu bài sẽ được hoàn thiện sau. Bài viết: ' + article.title);
-// });
 
 // ===== Tag Autocomplete Functionality =====
 
