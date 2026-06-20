@@ -32,6 +32,7 @@ export interface Tour {
   image_url?: string;
   name?: string;
   toursCount?: number;
+  search_key?: string;
 }
 
 export interface TourFilterOptions {

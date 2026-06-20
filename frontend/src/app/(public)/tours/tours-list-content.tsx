@@ -41,6 +41,7 @@ export default function ToursListContent() {
 
   // Đọc các giá trị ban đầu từ URL
   const initialSearch = searchParams.get("search") || "";
+  const initialLocation = searchParams.get("location") || "";
   const initialType = searchParams.get("type") || "all";
   const initialCategory = searchParams.get("category") || "all";
   const initialDate = searchParams.get("date") || "";
@@ -50,6 +51,7 @@ export default function ToursListContent() {
 
   // State các bộ lọc
   const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [locationQuery, setLocationQuery] = useState(initialLocation);
   const [region, setRegion] = useState<string>(initialType);
   const [category, setCategory] = useState<string>(initialCategory);
   const [maxPrice, setMaxPrice] = useState<number>(10000000); // Mặc định 10 triệu
@@ -68,6 +70,7 @@ export default function ToursListContent() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setSearchQuery(initialSearch);
+      setLocationQuery(initialLocation);
       if (initialType !== "all") setRegion(initialType);
       if (initialCategory !== "all") setCategory(initialCategory);
       if (initialDate) setDate(initialDate);
@@ -76,13 +79,14 @@ export default function ToursListContent() {
       if (initialChildren) setChildren(Number(initialChildren));
     }, 0);
     return () => clearTimeout(timer);
-  }, [initialSearch, initialType, initialCategory, initialDate, initialGuests, initialAdults, initialChildren]);
+  }, [initialSearch, initialLocation, initialType, initialCategory, initialDate, initialGuests, initialAdults, initialChildren]);
 
   // Đồng bộ hóa các bộ lọc lên URL (Debounced để tránh giật lag khi kéo giá)
   useEffect(() => {
     const delayDebounce = setTimeout(() => {
       const params = new URLSearchParams();
       if (searchQuery) params.append("search", searchQuery);
+      if (locationQuery) params.append("location", locationQuery);
       if (date) params.append("date", date);
       if (guests) params.append("guests", guests.toString());
       if (adults) params.append("adults", adults.toString());
@@ -101,13 +105,17 @@ export default function ToursListContent() {
     }, 400);
 
     return () => clearTimeout(delayDebounce);
-  }, [searchQuery, region, category, maxPrice, duration, minRating, sortBy, currentPage, router]);
+  }, [searchQuery, locationQuery, region, category, maxPrice, duration, minRating, sortBy, currentPage, router]);
 
   useEffect(() => {
     const search = async () => {
       try {
         const params = new URLSearchParams();
-        if (searchQuery) params.append("search", searchQuery);
+        if (searchQuery) {
+          params.append("search", searchQuery);
+        } else if (locationQuery) {
+          params.append("search", locationQuery);
+        }
         if (date) params.append("date", date);
         if (guests) params.append("guests", guests.toString());
         if (adults) params.append("adults", adults.toString());
@@ -150,20 +158,29 @@ export default function ToursListContent() {
         const filteredMock = mockTours.filter((t) => {
           if (searchQuery.trim()) {
             const term = removeAccents(searchQuery.toLowerCase());
-            return removeAccents(t.title.toLowerCase()).includes(term) || removeAccents(t.location.toLowerCase()).includes(term);
+            if (!removeAccents(t.title.toLowerCase()).includes(term) && !removeAccents(t.location.toLowerCase()).includes(term)) {
+              return false;
+            }
+          }
+          if (locationQuery.trim()) {
+            const locTerm = removeAccents(locationQuery.toLowerCase());
+            const tourLoc = removeAccents(t.location.toLowerCase());
+            const isMatch = tourLoc.includes(locTerm) || locTerm.includes(tourLoc);
+            if (!isMatch) return false;
           }
           return true;
         });
         setTours(filteredMock);
       }
-    }
+    };
     search();
-  }, [searchQuery, date, guests, adults, children]);
+  }, [searchQuery, locationQuery, date, guests, adults, children]);
 
 
   // Hàm Reset bộ lọc
   const handleResetFilters = () => {
     setSearchQuery("");
+    setLocationQuery("");
     setRegion("all");
     setCategory("all");
     setMaxPrice(10000000);
@@ -189,6 +206,18 @@ export default function ToursListContent() {
         removeAccents((tour.location_name || "").toLowerCase()).includes(term) ||
         removeAccents((tour.location || "").toLowerCase()).includes(term);
       if (!inTitle && !inLocation) return false;
+    }
+
+    // Lọc theo địa điểm cụ thể (tham số location)
+    if (locationQuery.trim()) {
+      const locTerm = removeAccents(locationQuery.toLowerCase());
+      const tourLocName = removeAccents((tour.location_name || "").toLowerCase());
+      const tourLoc = removeAccents((tour.location || "").toLowerCase());
+      const isMatch = tourLocName.includes(locTerm) || 
+                      locTerm.includes(tourLocName) || 
+                      tourLoc.includes(locTerm) || 
+                      locTerm.includes(tourLoc);
+      if (!isMatch) return false;
     }
 
     // 2. Lọc theo thể loại

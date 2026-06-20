@@ -207,10 +207,11 @@ export default function PublicPage() {
             {/* Grid Spotlight */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {listDestinations?.map((dest, i) => (
-                <div
+                <Link
                   key={i}
+                  href={`/tours?location=${encodeURIComponent(dest.name || "")}`}
                   className={cn(
-                    "relative overflow-hidden rounded-3xl group shadow-sm hover:shadow-lg cursor-pointer",
+                    "relative overflow-hidden rounded-3xl group shadow-sm hover:shadow-lg cursor-pointer block",
                     dest.className,
                   )}
                 >
@@ -233,7 +234,7 @@ export default function PublicPage() {
                       {dest.name}
                     </h3>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </div>
