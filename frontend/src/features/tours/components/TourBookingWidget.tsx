@@ -23,6 +23,7 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [recentBookingId, setRecentBookingId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,7 +33,7 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
     : Math.round(pricePerAdult * 0.7); // Trẻ em lấy từ database nếu có, ngược lại tính 70%
   const totalPrice = adults * pricePerAdult + children * pricePerChild;
 
-  const handleBooking = async (e: React.FormEvent) => {
+  const handleBooking = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!isAuthenticated || !user) {
@@ -42,6 +43,11 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
       return;
     }
 
+    setIsConfirmModalOpen(true);
+  };
+
+  const executeBooking = async () => {
+    setIsConfirmModalOpen(false);
     try {
       setIsSubmitting(true);
       const bookingData = {
@@ -286,6 +292,14 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
               Đặt Chỗ Thành Công!
             </h3>
 
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-4 px-2">
+              Nhân viên hỗ trợ sẽ nhanh chóng liên hệ với quý khách qua số điện thoại{" "}
+              <strong className="text-cyan-500 font-bold">
+                {user?.phoneNumber || "đăng ký"}
+              </strong>{" "}
+              để xác nhận hành trình.
+            </p>
+
             <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-6">
               Mã giao dịch: <span className="font-mono font-semibold text-zinc-600 dark:text-zinc-400">{recentBookingId}</span>
             </p>
@@ -329,6 +343,81 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
                 className="w-full py-3 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold rounded-xl text-sm transition-all cursor-pointer bg-transparent"
               >
                 Đóng
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ================= MODAL XÁC NHẬN ĐẶT TOUR ================= */}
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          {/* Backdrop */}
+          <div
+            onClick={() => setIsConfirmModalOpen(false)}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          />
+
+          {/* Modal Content */}
+          <div className="relative bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 max-w-md w-full rounded-3xl p-6 sm:p-8 shadow-2xl animate-scale-up text-center z-10">
+
+            <div className="w-16 h-16 bg-cyan-50 dark:bg-cyan-950/20 text-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Calendar className="w-10 h-10" />
+            </div>
+
+            <h3 className="text-xl font-extrabold text-zinc-900 dark:text-white mb-2">
+              Xác Nhận Đặt Tour?
+            </h3>
+
+            <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-6">
+              Quý khách vui lòng kiểm tra kỹ các thông tin hành trình dưới đây trước khi xác nhận đặt tour.
+            </p>
+
+            {/* Chi tiết đơn hàng dự kiến */}
+            <div className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200/50 dark:border-zinc-800/50 rounded-2xl p-4 text-left space-y-2.5 text-xs text-zinc-650 dark:text-zinc-300 mb-6">
+              <div>
+                <span className="text-zinc-400 block mb-0.5">Tên tour hành trình:</span>
+                <span className="font-bold text-zinc-800 dark:text-zinc-200">{tour.title}</span>
+              </div>
+              <div className="flex justify-between">
+                <div>
+                  <span className="text-zinc-400 block mb-0.5">Ngày đi dự kiến:</span>
+                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                    {departureDate ? new Date(departureDate).toLocaleDateString("vi-VN", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }) : "N/A"}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-zinc-400 block mb-0.5">Hành khách:</span>
+                  <span className="font-semibold text-zinc-800 dark:text-zinc-200">
+                    {adults} Người lớn {children > 0 && `, ${children} Trẻ em`}
+                  </span>
+                </div>
+              </div>
+              <div className="pt-2.5 border-t border-zinc-200/50 dark:border-zinc-850 flex justify-between items-center text-sm">
+                <span className="font-bold text-zinc-800 dark:text-zinc-200">Tổng tạm tính:</span>
+                <span className="font-extrabold text-cyan-500 dark:text-cyan-400">{formatCurrency(totalPrice)}</span>
+              </div>
+            </div>
+
+            {/* Các nút hành động */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="flex-1 py-3 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-bold rounded-xl text-sm transition-all cursor-pointer bg-transparent"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={executeBooking}
+                className="flex-1 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-1 cursor-pointer border-0"
+              >
+                Xác nhận đặt
               </button>
             </div>
 

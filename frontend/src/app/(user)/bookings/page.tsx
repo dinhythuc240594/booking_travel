@@ -141,19 +141,19 @@ export default function BookingsPage() {
       case BookingStatus.PENDING:
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30">
-            <Clock className="w-3.5 h-3.5" /> Chờ xác nhận
+            <Clock className="w-3.5 h-3.5" /> Chờ duyệt
           </span>
         );
       case BookingStatus.CONFIRMED:
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/30">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Đã xác nhận
+            <CheckCircle2 className="w-3.5 h-3.5" /> Đã duyệt
           </span>
         );
       case BookingStatus.COMPLETED:
         return (
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/20 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-900/30">
-            <ShieldCheck className="w-3.5 h-3.5" /> Hoàn thành
+            <ShieldCheck className="w-3.5 h-3.5" /> Hoàn thành tour
           </span>
         );
       case BookingStatus.CANCELLED:

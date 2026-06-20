@@ -145,7 +145,7 @@ class TourModel:
         return query.all()
 
     def _tour_to_dict(self, tour: db.Tour, adult: int = 1, children: int = 0) -> dict:
-        
+
         # Parse images JSON string nếu có
         images_list = []
         if tour.images:
@@ -195,7 +195,7 @@ class TourModel:
             'reviewer': tour.reviewer.username if tour.reviewer else None,
             'reviewer_full_name': tour.reviewer.full_name if tour.reviewer and tour.reviewer.full_name else (tour.reviewer.username if tour.reviewer else None),
             'is_api': tour.is_api if hasattr(tour, 'is_api') else False,
-            'status': tour.status.value,
+            'status': tour.status.value if tour.status else '',
             'created_at': tour.created_at.strftime('%d/%m/%Y %H:%M') if tour.created_at else '',
             'published_at': tour.published_at.strftime('%d/%m/%Y %H:%M') if tour.published_at else '',
             'updated_at': tour.updated_at.strftime('%d/%m/%Y %H:%M') if tour.updated_at else '',

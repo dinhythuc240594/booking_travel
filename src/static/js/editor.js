@@ -304,7 +304,7 @@ $(document).ready(function () {
         let dates = [];
         try {
             dates = JSON.parse($('#articleStartDates').val() || '[]');
-        } catch (e) {}
+        } catch (e) { }
         if (dates.includes(dateVal)) {
             showToast('Cảnh báo', 'Ngày này đã có trong danh sách!', 'warning');
             return;
@@ -326,7 +326,7 @@ $(document).ready(function () {
         let dates = [];
         try {
             dates = JSON.parse($('#editArticleStartDates').val() || '[]');
-        } catch (e) {}
+        } catch (e) { }
         if (dates.includes(dateVal)) {
             showToast('Cảnh báo', 'Ngày này đã có trong danh sách!', 'warning');
             return;
@@ -392,7 +392,7 @@ async function loadSectionData(section) {
         case 'my-articles':
             loadMyArticles(1, $('#filterStatus').val(), $('#searchMyArticles').val().trim());
             break;
-        case 'drafts':
+        case 'draft':
             loadDrafts();
             break;
         case 'pending':
@@ -632,7 +632,7 @@ function updatePageTitle(section) {
         'dashboard': 'Dashboard',
         'my-articles': 'Bài viết của tôi',
         'create': 'Tạo bài viết mới',
-        'drafts': 'Bản nháp',
+        'draft': 'Bản nháp',
         'pending': 'Chờ duyệt',
         'published': 'Đã xuất bản',
         'tour-tree': 'Thư mục bài viết',
@@ -671,25 +671,40 @@ async function loadMyArticles(page = 1, status = null, search = null) {
             date: item.created_at || item.published_at || ''
         }));
 
-        var tabIdLoad = '';
-        if (status == 'draft') {
-            tabIdLoad = 'draftsTable';
-        } else if (status == 'pending') {
-            tabIdLoad = 'pendingTable';
-        } else if (status == 'published') {
-            tabIdLoad = 'publishedTable';
-        } else {
+        var tabIdLoad = 'myArticlesTable';
+        var paginationId = 'myArticlesPagination';
+        var infoId = 'myArticlesInfo';
+        var activeTab = status;
+        if (activeTab == 'my-articles') {
             tabIdLoad = 'myArticlesTable';
+            paginationId = 'myArticlesPagination';
+            infoId = 'myArticlesInfo';
+        } else if (activeTab == 'draft') {
+            tabIdLoad = 'draftsTable';
+            paginationId = 'draftsPagination';
+            infoId = 'draftsInfo';
+        } else if (activeTab == 'pending') {
+            tabIdLoad = 'pendingTable';
+            paginationId = 'pendingPagination';
+            infoId = 'pendingInfo';
+        } else if (activeTab == 'published') {
+            tabIdLoad = 'publishedTable';
+            paginationId = 'publishedPagination';
+            infoId = 'publishedInfo';
+        } else if (activeTab == 'rejected') {
+            tabIdLoad = 'rejectedTable';
+            paginationId = 'rejectedPagination';
+            infoId = 'rejectedInfo';
         }
 
         const pagination = result.pagination || {};
         displayArticles(articles, tabIdLoad);
         updatePagination(
             pagination,
-            'myArticlesPagination',
-            (newPage) => loadMyArticles(newPage, $('#filterStatus').val(), $('#searchMyArticles').val().trim())
+            paginationId,
+            (newPage) => loadMyArticles(newPage, status, search)
         );
-        updateInfoText(pagination, 'myArticlesInfo');
+        updateInfoText(pagination, infoId);
     } catch (error) {
         console.error('Lỗi tải bài viết:', error);
         hideSpinner();
@@ -700,7 +715,7 @@ async function loadMyArticles(page = 1, status = null, search = null) {
 // Load danh sách bản nháp
 function loadDrafts(page = 1) {
     const search = $('#searchDrafts').val() ? $('#searchDrafts').val().trim() : null;
-    fetchMyArticlesForSection('draft', page, search, 'draftsTable', 'draftsPagination', 'draftsInfo', 'drafts');
+    fetchMyArticlesForSection('draft', page, search, 'draftsTable', 'draftsPagination', 'draftsInfo', 'draft');
 }
 
 // Load danh sách chờ duyệt
@@ -827,8 +842,8 @@ function displayArticles(articles, tableBodyId) {
             html += '<button class="btn btn-sm btn-info btn-action btn-view" data-id="' + article.tour_id + '" title="Xem bài viết">';
             html += '<i class="fas fa-eye"></i>';
             html += '</button>';
-        } else {
-            // Các trạng thái khác (published, rejected) vẫn có nút delete
+        } else if (article.status != 'published') {
+            // Các trạng thái khác published vẫn có nút delete
             html += '<button class="btn btn-sm btn-danger btn-action btn-delete" data-id="' + article.tour_id + '" title="Xóa">';
             html += '<i class="fas fa-trash"></i>';
             html += '</button>';
@@ -1507,11 +1522,9 @@ async function saveEdit(newStatus = null) {
             start_dates: JSON.parse($('#editArticleStartDates').val() || '[]')
             // tags: tags
         };
-        if (newStatus) {
-            payload.status = newStatus;
-        } else {
-            payload.status = status;
-        }
+
+        var activeTab = $('.sidebar-menu').find('.active').children('a').attr('data-section');
+        payload.status = status;
 
         const response = await fetch(`/admin/api/tour/article/${articleId}/edit`, {
             method: 'POST',
@@ -1525,7 +1538,7 @@ async function saveEdit(newStatus = null) {
             showToast('Thành công', 'Bài viết đã được cập nhật', 'success');
             bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
             refreshEditorStats(false);
-            loadMyArticles(1, status, null);
+            loadMyArticles(1, activeTab, null);
         } else {
             showToast('Lỗi', result.error || 'Không thể cập nhật bài viết', 'warning');
         }
@@ -1562,7 +1575,7 @@ async function deleteArticle(articleId) {
             const activeSection = $('.content-section.active').attr('id');
             if (activeSection === 'my-articles') {
                 loadMyArticles(1, $('#filterStatus').val(), $('#searchMyArticles').val().trim());
-            } else if (activeSection === 'drafts') {
+            } else if (activeSection === 'draft') {
                 loadDrafts(1);
             } else if (activeSection === 'pending') {
                 loadPendingArticlesEditor(1);
@@ -2100,7 +2113,7 @@ window.removeGalleryImage = function (containerId, hiddenInputId, index) {
 function renderStartDatesList(containerSelector, hiddenInputSelector, dates) {
     const $container = $(containerSelector);
     $container.empty();
-    
+
     dates.forEach(function (dateStr) {
         let formattedDate = dateStr;
         try {
@@ -2108,7 +2121,7 @@ function renderStartDatesList(containerSelector, hiddenInputSelector, dates) {
             if (parts.length === 3) {
                 formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
             }
-        } catch(e) {}
+        } catch (e) { }
 
         const $badge = $(`
             <span class="badge bg-primary d-flex align-items-center gap-2 px-3 py-2" style="font-size: 0.9rem;">
@@ -2121,7 +2134,7 @@ function renderStartDatesList(containerSelector, hiddenInputSelector, dates) {
             let currentDates = [];
             try {
                 currentDates = JSON.parse($(hiddenInputSelector).val() || '[]');
-            } catch (e) {}
+            } catch (e) { }
             currentDates = currentDates.filter(d => d !== dateStr);
             $(hiddenInputSelector).val(JSON.stringify(currentDates));
             renderStartDatesList(containerSelector, hiddenInputSelector, currentDates);

@@ -1621,8 +1621,54 @@ class AdminController:
             if not booking:
                 return jsonify({'success': False, 'error': 'Không tìm thấy booking'}), 404
                 
+            old_status = booking.booking_status
             booking.booking_status = new_status
             self.db_session.commit()
+            
+            # Gửi email thông báo tự động khi thay đổi trạng thái
+            if old_status != new_status:
+                try:
+                    from email_utils import send_booking_approved_email, send_booking_completed_email
+                    
+                    # Lấy tên tour
+                    tour_title = "N/A"
+                    if booking.booking_type == BookingType.TOUR:
+                        tour = self.db_session.query(Tour).get(booking.reference_id)
+                        if tour:
+                            tour_title = tour.title
+                            
+                    user_name = booking.user.full_name or booking.user.username
+                    to_email = booking.user.email
+                    check_in_date = booking.check_in_date.strftime('%d-%m-%Y') if booking.check_in_date else 'N/A'
+                    total_price_formatted = "{:,.0f}".format(float(booking.total_price)) if booking.total_price else "0"
+                    
+                    if new_status == BookingStatus.CONFIRMED:
+                        send_booking_approved_email(
+                            to_email=to_email,
+                            user_name=user_name,
+                            booking_id=booking.booking_id,
+                            tour_title=tour_title,
+                            check_in_date=check_in_date,
+                            total_price=total_price_formatted
+                        )
+                    elif new_status == BookingStatus.COMPLETED:
+                        from database import Payment
+                        payment = self.db_session.query(Payment).filter(Payment.booking_id == booking.booking_id).first()
+                        payment_method = payment.payment_method.value if (payment and payment.payment_method) else 'credit_card'
+                        
+                        send_booking_completed_email(
+                            to_email=to_email,
+                            user_name=user_name,
+                            booking_id=booking.booking_id,
+                            tour_title=tour_title,
+                            check_in_date=check_in_date,
+                            total_price=total_price_formatted,
+                            adults=booking.adults or 1,
+                            children=booking.children or 0,
+                            payment_method=payment_method
+                        )
+                except Exception as ex:
+                    print(f"Error sending booking status email: {str(ex)}")
             
             return jsonify({
                 'success': True,

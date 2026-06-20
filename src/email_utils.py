@@ -227,3 +227,146 @@ def send_password_reset_email(user_email, reset_token):
     except Exception as e:
         print(f"Error sending password reset email: {str(e)}")
         return False
+
+
+def send_booking_approved_email(to_email, user_name, booking_id, tour_title, check_in_date, total_price):
+    """
+    Gửi email thông báo đơn đặt tour đã được duyệt
+    """
+    try:
+        subject = f"Đơn đặt tour #{booking_id} đã được duyệt thành công"
+        body_html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eef2f3;">
+                <div style="text-align: center; border-bottom: 2px solid #00acc1; padding-bottom: 20px; margin-bottom: 20px;">
+                    <h2 style="color: #00acc1; margin: 0;">Xác Nhận Duyệt Đơn Đặt Tour</h2>
+                    <p style="color: #7f8c8d; margin: 5px 0 0 0;">Mã đơn: #{booking_id}</p>
+                </div>
+                <p>Xin chào <strong>{user_name}</strong>,</p>
+                <p>Chúc mừng bạn! Yêu cầu đặt tour của bạn đã được duyệt thành công. Dưới đây là thông tin chi tiết:</p>
+                <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+                    <tr style="background-color: #f8f9fa;">
+                        <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold; width: 35%;">Tên Tour:</td>
+                        <td style="padding: 10px; border: 1px solid #dee2e6;">{tour_title}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Ngày khởi hành:</td>
+                        <td style="padding: 10px; border: 1px solid #dee2e6;">{check_in_date}</td>
+                    </tr>
+                    <tr style="background-color: #f8f9fa;">
+                        <td style="padding: 10px; border: 1px solid #dee2e6; font-weight: bold;">Tổng tiền:</td>
+                        <td style="padding: 10px; border: 1px solid #dee2e6; color: #e74c3c; font-weight: bold;">{total_price} VNĐ</td>
+                    </tr>
+                </table>
+                <p>Nhân viên của chúng tôi sẽ liên hệ trực tiếp với bạn qua số điện thoại để hỗ trợ chuẩn bị trước ngày khởi hành.</p>
+                <p>Chúc quý khách có một chuyến đi vui vẻ và ý nghĩa!</p>
+                <div style="border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 30px; text-align: center; color: #95a5a6; font-size: 12px;">
+                    <p>Đây là email tự động từ hệ thống VnTravel. Vui lòng không trả lời trực tiếp email này.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        body_text = f"""Xin chào {user_name},
+        Yêu cầu đặt tour #{booking_id} của bạn đã được duyệt thành công.
+        Tên Tour: {tour_title}
+        Ngày khởi hành: {check_in_date}
+        Tổng tiền: {total_price} VNĐ
+        Chúc quý khách có một chuyến đi vui vẻ!
+        """
+        return send_email(to_email, subject, body_html, body_text)
+    except Exception as e:
+        print(f"Error sending booking approved email: {str(e)}")
+        return False
+
+
+def send_booking_completed_email(to_email, user_name, booking_id, tour_title, check_in_date, total_price, adults, children, payment_method):
+    """
+    Gửi email thông báo đơn đặt tour đã hoàn thành kèm hóa đơn điện tử
+    """
+    try:
+        subject = f"Hóa đơn hoàn thành dịch vụ đặt tour #{booking_id}"
+        
+        pay_methods = {
+            'credit_card': 'Thẻ tín dụng',
+            'paypal': 'Paypal',
+            'bank_transfer': 'Chuyển khoản ngân hàng',
+            'cash': 'Tiền mặt'
+        }
+        pay_method_vn = pay_methods.get(payment_method, payment_method or 'Thẻ tín dụng')
+        
+        body_html = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9f9f9; padding: 20px;">
+            <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); border: 1px solid #eef2f3;">
+                <div style="text-align: center; border-bottom: 2px solid #2ecc71; padding-bottom: 20px; margin-bottom: 20px;">
+                    <h2 style="color: #2ecc71; margin: 0;">HÓA ĐƠN ĐIỆN TỬ</h2>
+                    <p style="color: #7f8c8d; margin: 5px 0 0 0;">Mã hóa đơn/đơn hàng: #{booking_id}</p>
+                    <p style="color: #95a5a6; font-size: 12px; margin: 5px 0 0 0;">Trạng thái: Đã hoàn thành & Thanh toán</p>
+                </div>
+                
+                <p>Kính gửi quý khách <strong>{user_name}</strong>,</p>
+                <p>Cảm ơn quý khách đã tin tưởng và đồng hành cùng VnTravel. Chuyến đi của quý khách đã hoàn thành tốt đẹp. Dưới đây là hóa đơn chi tiết dịch vụ đã thực hiện:</p>
+                
+                <div style="background-color: #fcfcfc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+                    <h4 style="margin-top: 0; color: #2c3e50; border-bottom: 1px solid #edf2f7; padding-bottom: 8px;">Chi tiết hóa đơn</h4>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                        <tr>
+                            <td style="padding: 6px 0; color: #718096;">Khách hàng:</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #2d3748;">{user_name}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; color: #718096;">Email:</td>
+                            <td style="padding: 6px 0; text-align: right; color: #2d3748;">{to_email}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; color: #718096;">Tên Tour:</td>
+                            <td style="padding: 6px 0; text-align: right; font-weight: bold; color: #2d3748;">{tour_title}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; color: #718096;">Khởi hành:</td>
+                            <td style="padding: 6px 0; text-align: right; color: #2d3748;">{check_in_date}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; color: #718096;">Số lượng:</td>
+                            <td style="padding: 6px 0; text-align: right; color: #2d3748;">{adults} Người lớn {f", {children} Trẻ em" if children > 0 else ""}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 6px 0; color: #718096;">Phương thức thanh toán:</td>
+                            <td style="padding: 6px 0; text-align: right; color: #2d3748;">{pay_method_vn}</td>
+                        </tr>
+                        <tr style="border-top: 1px solid #e2e8f0; font-size: 16px;">
+                            <td style="padding: 12px 0 0 0; font-weight: bold; color: #2c3e50;">Tổng thanh toán:</td>
+                            <td style="padding: 12px 0 0 0; text-align: right; font-weight: bold; color: #2ecc71;">{total_price} VNĐ</td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <p>Hóa đơn này được tạo tự động và xác nhận giao dịch thanh toán của quý khách là thành công.</p>
+                <p>Rất hân hạnh được phục vụ quý khách trong những hành trình tiếp theo!</p>
+                
+                <div style="border-top: 1px solid #eeeeee; padding-top: 20px; margin-top: 30px; text-align: center; color: #95a5a6; font-size: 12px;">
+                    <p>Đây là email tự động từ hệ thống VnTravel. Vui lòng không trả lời trực tiếp email này.</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        body_text = f"""Kính gửi quý khách {user_name},
+        Cảm ơn quý khách đã tin tưởng VnTravel. Chuyến đi của quý khách đã hoàn thành.
+        
+        HÓA ĐƠN CHI TIẾT
+        Mã đơn đặt tour: #{booking_id}
+        Tên Tour: {tour_title}
+        Khởi hành: {check_in_date}
+        Hành khách: {adults} Người lớn, {children} Trẻ em
+        Phương thức thanh toán: {pay_method_vn}
+        Tổng thanh toán: {total_price} VNĐ
+        
+        Trân trọng cảm ơn quý khách!
+        """
+        return send_email(to_email, subject, body_html, body_text)
+    except Exception as e:
+        print(f"Error sending booking completed email: {str(e)}")
+        return False
