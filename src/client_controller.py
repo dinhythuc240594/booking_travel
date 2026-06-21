@@ -219,6 +219,12 @@ class Controller():
                 )
                 
                 if user:
+
+                    session['customer_user_id'] = user.user_id
+                    session['customer_username'] = user.username
+                    session['customer_full_name'] = user.full_name or user.username
+                    session['customer_role'] = user.role.value
+
                     user = {
                         "id": user.user_id,
                         "username": user.username,
