@@ -143,7 +143,7 @@ function LoginContent() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-xs font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500 mb-2">
-              Địa chỉ Email
+              Tài khoản đăng nhập
             </label>
             <div className="relative">
               <span className="absolute left-4 top-3 text-zinc-400">
@@ -151,7 +151,7 @@ function LoginContent() {
               </span>
               <input
                 id="email"
-                type="email"
+                type="text"
                 required
                 placeholder="email@example.com"
                 value={email}
