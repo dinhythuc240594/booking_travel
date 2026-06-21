@@ -54,7 +54,47 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Thành phố <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="city" name="city" required>
+                        <select class="form-select" id="city" name="city" required>
+                            <option value="">-- Chọn Tỉnh/Thành phố --</option>
+                            {% if provinces %}
+                                {% for province in provinces %}
+                                    <option value="{{ province }}">{{ province }}</option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="An Giang">An Giang</option>
+                                <option value="Bà Rịa - Vũng Tàu">Bà Rịa - Vũng Tàu</option>
+                                <option value="Bạc Liêu">Bạc Liêu</option>
+                                <option value="Bến Tre">Bến Tre</option>
+                                <option value="Bình Thuận">Bình Thuận</option>
+                                <option value="Cần Thơ">Cần Thơ</option>
+                                <option value="Cao Bằng">Cao Bằng</option>
+                                <option value="Đà Nẵng">Đà Nẵng</option>
+                                <option value="Đắk Lắk">Đắk Lắk</option>
+                                <option value="Điện Biên">Điện Biên</option>
+                                <option value="Đồng Nai">Đồng Nai</option>
+                                <option value="Hà Giang">Hà Giang</option>
+                                <option value="Hà Nội">Hà Nội</option>
+                                <option value="Hà Tĩnh">Hà Tĩnh</option>
+                                <option value="Hải Phòng">Hải Phòng</option>
+                                <option value="Hòa Bình">Hòa Bình</option>
+                                <option value="Khánh Hòa">Khánh Hòa</option>
+                                <option value="Kiên Giang">Kiên Giang</option>
+                                <option value="Lâm Đồng">Lâm Đồng</option>
+                                <option value="Lạng Sơn">Lạng Sơn</option>
+                                <option value="Lào Cai">Lào Cai</option>
+                                <option value="Nghệ An">Nghệ An</option>
+                                <option value="Ninh Bình">Ninh Bình</option>
+                                <option value="Phú Yên">Phú Yên</option>
+                                <option value="Quảng Bình">Quảng Bình</option>
+                                <option value="Quảng Nam">Quảng Nam</option>
+                                <option value="Quảng Ngãi">Quảng Ngãi</option>
+                                <option value="Quảng Ninh">Quảng Ninh</option>
+                                <option value="Quảng Trị">Quảng Trị</option>
+                                <option value="Sơn La">Sơn La</option>
+                                <option value="Thừa Thiên Huế">Thừa Thiên Huế</option>
+                                <option value="TP. Hồ Chí Minh">TP. Hồ Chí Minh</option>
+                            {% endif %}
+                        </select>
                         <div class="invalid-feedback"></div>
                     </div>
                     <div class="mb-3" style="display: none;">

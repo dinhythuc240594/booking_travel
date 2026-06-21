@@ -20,6 +20,41 @@ interface LocationOption {
   search_key: string;
 }
 
+const DOMESTIC_PROVINCES = [
+  "An Giang",
+  "Bà Rịa - Vũng Tàu",
+  "Bạc Liêu",
+  "Bến Tre",
+  "Bình Thuận",
+  "Cần Thơ",
+  "Cao Bằng",
+  "Đà Nẵng",
+  "Đắk Lắk",
+  "Điện Biên",
+  "Đồng Nai",
+  "Hà Giang",
+  "Hà Nội",
+  "Hà Tĩnh",
+  "Hải Phòng",
+  "Hòa Bình",
+  "Khánh Hòa",
+  "Kiên Giang",
+  "Lâm Đồng",
+  "Lạng Sơn",
+  "Lào Cai",
+  "Nghệ An",
+  "Ninh Bình",
+  "Phú Yên",
+  "Quảng Bình",
+  "Quảng Nam",
+  "Quảng Ngãi",
+  "Quảng Ninh",
+  "Quảng Trị",
+  "Sơn La",
+  "Thừa Thiên Huế",
+  "TP. Hồ Chí Minh"
+];
+
 export default function TourSearch() {
   const router = useRouter();
   const [destination, setDestination] = useState("");
@@ -73,6 +108,47 @@ export default function TourSearch() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const getSuggestions = () => {
+    const q = removeAccents(destination.toLowerCase().trim());
+    const suggestions = new Set<string>();
+    
+    if (locationType === "domestic") {
+      // 1. Check direct matches against the 32 provinces
+      DOMESTIC_PROVINCES.forEach(prov => {
+        if (removeAccents(prov.toLowerCase()).includes(q)) {
+          suggestions.add(prov);
+        }
+      });
+      
+      // 2. Check matches in locationsList (e.g. typing "Sa Pa" matches "Lào Cai")
+      locationsList.forEach(loc => {
+        const name = removeAccents(loc.name.toLowerCase());
+        const city = loc.city || "";
+        const searchKey = removeAccents((loc.search_key || "").toLowerCase());
+        
+        if (name.includes(q) || searchKey.includes(q)) {
+          if (city && DOMESTIC_PROVINCES.includes(city)) {
+            suggestions.add(city);
+          }
+        }
+      });
+    } else {
+      // For international, just deduplicate and match
+      locationsList.forEach(loc => {
+        const name = removeAccents(loc.name.toLowerCase());
+        const city = loc.city || loc.name;
+        const cityNorm = removeAccents(city.toLowerCase());
+        const searchKey = removeAccents((loc.search_key || "").toLowerCase());
+        
+        if (name.includes(q) || cityNorm.includes(q) || searchKey.includes(q)) {
+          suggestions.add(city);
+        }
+      });
+    }
+    
+    return Array.from(suggestions);
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,35 +273,21 @@ export default function TourSearch() {
                   )}
                 </p>
                 <div className="flex flex-col gap-1 max-h-60 overflow-y-auto">
-                  {!isFetchingLocations && locationsList
-                    .filter(dest => {
-                      const q = removeAccents(destination.toLowerCase().trim());
-                      const name = removeAccents(dest.name.toLowerCase());
-                      const city = removeAccents((dest.city || "").toLowerCase());
-                      const searchKey = removeAccents((dest.search_key || "").toLowerCase());
-                      return name.includes(q) || city.includes(q) || searchKey.includes(q);
-                    })
-                    .map((dest, i) => (
+                  {!isFetchingLocations && getSuggestions().map((city, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => {
-                          setDestination(dest.city || dest.name);
+                          setDestination(city);
                           setIsDestDropdownOpen(false);
                         }}
                         className="flex items-center gap-3 w-full px-3 py-2 rounded-xl text-sm font-medium hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors text-left cursor-pointer"
                       >
                         <MapPin className="w-4 h-4 text-zinc-400" />
-                        <span>{dest.city || dest.name}</span>
+                        <span>{city}</span>
                       </button>
                     ))}
-                  {!isFetchingLocations && locationsList.filter(dest => {
-                    const q = removeAccents(destination.toLowerCase().trim());
-                    const name = removeAccents(dest.name.toLowerCase());
-                    const city = removeAccents((dest.city || "").toLowerCase());
-                    const searchKey = removeAccents((dest.search_key || "").toLowerCase());
-                    return name.includes(q) || city.includes(q) || searchKey.includes(q);
-                  }).length === 0 && (
+                  {!isFetchingLocations && getSuggestions().length === 0 && (
                     <div className="text-zinc-500 text-xs py-2 px-3">
                       Không tìm thấy gợi ý nào phù hợp.
                     </div>

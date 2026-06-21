@@ -8,7 +8,7 @@ from sqlalchemy import or_, desc
 
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME, CATEGORY_NAME_DICT, _allowed_file
+from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME, CATEGORY_NAME_DICT, _allowed_file, VIETNAM_PROVINCES
 from email_utils import send_email
 from template_html import EMAIL_BODY_HTML, EMAIL_SUBJECT_TEST, EMAIL_BODY_HTML_TEST, EMAIL_BODY_TEXT_TEST
 from database import (
@@ -146,6 +146,7 @@ class AdminController:
                              stat_rejected=rejected_tour,
                              pending_list=pending_list,
                              latest_tours=latest_tours,
+                             provinces=VIETNAM_PROVINCES,
                              user=user)
     
     def editor_dashboard(self):

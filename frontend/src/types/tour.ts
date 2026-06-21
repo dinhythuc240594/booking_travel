@@ -27,6 +27,8 @@ export interface Tour {
   excluded?: string[]; // Dịch vụ không bao gồm (tip, chi phí cá nhân,...)
   itinerary?: ItineraryDay[];
   location_name?: string;
+  location_city?: string;
+  location_search_key?: string;
   country?: string;
   className?: string;
   image_url?: string;

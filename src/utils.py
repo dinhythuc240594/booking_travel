@@ -190,3 +190,39 @@ def _allowed_file(filename):
     """Kiểm tra file có được phép upload không"""
     return '.' in filename and \
             filename.rsplit('.', 1)[1].lower() in current_app.config.get('ALLOWED_EXTENSIONS', {'png', 'jpg', 'jpeg', 'gif', 'webp'})
+
+
+VIETNAM_PROVINCES = [
+    "An Giang",
+    "Bà Rịa - Vũng Tàu",
+    "Bạc Liêu",
+    "Bến Tre",
+    "Bình Thuận",
+    "Cần Thơ",
+    "Cao Bằng",
+    "Đà Nẵng",
+    "Đắk Lắk",
+    "Điện Biên",
+    "Đồng Nai",
+    "Hà Giang",
+    "Hà Nội",
+    "Hà Tĩnh",
+    "Hải Phòng",
+    "Hòa Bình",
+    "Khánh Hòa",
+    "Kiên Giang",
+    "Lâm Đồng",
+    "Lạng Sơn",
+    "Lào Cai",
+    "Nghệ An",
+    "Ninh Bình",
+    "Phú Yên",
+    "Quảng Bình",
+    "Quảng Nam",
+    "Quảng Ngãi",
+    "Quảng Ninh",
+    "Quảng Trị",
+    "Sơn La",
+    "Thừa Thiên Huế",
+    "TP. Hồ Chí Minh"
+]

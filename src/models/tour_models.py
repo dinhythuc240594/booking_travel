@@ -207,6 +207,8 @@ class TourModel:
             'category_name_vi': CATEGORY_NAME_DICT.get(tour.category_name, tour.category_name) if tour.category_name else 'N/A',
             'location_id': tour.location_id,
             'location_name': tour.location.name if tour.location else 'Việt Nam',
+            'location_city': tour.location.city if tour.location else '',
+            'location_search_key': tour.location.search_key if tour.location else '',
             'price_per_adult': tour.price_per_adult,
             'price_per_child': tour.price_per_child,
             'duration_days': tour.duration_days,

@@ -138,6 +138,8 @@ export default function ToursListContent() {
             price_per_child: Number(t.price_per_child) || 0,
             duration: t.duration ? t.duration : durationStr,
             location: t.location_name || t.location || "Việt Nam",
+            location_city: t.location_city || "",
+            location_search_key: t.location_search_key || "",
             country: t.country || "Việt Nam",
             featuredImage: t.thumbnail ? (t.thumbnail.startsWith('http') ? t.thumbnail : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.thumbnail) : (t.featuredImage ? (t.featuredImage.startsWith('http') ? t.featuredImage : (process.env.NEXT_PUBLIC_BASE_URL || "") + t.featuredImage) : "https://images.unsplash.com/photo-1508873699372-7aeab60b44ab?w=800&auto=format&fit=crop&q=80"),
             images: Array.isArray(t.images) && t.images.length > 0
@@ -204,7 +206,9 @@ export default function ToursListContent() {
       const inTitle = removeAccents(tour.title.toLowerCase()).includes(term);
       const inLocation =
         removeAccents((tour.location_name || "").toLowerCase()).includes(term) ||
-        removeAccents((tour.location || "").toLowerCase()).includes(term);
+        removeAccents((tour.location || "").toLowerCase()).includes(term) ||
+        removeAccents((tour.location_city || "").toLowerCase()).includes(term) ||
+        removeAccents((tour.location_search_key || "").toLowerCase()).includes(term);
       if (!inTitle && !inLocation) return false;
     }
 
@@ -213,10 +217,16 @@ export default function ToursListContent() {
       const locTerm = removeAccents(locationQuery.toLowerCase());
       const tourLocName = removeAccents((tour.location_name || "").toLowerCase());
       const tourLoc = removeAccents((tour.location || "").toLowerCase());
+      const tourLocCity = removeAccents((tour.location_city || "").toLowerCase());
+      const tourLocSearchKey = removeAccents((tour.location_search_key || "").toLowerCase());
       const isMatch = tourLocName.includes(locTerm) || 
                       locTerm.includes(tourLocName) || 
                       tourLoc.includes(locTerm) || 
-                      locTerm.includes(tourLoc);
+                      locTerm.includes(tourLoc) ||
+                      tourLocCity.includes(locTerm) ||
+                      locTerm.includes(tourLocCity) ||
+                      tourLocSearchKey.includes(locTerm) ||
+                      locTerm.includes(tourLocSearchKey);
       if (!isMatch) return false;
     }
 
