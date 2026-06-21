@@ -375,7 +375,10 @@ async function loadLocations() {
                 html += `
                 <tr>
                     <td>${location.location_id}</td>
-                    <td>${escapeHtml(location.name)}</td>
+                    <td>
+                        <strong>${escapeHtml(location.name)}</strong><br>
+                        <small class="text-muted">Slug: ${escapeHtml(location.slug || '')}</small>
+                    </td>
                     <td>${escapeHtml(location.city)}</td>
                     <td><img src="${escapeHtml(location.image_url)}" width="100px" height="100px"></td>
                     <td>

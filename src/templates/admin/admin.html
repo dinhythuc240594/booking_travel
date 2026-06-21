@@ -542,6 +542,8 @@
         $('#locationModalLabel').html('<i class="fas fa-location-plus me-2"></i>Thêm địa điểm mới');
         $('#locationForm')[0].reset();
         $('#locationId').val('');
+        $('#slug').prop('readonly', false);
+        $('#slug').prop('disabled', false);
         $('#locationImagePreview').attr('src', '{{ url_for("static", filename="images/default-image.jpg") }}');
         $('#locationModal').modal('show');
     });
@@ -559,12 +561,9 @@
             city: $('#city').val(),
             country: $('#country').val(),
             description: $('#description').val(),
-            image_url: $('#image_url').val()
+            image_url: $('#image_url').val(),
+            slug: $('#slug').val()
         };
-
-        if (!$('#slug').is(':disabled')) {
-            data.slug = $('#slug').val();
-        }
 
         const locationId = $('#locationId').val();
         const url = locationId ? `/admin/api/locations/update/${locationId}` : `/admin/api/locations/create`;
@@ -593,8 +592,8 @@
 
     $(document).on('click', '.edit-location', function () {
         const locationId = $(this).data('id');
-        $('#slug').prop('readonly', true);
-        $('#slug').prop('disabled', true);
+        $('#slug').prop('readonly', false);
+        $('#slug').prop('disabled', false);
         $.ajax({
             url: `/admin/api/locations/${locationId}`,
             method: 'GET',
@@ -632,13 +631,19 @@
         });
     });
 
-    $('#city').on('change', function () {
-        const city = $(this).val();
-        const name = $('#name').val();
-        const name_slug = city + ' ' + name;
-        const slug = slugify(name_slug);
-        $('#slug').val(slug);
-    });
+    // Auto-generate slug when name or city is input, but only when creating a new location
+    function updateLocationSlug() {
+        const locationId = $('#locationId').val();
+        if (!locationId) {
+            const city = $('#city').val() || '';
+            const name = $('#name').val() || '';
+            const name_slug = (city + ' ' + name).trim();
+            const slug = slugify(name_slug);
+            $('#slug').val(slug);
+        }
+    }
+
+    $('#name, #city').on('input change', updateLocationSlug);
 
     // Image preview and upload
     $('#locationImage').change(function () {

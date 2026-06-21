@@ -57,6 +57,33 @@ async function uploadArticleImage(file, type_data = null, id = null) {
 }
 
 
+// Generate slug from text
+function slugify(text) {
+    if (!text) return '';
+    
+    // Map Vietnamese characters
+    const from = "àáäâãèéëêìíïîòóöôõùúüûñçăắằẳẵặâấầẩẫậđèéẹẻẽêếềểễệìíịỉĩòóọỏõôốồổỗộơớờởỡợùúụủũưứừửữựỳýỵỷỹ";
+    const to = "aaaaaeeeeiiiioooooouuuuncaaaaaaaaaaaadeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyy";
+    
+    let slug = text.toLowerCase();
+    
+    for (let i = 0; i < from.length; i++) {
+        slug = slug.replace(new RegExp(from[i], 'g'), to[i]);
+    }
+    
+    // Convert đ/Đ to d
+    slug = slug.replace(/đ/g, 'd');
+    
+    slug = slug.replace(/[^a-z0-9 -]/g, '') // remove invalid chars
+               .replace(/\s+/g, '-')       // collapse whitespace and replace by -
+               .replace(/-+/g, '-')        // collapse dashes
+               .replace(/^-+/, '')         // trim - from start of text
+               .replace(/-+$/, '');        // trim - from end of text
+    
+    return slug;
+}
+
+
 $(document).ready(function () {
     checkAuth();
 });

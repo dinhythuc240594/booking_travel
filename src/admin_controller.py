@@ -1294,7 +1294,15 @@ class AdminController:
             country = data.get('country', '').strip()
             description = data.get('description', '').strip()
             image_url = data.get('image_url', '').strip()
-            slug = data.get('slug', '')
+            slug = data.get('slug', '').strip()
+            
+            if not slug:
+                slug = generate_slug(f"{city} {name}")
+                
+            # Check unique slug
+            existing = self.db_session.query(Location).filter(Location.slug == slug).first()
+            if existing:
+                return jsonify({'success': False, 'error': f'Slug "{slug}" đã tồn tại cho địa điểm khác'}), 400
             
             success = self.location_model.create_location_bulk(
                 [{   
@@ -1333,10 +1341,20 @@ class AdminController:
             country = data.get('country', '').strip()
             description = data.get('description', '').strip()
             image_url = data.get('image_url', '').strip()
-            # location_id = data.get('location_id', '')
+            slug = data.get('slug', '').strip()
+            
             location = self.location_model.get_by_id(location_id)
             if not location:
                 return jsonify({'success': False, 'error': 'Không tìm thấy địa điểm'}), 404
+                
+            if not slug:
+                slug = generate_slug(f"{city} {name}")
+                
+            # Check unique slug
+            existing = self.db_session.query(Location).filter(Location.slug == slug, Location.location_id != location_id).first()
+            if existing:
+                return jsonify({'success': False, 'error': f'Slug "{slug}" đã tồn tại cho địa điểm khác'}), 400
+
             success = self.location_model.update_location(
                 {
                     'location_id':location_id,
@@ -1345,7 +1363,8 @@ class AdminController:
                     'city':city,
                     'country':country,
                     'description':description,
-                    'image_url':image_url
+                    'image_url':image_url,
+                    'slug':slug
                 }
             )
             
@@ -1395,7 +1414,8 @@ class AdminController:
                     'city': location.city,
                     'country': location.country,
                     'description': location.description,
-                    'image_url': location.image_url
+                    'image_url': location.image_url,
+                    'slug': location.slug
                 })
 
             print(locations_data)
