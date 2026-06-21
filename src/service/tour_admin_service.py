@@ -101,7 +101,7 @@ class TourAdminService:
             return tour_id
         except Exception as e:
             print(e)
-            return None
+            raise e
         finally:
             session.close()
 

@@ -25,7 +25,7 @@ class UserService:
             return command.user_record
         except Exception as e:
             session.rollback()
-            return None
+            raise e
         finally:
             session.close()
 
@@ -62,7 +62,7 @@ class UserService:
         except Exception as e:
             print(e)
             session.rollback()
-            return False
+            raise e
         finally:
             session.close()
 

@@ -46,9 +46,18 @@ axiosInstance.interceptors.response.use(
       // Gọi hàm logout từ Zustand Auth Store để xóa thông tin phiên đăng nhập
       useAuthStore.getState().logout();
       
-      // Nếu đang chạy ở phía trình duyệt, tự động redirect về trang login
+      // Nếu đang chạy ở phía trình duyệt, tự động redirect về trang login nếu ở trang được bảo vệ
       if (typeof window !== "undefined") {
-        window.location.href = "/login";
+        const currentPath = window.location.pathname;
+        const isProtectedRoute = currentPath.startsWith("/profile") || 
+                                 currentPath.startsWith("/bookings") || 
+                                 currentPath.startsWith("/wishlist") || 
+                                 currentPath.startsWith("/reviews");
+        
+        if (isProtectedRoute) {
+          const fullPath = window.location.pathname + window.location.search;
+          window.location.href = `/login?redirect=${encodeURIComponent(fullPath)}`;
+        }
       }
     }
 

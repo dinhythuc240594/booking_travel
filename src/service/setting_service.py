@@ -47,6 +47,6 @@ class SettingService:
             invoker.execute_transaction(session, [command])
             return True
         except Exception as e:
-            return False
+            raise e
         finally:
             session.close()

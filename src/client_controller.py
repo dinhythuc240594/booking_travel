@@ -7,7 +7,7 @@ from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 from sqlalchemy import or_, desc
 import traceback
-from utils import validate_email, validate_password, validate_phone, hash_password, verify_password, _allowed_file, CATEGORY_MAP, DOMESTIC
+from utils import validate_email, validate_password, validate_phone, hash_password, verify_password, _allowed_file, CATEGORY_MAP, DOMESTIC, format_db_error
 from email_utils import generate_token, send_password_reset_email
 from database import (
     get_session,
@@ -249,10 +249,11 @@ class Controller():
                     })
             except Exception as e:
                 print(e)
+                
                 return jsonify({
                     'status': False,
                     'code': 400,
-                    'message': 'Đăng ký thất bại',
+                    'message': f'Đăng ký thất bại: {format_db_error(e)}',
                     'user': {}
                 })
 
@@ -423,7 +424,7 @@ class Controller():
             return jsonify({
                 'status': False,
                 'code': 500,
-                'message': 'Có lỗi xảy ra trong quá trình đặt lại mật khẩu',
+                'message': f'Có lỗi xảy ra trong quá trình đặt lại mật khẩu: {format_db_error(e)}',
                 'user': {}
             })
         finally:
@@ -717,8 +718,9 @@ class Controller():
             self.db_session.rollback()
             print(f"Error in create_booking: {str(e)}")
             return jsonify({
-                'status': 500,
-                'message': f'Lỗi hệ thống khi đặt tour: {str(e)}'
+                'status': False,
+                'code': 500,
+                'message': f'Lỗi hệ thống khi đặt tour: {format_db_error(e)}'
             }), 500
         finally:
             self.db_session.close()
@@ -746,7 +748,7 @@ class Controller():
             return jsonify({
                 'status': False,
                 'code': 500,
-                'message': f'Lỗi hệ thống: {str(e)}'
+                'message': f'Lỗi hệ thống: {format_db_error(e)}'
             }), 500
 
     def profile_user(self):

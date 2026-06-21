@@ -10,7 +10,7 @@ import random as rand_module
 
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
-from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME, CATEGORY_NAME_DICT, _allowed_file, VIETNAM_PROVINCES
+from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME, CATEGORY_NAME_DICT, _allowed_file, VIETNAM_PROVINCES, format_db_error
 from email_utils import send_email, send_booking_approved_email, send_booking_completed_email
 from template_html import EMAIL_BODY_HTML, EMAIL_SUBJECT_TEST, EMAIL_BODY_HTML_TEST, EMAIL_BODY_TEXT_TEST
 from database import (
@@ -823,10 +823,14 @@ class AdminController:
             else:
                 data_dict['start_dates'] = start_dates
 
-        result = self.admin_model.create_tour(data_dict)
-        tour_obj = self.tour_model.get_by_id(result['tour_id'])
-        data = self.tour_model._tour_to_dict(tour_obj) if tour_obj else None
-        return jsonify({'success': result.get('success'), 'message': result.get('message'), 'data': data})
+        try:
+            result = self.admin_model.create_tour(data_dict)
+            tour_obj = self.tour_model.get_by_id(result['tour_id'])
+            data = self.tour_model._tour_to_dict(tour_obj) if tour_obj else None
+            return jsonify({'success': result.get('success'), 'message': result.get('message'), 'data': data})
+        except Exception as e:
+            self.db_session.rollback()
+            return jsonify({'success': False, 'error': format_db_error(e)}), 500
 
     def api_edit_tour(self, tour_id: int):
         user_id = session.get('admin_user_id')
@@ -1225,7 +1229,8 @@ class AdminController:
             })
         except Exception as e:
             self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
+            err_msg = format_db_error(e)
+            return jsonify({'success': False, 'error': err_msg, 'message': err_msg}), 500
     
     def api_update_user(self, user_id):
         """API cập nhật user hoặc lấy thông tin user"""
@@ -1276,7 +1281,8 @@ class AdminController:
             })
         except Exception as e:
             self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
+            err_msg = format_db_error(e)
+            return jsonify({'success': False, 'error': err_msg, 'message': err_msg}), 500
     
     def api_create_location(self):
         """API tạo danh sách địa điểm"""
@@ -1323,7 +1329,8 @@ class AdminController:
             })
         except Exception as e:
             self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
+            err_msg = format_db_error(e)
+            return jsonify({'success': False, 'error': err_msg, 'message': err_msg}), 500
 
     def api_update_location(self, location_id):
         """API cập nhật danh sách địa điểm"""
@@ -1375,7 +1382,8 @@ class AdminController:
             })
         except Exception as e:
             self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
+            err_msg = format_db_error(e)
+            return jsonify({'success': False, 'error': err_msg, 'message': err_msg}), 500
 
     def api_delete_location(self, location_id):
         try:
@@ -1399,7 +1407,8 @@ class AdminController:
             })
         except Exception as e:
             self.db_session.rollback()
-            return jsonify({'success': False, 'error': str(e)}), 500
+            err_msg = format_db_error(e)
+            return jsonify({'success': False, 'error': err_msg, 'message': err_msg}), 500
 
     def api_location(self):
         """API lấy danh sách địa điểm"""
@@ -1473,11 +1482,15 @@ class AdminController:
     
     def api_update_settings(self):
         data = request.json if request.is_json else request.form
-        success = self.setting_model.update_settings(data)
-        
-        if success:
-            return jsonify({'success': True, 'message': 'Cập nhật cài đặt thành công'})
-        return jsonify({'success': False, 'error': 'Có lỗi khi cập nhật'}), 500
+        try:
+            success = self.setting_model.update_settings(data)
+            if success:
+                return jsonify({'success': True, 'message': 'Cập nhật cài đặt thành công'})
+            return jsonify({'success': False, 'error': 'Có lỗi khi cập nhật', 'message': 'Có lỗi khi cập nhật'}), 500
+        except Exception as e:
+            self.db_session.rollback()
+            err_msg = format_db_error(e)
+            return jsonify({'success': False, 'error': err_msg, 'message': err_msg}), 500
     
     def api_test_email(self):
         """API test gửi email"""
@@ -1745,7 +1758,8 @@ class AdminController:
         except Exception as e:
             self.db_session.rollback()
             print(f"Error in api_update_booking_status: {str(e)}")
-            return jsonify({'success': False, 'error': str(e)}), 500
+            err_msg = format_db_error(e)
+            return jsonify({'success': False, 'error': err_msg, 'message': err_msg}), 500
 
     def api_bookings_statistics(self):
         """API lấy thống kê đặt tour cho dashboard admin"""

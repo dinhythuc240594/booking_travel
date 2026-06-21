@@ -226,3 +226,95 @@ VIETNAM_PROVINCES = [
     "Thừa Thiên Huế",
     "TP. Hồ Chí Minh"
 ]
+
+def format_db_error(e) -> str:
+    """
+    Định dạng lỗi database thành thông điệp tiếng Việt chi tiết và thân thiện.
+    """
+    if e is None:
+        return "Lỗi không xác định."
+        
+    error_msg = ""
+    is_integrity = False
+    is_data_error = False
+
+    if isinstance(e, str):
+        error_msg = e
+        lower_msg = e.lower()
+        if "integrityerror" in lower_msg or "duplicate" in lower_msg or "1062" in e or "foreign key" in lower_msg or "1451" in e or "1452" in e or "cannot be null" in lower_msg or "1048" in e:
+            is_integrity = True
+        elif "dataerror" in lower_msg or "too long" in lower_msg or "1406" in e or "out of range" in lower_msg or "1264" in e or "incorrect decimal value" in lower_msg or "1366" in e:
+            is_data_error = True
+    else:
+        from sqlalchemy.exc import IntegrityError, DataError, SQLAlchemyError
+        if isinstance(e, IntegrityError):
+            is_integrity = True
+        elif isinstance(e, DataError):
+            is_data_error = True
+        
+        if hasattr(e, 'orig') and e.orig:
+            error_msg = str(e.orig)
+        else:
+            error_msg = str(e)
+            
+    # Xử lý các lỗi ràng buộc toàn vẹn dữ liệu (IntegrityError)
+    if is_integrity:
+        # Lỗi trùng lặp dữ liệu (Unique Constraint)
+        if "duplicate" in error_msg.lower() or "1062" in error_msg:
+            # Tìm trường bị trùng
+            match = re.search(r"for key '([^']+)'", error_msg)
+            if match:
+                key_name = match.group(1)
+                if "." in key_name:
+                    key_name = key_name.split(".")[-1]
+                
+                # Ánh xạ tên trường sang tiếng Việt
+                field_map = {
+                    "username": "Tên đăng nhập",
+                    "email": "Địa chỉ email",
+                    "slug": "Đường dẫn (slug) tạo từ tiêu đề",
+                    "name": "Tên địa điểm/khách sạn",
+                }
+                for k, v in field_map.items():
+                    if k in key_name.lower():
+                        return f"{v} đã tồn tại trong hệ thống. Vui lòng chọn giá trị khác."
+                return f"Dữ liệu của trường '{key_name}' bị trùng lặp với thông tin đã có."
+            return "Thông tin đăng ký bị trùng lặp với dữ liệu đã tồn tại."
+            
+        # Lỗi khóa ngoại (Foreign Key Constraint)
+        elif "foreign key" in error_msg.lower() or "1216" in error_msg or "1217" in error_msg or "1451" in error_msg or "1452" in error_msg:
+            return "Lỗi liên kết dữ liệu: Bản ghi liên quan không tồn tại."
+            
+        # Lỗi dữ liệu bắt buộc bị bỏ trống (Not Null Constraint)
+        elif "cannot be null" in error_msg.lower() or "1048" in error_msg:
+            match = re.search(r"Column '([^']+)' cannot be null", error_msg)
+            if match:
+                col_name = match.group(1)
+                return f"Trường thông tin '{col_name}' bắt buộc phải nhập."
+            return "Có trường thông tin bắt buộc bị bỏ trống."
+            
+    # Xử lý lỗi dữ liệu không hợp lệ hoặc quá dài (DataError)
+    elif is_data_error:
+        # Lỗi dữ liệu quá dài (Data Too Long)
+        if "too long" in error_msg.lower() or "1406" in error_msg:
+            match = re.search(r"Column '([^']+)'", error_msg)
+            if match:
+                col_name = match.group(1)
+                return f"Nội dung nhập vào ở trường '{col_name}' vượt quá giới hạn cho phép."
+            return "Nội dung vượt quá giới hạn cho phép."
+            
+        # Lỗi số quá giới hạn (Out Of Range)
+        elif "out of range" in error_msg.lower() or "1264" in error_msg:
+            return "Giá trị số nhập vào vượt quá phạm vi giới hạn cho phép."
+            
+        # Lỗi sai định dạng số hoặc kiểu dữ liệu
+        elif "incorrect decimal value" in error_msg.lower() or "1366" in error_msg or "incorrect value" in error_msg.lower():
+            return "Định dạng dữ liệu không hợp lệ."
+
+    # Trả về thông báo lỗi gốc được lược bớt thông tin hệ thống nhạy cảm
+    clean_msg = error_msg
+    # Loại bỏ các thông tin sql thô nếu có
+    if "update" in clean_msg.lower() or "insert" in clean_msg.lower():
+        clean_msg = clean_msg.split("[SQL:")[0].strip()
+    return f"Lỗi cơ sở dữ liệu: {clean_msg}"
+

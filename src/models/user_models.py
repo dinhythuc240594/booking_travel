@@ -7,6 +7,7 @@ import utils
 from service.user_service import UserService
 from service.tour_admin_service import TourAdminService
 from service.tour_client_service import TourClientService
+from utils import format_db_error
 
 
 class UserModel:
@@ -135,7 +136,7 @@ class AdminModel(UserModel):
         success, message, tour_record = TourAdminService.update_tour(tour_id, data)
         if success:
             return {'success': True, 'message': 'Cập nhật bài viết thành công', 'data': tour_record}
-        return {'success': False, 'message': 'Cập nhật bài viết thất bại', 'data': None}
+        return {'success': False, 'message': f'Cập nhật bài viết thất bại: {format_db_error(message)}', 'data': None}
 
     def delete_tour(self, tour_id: int) -> dict:
         """Xóa bài viết"""
@@ -143,7 +144,7 @@ class AdminModel(UserModel):
         success, message, tour_record = TourAdminService.delete_tour(tour_id)
         if success:
             return {'success': True, 'message': 'Xóa bài viết thành công', 'data': tour_record}
-        return {'success': False, 'message': 'Xóa bài viết thất bại', 'data': None}
+        return {'success': False, 'message': f'Xóa bài viết thất bại: {format_db_error(message)}', 'data': None}
 
     def approve_tour(self, tour_id: int, user_id: int) -> dict:
         """Duyệt bài viết"""
@@ -151,7 +152,7 @@ class AdminModel(UserModel):
         success, message, tour_record = TourAdminService.api_approved_atour(tour_id, user_id)
         if success:
             return {'success': True, 'message': 'Duyệt bài viết thành công', 'data': tour_record}
-        return {'success': False, 'message': 'Duyệt bài viết thất bại', 'data': None}
+        return {'success': False, 'message': f'Duyệt bài viết thất bại: {format_db_error(message)}', 'data': None}
 
     def reject_tour(self, tour_id: int, user_id: int, reason: str = None) -> dict:
         """Từ chối bài viết"""
@@ -159,7 +160,7 @@ class AdminModel(UserModel):
         success, message, tour_record = TourAdminService.api_rejected_atour(tour_id, user_id, reason)
         if success:
             return {'success': True, 'message': 'Từ chối bài viết thành công', 'data': tour_record}
-        return {'success': False, 'message': 'Từ chối bài viết thất bại', 'data': None}
+        return {'success': False, 'message': f'Từ chối bài viết thất bại: {format_db_error(message)}', 'data': None}
 
     def statistics_editor(self, user_id: int):
         """Thống kê bài viết"""

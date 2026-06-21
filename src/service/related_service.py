@@ -104,7 +104,7 @@ class RelatedService:
         except Exception as e:
             print(e)
             session.rollback()
-            return False
+            raise e
         finally:
             session.close()
 
