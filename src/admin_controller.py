@@ -5,11 +5,13 @@ from random import random
 from database import Location
 from flask import Blueprint, render_template, request, jsonify, abort, redirect, url_for, flash, session, current_app
 from sqlalchemy import or_, desc
+import json
+import random as rand_module
 
 from datetime import datetime, timedelta
 from werkzeug.utils import secure_filename
 from utils import validate_email, validate_password, generate_slug, verify_password, hash_password, CATEGORY_NAME, CATEGORY_NAME_DICT, _allowed_file, VIETNAM_PROVINCES
-from email_utils import send_email
+from email_utils import send_email, send_booking_approved_email, send_booking_completed_email
 from template_html import EMAIL_BODY_HTML, EMAIL_SUBJECT_TEST, EMAIL_BODY_HTML_TEST, EMAIL_BODY_TEXT_TEST
 from database import (
     Tour,
@@ -814,7 +816,6 @@ class AdminController:
         except (ValueError, TypeError):
             data_dict['duration_days'] = 1
 
-        import json
         start_dates = data.get('start_dates')
         if start_dates is not None:
             if isinstance(start_dates, (list, tuple)):
@@ -864,7 +865,6 @@ class AdminController:
             except (ValueError, TypeError):
                 data['duration_days'] = 1
 
-        import json
         start_dates = data.get('start_dates')
         if start_dates is not None:
             if isinstance(start_dates, (list, tuple)):
@@ -1672,7 +1672,6 @@ class AdminController:
                 payment = self.db_session.query(Payment).filter(Payment.booking_id == booking_id).first()
                 
                 # Random hình thức thanh toán từ các member của PaymentMethod
-                import random as rand_module
                 random_method = rand_module.choice([
                     PaymentMethod.CREDIT_CARD,
                     PaymentMethod.PAYPAL,
@@ -1698,7 +1697,7 @@ class AdminController:
             # Gửi email thông báo tự động khi thay đổi trạng thái
             if old_status != new_status:
                 try:
-                    from email_utils import send_booking_approved_email, send_booking_completed_email
+                    
                     
                     # Lấy tên tour
                     tour_title = "N/A"

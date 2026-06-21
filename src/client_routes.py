@@ -7,6 +7,7 @@ from flask import Blueprint, render_template, request, jsonify, abort, make_resp
 import json
 import base
 import client_controller
+import os
 
 
 # Create Blueprint for client with url_prefix is empty to redirect route
@@ -109,7 +110,6 @@ class ForgotPassword(BaseClientView):
 class ResetPassword(BaseClientView):
     
     def get(self):
-        import os
         token = request.args.get('token', '')
         frontend_url = os.environ.get('FRONTEND_URL') or 'http://localhost:3000'
         return redirect(f"{frontend_url}/reset-password?token={token}")

@@ -6,6 +6,7 @@ import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import secrets
+from database import get_session, Setting
 from flask import url_for, current_app
 
 
@@ -31,7 +32,6 @@ def get_smtp_config():
     """
     try:
         # Thử lấy từ database settings
-        from database import get_session, Setting
         db_session = get_session()
         try:
             smtp_settings = db_session.query(Setting).filter(

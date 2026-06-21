@@ -2,7 +2,7 @@
 
 from datetime import timedelta
 import os
-import secrets;
+import secrets
 
 class envConfig():
 

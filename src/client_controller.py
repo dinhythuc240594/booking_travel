@@ -5,6 +5,8 @@ import os
 from flask import render_template, request, jsonify, abort, redirect, url_for, flash, session
 from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
+from sqlalchemy import or_, desc
+import traceback
 from utils import validate_email, validate_password, validate_phone, hash_password, verify_password, _allowed_file, CATEGORY_MAP, DOMESTIC
 from email_utils import generate_token, send_password_reset_email
 from database import (
@@ -46,7 +48,7 @@ class Controller():
             category = request.args.get('category')
             if category and category != 'all':
                 if category in CATEGORY_MAP:
-                    from sqlalchemy import or_
+                    
                     query = self.db_session.query(Tour).filter(Tour.is_deleted == False, Tour.status == TourStatus.PUBLISHED)
                     filters = [Tour.category_name.ilike(f"%{name}%") for name in CATEGORY_MAP[category]]
                     query = query.filter(or_(*filters))
@@ -477,7 +479,6 @@ class Controller():
             # Lấy các tour liên quan (cùng địa điểm hoặc cùng danh mục, loại trừ tour hiện tại)
             related_tours = []
             if tour.location_id or tour.category_name:
-                from sqlalchemy import or_, desc
                 query = self.db_session.query(Tour).filter(
                     Tour.status == TourStatus.PUBLISHED,
                     Tour.is_deleted == False,
@@ -498,7 +499,6 @@ class Controller():
                 
             if len(related_tours) < 3:
                 exclude_ids = [tour.tour_id] + [t["tour_id"] for t in related_tours]
-                from sqlalchemy import desc
                 fallback_query = self.db_session.query(Tour).filter(
                     Tour.status == TourStatus.PUBLISHED,
                     Tour.is_deleted == False,
@@ -516,7 +516,6 @@ class Controller():
         except Exception as e:
             self.db_session.rollback()
             
-            import traceback
             print(f"Error in tours_detail: {str(e)}")
             traceback.print_exc()
             
