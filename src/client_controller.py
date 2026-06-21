@@ -56,11 +56,11 @@ class Controller():
                 else:
                     tours_list = self.tour_model.get_by_category_name(category)
                 
-                tours_json = [self.tour_model._tour_to_dict(tour) for tour in tours_list]
+                tours_json = [self.tour_model._tour_to_dict(tour, filter_past_dates=True) for tour in tours_list]
                 return tours_json
             else:
                 tours_list = self.tour_model.get_public_tours(limit, offset)
-                tours_json = [self.tour_model._tour_to_dict(tour) for tour in tours_list]
+                tours_json = [self.tour_model._tour_to_dict(tour, filter_past_dates=True) for tour in tours_list]
                 return tours_json
         finally:
             self.db_session.close()
@@ -496,7 +496,7 @@ class Controller():
                     query = query.filter(or_(*filters))
                 
                 db_related = query.order_by(desc(Tour.published_at)).limit(3).all()
-                related_tours = [self.tour_model._tour_to_dict(t) for t in db_related]
+                related_tours = [self.tour_model._tour_to_dict(t, filter_past_dates=True) for t in db_related]
                 
             if len(related_tours) < 3:
                 exclude_ids = [tour.tour_id] + [t["tour_id"] for t in related_tours]
@@ -506,10 +506,10 @@ class Controller():
                     ~Tour.tour_id.in_(exclude_ids)
                 ).order_by(desc(Tour.published_at)).limit(3 - len(related_tours))
                 for t in fallback_query.all():
-                    related_tours.append(self.tour_model._tour_to_dict(t))
+                    related_tours.append(self.tour_model._tour_to_dict(t, filter_past_dates=True))
 
             return {
-                "tour": self.tour_model._tour_to_dict(tour),
+                "tour": self.tour_model._tour_to_dict(tour, filter_past_dates=True),
                 "is_saved": is_saved,
                 "user_id": user_id,
                 "related_tours": related_tours
@@ -572,7 +572,7 @@ class Controller():
                     limit=per_page,
                     offset=offset
                 )
-            tours_json = [self.tour_model._tour_to_dict(tour, adult, children) for tour in tour_list]
+            tours_json = [self.tour_model._tour_to_dict(tour, adult, children, filter_past_dates=True) for tour in tour_list]
             return tours_json
 
         finally:

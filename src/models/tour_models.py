@@ -144,7 +144,7 @@ class TourModel:
             query = query.limit(limit).offset(offset)
         return query.all()
 
-    def _tour_to_dict(self, tour: db.Tour, adult: int = 1, children: int = 0) -> dict:
+    def _tour_to_dict(self, tour: db.Tour, adult: int = 1, children: int = 0, filter_past_dates: bool = False) -> dict:
 
         # Parse images JSON string nếu có
         images_list = []
@@ -158,7 +158,13 @@ class TourModel:
         start_dates_list = []
         if getattr(tour, 'start_dates', None):
             try:
-                start_dates_list = json.loads(tour.start_dates)
+                parsed_dates = json.loads(tour.start_dates)
+                if isinstance(parsed_dates, list):
+                    if filter_past_dates:
+                        today_str = datetime.date.today().isoformat()
+                        start_dates_list = [d for d in parsed_dates if isinstance(d, str) and d >= today_str]
+                    else:
+                        start_dates_list = parsed_dates
             except:
                 pass
 
