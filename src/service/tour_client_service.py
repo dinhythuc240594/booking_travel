@@ -181,12 +181,18 @@ class TourClientService:
             # Gốc cây lớn
             root = TourGroupComposite("Tất cả điểm đến", "Hệ thống")
             
-            # Khởi tạo các nhóm theo địa điểm
+            # Khởi tạo các nhóm theo địa điểm (Duy nhất theo Thành phố/City)
             location_groups = {}
+            city_groups = {}
             for loc in locations:
-                group = TourGroupComposite(loc.city, "Địa điểm")
+                city_name = loc.city or "Khác"
+                if city_name not in city_groups:
+                    group = TourGroupComposite(city_name, "Địa điểm")
+                    city_groups[city_name] = group
+                    root.add_child(group)
+                else:
+                    group = city_groups[city_name]
                 location_groups[loc.location_id] = group
-                root.add_child(group)
                 
             # Tạo nhóm "Không xác định" cho tours không có location_id hoặc location_id không tìm thấy
             unknown_location_group = TourGroupComposite("Địa điểm khác", "Địa điểm")
