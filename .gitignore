@@ -60,3 +60,4 @@ Thumbs.db
 
 # Static files uploads
 /src/static/uploads
+*.mp4
