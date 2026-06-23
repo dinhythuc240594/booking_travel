@@ -540,10 +540,10 @@ export default function ToursListContent() {
                     }}
                     className="bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500 text-zinc-800 dark:text-zinc-100 cursor-pointer"
                   >
-                    <option value="recommended">Đề xuất hàng đầu</option>
+                    {/* <option value="recommended">Đề xuất hàng đầu</option> */}
                     <option value="priceAsc">Giá: Từ thấp đến cao</option>
                     <option value="priceDesc">Giá: Từ cao đến thấp</option>
-                    <option value="rating">Đánh giá tốt nhất</option>
+                    {/* <option value="rating">Đánh giá tốt nhất</option> */}
                   </select>
                 </div>
               </div>
