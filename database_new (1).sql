@@ -245,35 +245,6 @@ INSERT INTO `saved_tour` VALUES (1,3,3,'2026-06-09 19:28:14'),(2,4,2,'2026-06-09
 UNLOCK TABLES;
 
 --
--- Table structure for table `saved_tours`
---
-
-DROP TABLE IF EXISTS `saved_tours`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `saved_tours` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `tour_id` int NOT NULL,
-  `created_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  KEY `tour_id` (`tour_id`),
-  CONSTRAINT `saved_tours_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `saved_tours_ibfk_2` FOREIGN KEY (`tour_id`) REFERENCES `tour` (`tour_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `saved_tours`
---
-
-LOCK TABLES `saved_tours` WRITE;
-/*!40000 ALTER TABLE `saved_tours` DISABLE KEYS */;
-/*!40000 ALTER TABLE `saved_tours` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `settings`
 --
 
