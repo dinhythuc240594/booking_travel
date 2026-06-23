@@ -628,7 +628,7 @@ class TourComment(Base):
 
 
 class Savedtour(Base):
-    __tablename__ = 'saved_tours'
+    __tablename__ = 'saved_tour'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)
@@ -641,7 +641,7 @@ class Savedtour(Base):
 
 
 class Viewedtour(Base):
-    __tablename__ = 'viewed_tours'
+    __tablename__ = 'viewed_tour'
     
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.user_id', ondelete="CASCADE"), nullable=False)

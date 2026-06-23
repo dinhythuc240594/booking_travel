@@ -492,35 +492,6 @@ INSERT INTO `viewed_tour` VALUES (1,3,1,'2026-06-09 19:28:14'),(2,3,2,'2026-06-0
 /*!40000 ALTER TABLE `viewed_tour` ENABLE KEYS */;
 UNLOCK TABLES;
 
---
--- Table structure for table `viewed_tours`
---
-
-DROP TABLE IF EXISTS `viewed_tours`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `viewed_tours` (
-  `id` int NOT NULL AUTO_INCREMENT,
-  `user_id` int NOT NULL,
-  `tour_id` int NOT NULL,
-  `created_at` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  KEY `tour_id` (`tour_id`),
-  CONSTRAINT `viewed_tours_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
-  CONSTRAINT `viewed_tours_ibfk_2` FOREIGN KEY (`tour_id`) REFERENCES `tour` (`tour_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `viewed_tours`
---
-
-LOCK TABLES `viewed_tours` WRITE;
-/*!40000 ALTER TABLE `viewed_tours` DISABLE KEYS */;
-INSERT INTO `viewed_tours` VALUES (1,8,4,'2026-06-21 10:38:06'),(2,7,8,'2026-06-21 10:38:06'),(3,7,4,'2026-06-21 10:38:06'),(4,7,15,'2026-06-21 12:29:46'),(5,7,13,'2026-06-21 12:29:46'),(6,7,12,'2026-06-21 12:29:46');
-/*!40000 ALTER TABLE `viewed_tours` ENABLE KEYS */;
-UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
