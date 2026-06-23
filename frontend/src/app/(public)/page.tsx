@@ -66,7 +66,7 @@ export default function PublicPage() {
               reviewsCount: t.reviewsCount || 12,
               category: mapCategoryNameToId(t.category_name || t.category || "culture"),
               maxGroupSize: t.maxGroupSize || 20,
-              startDates: t.startDates || ["2026-06-12", "2026-06-19", "2026-06-26"],
+              startDates: t.startDates || [],
               highlights: t.highlights || [],
             };
           });

@@ -26,6 +26,21 @@ const mapCategoryNameToId = (name: string): string => {
   return "culture"; // default fallback
 };
 
+const filterStartDates = (dates: string[]): string[] => {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return dates.filter((dateStr: string) => {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      const diffTime = d.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays > 7;
+    }
+    return false;
+  });
+};
+
 interface DetailTourProps {
   slug: string;
 }
@@ -91,11 +106,13 @@ export default function DetailTour({ slug }: DetailTourProps) {
                 image_url: item.thumbnail || imagesList[0],
                 category: mapCategoryNameToId(item.category_name || "culture"),
                 maxGroupSize: item.maxGroupSize || 20,
-                startDates: (Array.isArray(item.start_dates) && item.start_dates.length > 0)
-                  ? item.start_dates
-                  : (Array.isArray(item.startDates) && item.startDates.length > 0)
-                  ? item.startDates
-                  : ["2026-06-15", "2026-06-22", "2026-06-29"],
+                startDates: filterStartDates(
+                  (Array.isArray(item.start_dates) && item.start_dates.length > 0)
+                    ? item.start_dates
+                    : (Array.isArray(item.startDates) && item.startDates.length > 0)
+                      ? item.startDates
+                      : ["2026-06-15", "2026-06-22", "2026-06-29"]
+                ),
                 highlights: item.highlights || [
                   "Chuyến đi khám phá thắng cảnh nổi tiếng của địa phương.",
                   "Tìm hiểu văn hóa, lối sống và con người nơi đây.",
@@ -140,7 +157,8 @@ export default function DetailTour({ slug }: DetailTourProps) {
         const mockTour = mockTours.find((t) => t.slug === slug);
         if (isMounted) {
           if (mockTour) {
-            setTour(mockTour);
+            const filteredMockTour = { ...mockTour, startDates: filterStartDates(mockTour.startDates) };
+            setTour(filteredMockTour);
             const tourReviews = mockReviews.filter((r) => r.tourId === mockTour.id);
             setReviews(tourReviews);
 
@@ -149,7 +167,8 @@ export default function DetailTour({ slug }: DetailTourProps) {
               .filter((t) => t.slug !== mockTour.slug)
               .sort((a, b) => (a.category === mockTour.category ? -1 : 1))
               .slice(0, 3);
-            setDbRelatedTours(related);
+            const filteredRelated = related.map(t => ({ ...t, startDates: filterStartDates(t.startDates) }));
+            setDbRelatedTours(filteredRelated);
           } else {
             setError("Không tìm thấy tour này");
           }

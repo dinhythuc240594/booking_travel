@@ -27,6 +27,10 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
   const [recentBookingId, setRecentBookingId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  React.useEffect(() => {
+    setDepartureDate(tour.startDates[0] || "");
+  }, [tour.startDates]);
+
   const pricePerAdult = tour.discountPrice || tour.price;
   const pricePerChild = tour.price_per_child && tour.price_per_child > 0
     ? tour.price_per_child
@@ -167,24 +171,30 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
             <div className="absolute left-4 top-3.5 text-zinc-400">
               <Calendar className="w-5 h-5" />
             </div>
-            <select
-              id="departure-date"
-              value={departureDate}
-              onChange={(e) => setDepartureDate(e.target.value)}
-              required
-              className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-12 pr-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500 text-zinc-800 dark:text-zinc-100 cursor-pointer appearance-none"
-            >
-              {tour.startDates.map((date) => (
-                <option key={date} value={date}>
-                  {new Date(date).toLocaleDateString("vi-VN", {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </option>
-              ))}
-            </select>
+            {tour.startDates.length > 0 ? (
+              <select
+                id="departure-date"
+                value={departureDate}
+                onChange={(e) => setDepartureDate(e.target.value)}
+                required
+                className="w-full bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl pl-12 pr-4 py-3 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-cyan-500 text-zinc-800 dark:text-zinc-100 cursor-pointer appearance-none"
+              >
+                {tour.startDates.map((date) => (
+                  <option key={date} value={date}>
+                    {new Date(date).toLocaleDateString("vi-VN", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="w-full bg-zinc-50 dark:bg-zinc-950 border border-red-200 dark:border-red-900/50 text-red-500 rounded-xl pl-12 pr-4 py-3 text-xs font-semibold">
+                Không có ngày khởi hành phù hợp (tối thiểu 7 ngày chuẩn bị)
+              </div>
+            )}
           </div>
         </div>
 
@@ -259,11 +269,17 @@ export default function TourBookingWidget({ tour }: TourBookingWidgetProps) {
         {/* Nút Submit */}
         <Button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isSubmitting || tour.startDates.length === 0}
           className="w-full rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold py-6 text-sm shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all cursor-pointer border-0 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <CreditCard className="w-4.5 h-4.5" />
-          {isSubmitting ? "Đang xử lý..." : isAuthenticated ? "Đặt Tour Ngay" : "Đăng nhập để đặt tour"}
+          {tour.startDates.length === 0
+            ? "Tạm ngưng nhận đặt tour"
+            : isSubmitting
+              ? "Đang xử lý..."
+              : isAuthenticated
+                ? "Đặt Tour Ngay"
+                : "Đăng nhập để đặt tour"}
         </Button>
 
       </form>

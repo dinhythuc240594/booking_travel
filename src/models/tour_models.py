@@ -161,8 +161,9 @@ class TourModel:
                 parsed_dates = json.loads(tour.start_dates)
                 if isinstance(parsed_dates, list):
                     if filter_past_dates:
-                        today_str = datetime.date.today().isoformat()
-                        start_dates_list = [d for d in parsed_dates if isinstance(d, str) and d >= today_str]
+                        cutoff_date = datetime.date.today() + datetime.timedelta(days=7)
+                        cutoff_str = cutoff_date.isoformat()
+                        start_dates_list = [d for d in parsed_dates if isinstance(d, str) and d > cutoff_str]
                     else:
                         start_dates_list = parsed_dates
             except:

@@ -1102,7 +1102,7 @@ async function previewArticle(articleId, articleType) {
             // Generate gallery HTML dynamically based on displayImages count
             const len = displayImages.length;
             let galleryHtml = '';
-            
+
             if (len === 1) {
                 galleryHtml = `
                     <div class="gallery-grid" style="grid-template-columns: 1fr;">
@@ -1188,9 +1188,23 @@ async function previewArticle(articleId, articleType) {
             }
 
             // Prepare start dates
-            const startDates = Array.isArray(article.start_dates) && article.start_dates.length > 0
+            let startDates = Array.isArray(article.start_dates) && article.start_dates.length > 0
                 ? article.start_dates
-                : ["2026-06-25", "2026-07-02", "2026-07-09", "2026-07-16"];
+                : [];
+
+            // Filter out dates that are within 7 days from today
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            startDates = startDates.filter(dateStr => {
+                const parts = dateStr.split('-');
+                if (parts.length === 3) {
+                    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+                    const diffTime = d.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays > 7;
+                }
+                return false;
+            });
 
             const startDatesJson = JSON.stringify(startDates);
 
@@ -1932,26 +1946,40 @@ async function previewArticle(articleId, articleType) {
                         // Populate start dates
                         const dateSelect = document.getElementById('select-departure');
                         if (dateSelect) {
-                            startDates.forEach(dateStr => {
+                            if (startDates.length === 0) {
+                                dateSelect.disabled = true;
                                 const option = document.createElement('option');
-                                option.value = dateStr;
-                                try {
-                                    const dObj = new Date(dateStr);
-                                    if (!isNaN(dObj)) {
-                                        option.textContent = dObj.toLocaleDateString('vi-VN', {
-                                            weekday: 'long',
-                                            year: 'numeric',
-                                            month: 'long',
-                                            day: 'numeric'
-                                        });
-                                    } else {
+                                option.textContent = "Không có ngày khởi hành phù hợp (> 7 ngày)";
+                                dateSelect.appendChild(option);
+                                const submitBtn = document.querySelector('.btn-submit');
+                                if (submitBtn) {
+                                    submitBtn.disabled = true;
+                                    submitBtn.textContent = "Tạm ngưng nhận đặt tour";
+                                    submitBtn.style.opacity = 0.5;
+                                    submitBtn.style.cursor = 'not-allowed';
+                                }
+                            } else {
+                                startDates.forEach(dateStr => {
+                                    const option = document.createElement('option');
+                                    option.value = dateStr;
+                                    try {
+                                        const dObj = new Date(dateStr);
+                                        if (!isNaN(dObj)) {
+                                            option.textContent = dObj.toLocaleDateString('vi-VN', {
+                                                weekday: 'long',
+                                                year: 'numeric',
+                                                month: 'long',
+                                                day: 'numeric'
+                                            });
+                                        } else {
+                                            option.textContent = dateStr;
+                                        }
+                                    } catch (err) {
                                         option.textContent = dateStr;
                                     }
-                                } catch (err) {
-                                    option.textContent = dateStr;
-                                }
-                                dateSelect.appendChild(option);
-                            });
+                                    dateSelect.appendChild(option);
+                                });
+                            }
                         }
 
                         function updateAdults(change) {

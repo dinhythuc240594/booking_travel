@@ -149,7 +149,7 @@ export default function ToursListContent() {
             reviewsCount: t.reviewsCount || 12,
             category: mapCategoryNameToId(t.category_name || t.category || "culture"),
             maxGroupSize: t.maxGroupSize || 20,
-            startDates: t.startDates || ["2026-06-12", "2026-06-19", "2026-06-26"],
+            startDates: t.startDates || [],
             highlights: t.highlights || []
           };
         });
@@ -219,14 +219,14 @@ export default function ToursListContent() {
       const tourLoc = removeAccents((tour.location || "").toLowerCase());
       const tourLocCity = removeAccents((tour.location_city || "").toLowerCase());
       const tourLocSearchKey = removeAccents((tour.location_search_key || "").toLowerCase());
-      const isMatch = tourLocName.includes(locTerm) || 
-                      locTerm.includes(tourLocName) || 
-                      tourLoc.includes(locTerm) || 
-                      locTerm.includes(tourLoc) ||
-                      tourLocCity.includes(locTerm) ||
-                      locTerm.includes(tourLocCity) ||
-                      tourLocSearchKey.includes(locTerm) ||
-                      locTerm.includes(tourLocSearchKey);
+      const isMatch = tourLocName.includes(locTerm) ||
+        locTerm.includes(tourLocName) ||
+        tourLoc.includes(locTerm) ||
+        locTerm.includes(tourLoc) ||
+        tourLocCity.includes(locTerm) ||
+        locTerm.includes(tourLocCity) ||
+        tourLocSearchKey.includes(locTerm) ||
+        locTerm.includes(tourLocSearchKey);
       if (!isMatch) return false;
     }
 
