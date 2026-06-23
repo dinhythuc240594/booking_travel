@@ -3,7 +3,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
 import { useAuthStore } from "@/store/auth.store";
 
 // Base URL cho API lấy từ biến môi trường hoặc mặc định là endpoint cục bộ
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BASE_URL || "/api";
 
 export const axiosInstance = axios.create({
   baseURL: API_URL,
@@ -45,15 +45,15 @@ axiosInstance.interceptors.response.use(
       console.warn("Unauthorized request detected. Logging out...");
       // Gọi hàm logout từ Zustand Auth Store để xóa thông tin phiên đăng nhập
       useAuthStore.getState().logout();
-      
+
       // Nếu đang chạy ở phía trình duyệt, tự động redirect về trang login nếu ở trang được bảo vệ
       if (typeof window !== "undefined") {
         const currentPath = window.location.pathname;
-        const isProtectedRoute = currentPath.startsWith("/profile") || 
-                                 currentPath.startsWith("/bookings") || 
-                                 currentPath.startsWith("/wishlist") || 
-                                 currentPath.startsWith("/reviews");
-        
+        const isProtectedRoute = currentPath.startsWith("/profile") ||
+          currentPath.startsWith("/bookings") ||
+          currentPath.startsWith("/wishlist") ||
+          currentPath.startsWith("/reviews");
+
         if (isProtectedRoute) {
           const fullPath = window.location.pathname + window.location.search;
           window.location.href = `/login?redirect=${encodeURIComponent(fullPath)}`;
@@ -63,7 +63,7 @@ axiosInstance.interceptors.response.use(
 
     // Trích xuất thông báo lỗi từ server hoặc dùng thông báo mặc định của Axios
     const customErrorMessage = errorData?.message || error.message || "Đã có lỗi xảy ra. Vui lòng thử lại.";
-    
+
     return Promise.reject(new Error(customErrorMessage));
   }
 );
