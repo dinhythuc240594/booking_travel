@@ -448,7 +448,7 @@ export default function BookingsPage() {
                                     >
                                       Chi tiết
                                     </button>
-                                    {(booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CONFIRMED) ? (
+                                    {(booking.status === BookingStatus.PENDING) ? (
                                       <button
                                         onClick={() => handleCancelClick(booking)}
                                         className="px-3 py-1.5 text-xs font-bold text-red-500 hover:text-white border border-red-500/30 hover:border-red-600 bg-transparent hover:bg-red-600 rounded-lg transition-all cursor-pointer"
@@ -532,7 +532,7 @@ export default function BookingsPage() {
                             >
                               Xem chi tiết
                             </button>
-                            {(booking.status === BookingStatus.PENDING || booking.status === BookingStatus.CONFIRMED) && (
+                            {(booking.status === BookingStatus.PENDING) && (
                               <button
                                 onClick={() => handleCancelClick(booking)}
                                 className="flex-1 py-2 text-xs font-bold text-red-500 hover:text-white border border-red-500/20 hover:border-red-600 bg-red-50/5 hover:bg-red-600 rounded-xl transition-all cursor-pointer"
@@ -755,7 +755,7 @@ export default function BookingsPage() {
               >
                 Đóng
               </button>
-              {(selectedBooking.status === BookingStatus.PENDING || selectedBooking.status === BookingStatus.CONFIRMED) && (
+              {(selectedBooking.status === BookingStatus.PENDING) && (
                 <button
                   onClick={() => {
                     handleCancelClick(selectedBooking);
