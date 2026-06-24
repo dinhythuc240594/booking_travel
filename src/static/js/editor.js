@@ -938,6 +938,7 @@ function updateInfoText(pagination, infoElementId) {
 async function uploadImageToEditor(file) {
     const formData = new FormData();
     formData.append('image', file);
+    formData.append('type_data', 'tour');
 
     try {
         const response = await fetch('/admin/api/upload-image', {
