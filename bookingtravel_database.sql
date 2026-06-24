@@ -472,14 +472,14 @@ DROP TABLE IF EXISTS `viewed_tour`;
 CREATE TABLE `viewed_tour` (
   `id` int NOT NULL AUTO_INCREMENT,
   `user_id` int NOT NULL,
-  `tour_id` int DEFAULT NULL,
-  `viewed_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `tour_id` int NOT NULL,
+  `created_at` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  KEY `fk_viewed_tour_user` (`user_id`),
-  KEY `fk_viewed_tour_tour` (`tour_id`),
-  CONSTRAINT `fk_viewed_tour_tour` FOREIGN KEY (`tour_id`) REFERENCES `tour` (`tour_id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_viewed_tour_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+  KEY `user_id` (`user_id`),
+  KEY `tour_id` (`tour_id`),
+  CONSTRAINT `viewed_tour_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`user_id`) ON DELETE CASCADE,
+  CONSTRAINT `viewed_tour_ibfk_2` FOREIGN KEY (`tour_id`) REFERENCES `tour` (`tour_id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -488,7 +488,7 @@ CREATE TABLE `viewed_tour` (
 
 LOCK TABLES `viewed_tour` WRITE;
 /*!40000 ALTER TABLE `viewed_tour` DISABLE KEYS */;
-INSERT INTO `viewed_tour` VALUES (1,3,1,'2026-06-09 19:28:14'),(2,3,2,'2026-06-09 19:28:14'),(3,3,3,'2026-06-09 19:28:14'),(4,4,3,'2026-06-09 19:28:14');
+INSERT INTO `viewed_tour` VALUES (1,8,4,'2026-06-21 10:38:06'),(2,7,8,'2026-06-21 10:38:06'),(3,7,4,'2026-06-21 10:38:06'),(4,7,15,'2026-06-21 12:29:46'),(5,7,13,'2026-06-21 12:29:46'),(6,7,12,'2026-06-21 12:29:46');
 /*!40000 ALTER TABLE `viewed_tour` ENABLE KEYS */;
 UNLOCK TABLES;
 
