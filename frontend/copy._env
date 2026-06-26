@@ -1,2 +1,4 @@
+# TẠO file .env và điền các thông tin sau, để chạy frontend
 NEXT_PUBLIC_API_BASE_URL = "http://localhost:5000/admin/api"
+NEXT_PUBLIC_ADMIN_BASE_URL = "http://localhost:5000/admin"
 NEXT_PUBLIC_BASE_URL = "http://localhost:5000"

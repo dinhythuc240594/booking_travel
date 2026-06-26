@@ -34,7 +34,6 @@ def create_app():
 
     # Set default configuration
     app.config['BABEL_DEFAULT_LOCALE'] = 'vn'
-    app.config['LANGUAGES'] = ['vn', 'en'] # Supported languages
 
     # initialization database
     init_db()
@@ -161,10 +160,8 @@ def create_app():
 if __name__ == '__main__':
     app = create_app()
     print("\n" + "="*50)
-    print("  Website News - Flask Server")
+    print("  Booking Travel - Flask Server")
     print("="*50)
-    print(f"  Server to run: http://localhost:5000")
-    print(f"  Home: http://localhost:5000/")
     print(f"  Admin: http://localhost:5000/admin/login")
     print("="*50 + "\n")
     app.run(debug=True, host='0.0.0.0', port=5000)
